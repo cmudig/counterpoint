@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {},
+  "typedocOptions": {
+    "entryPoints": ["lib"],
+    "entryPointStrategy": "expand",
+    "out": "docs",
+    "exclude": ["tests", "dist", "node_modules"],
+    "readme": "README.md",
+    "categorizeByGroup": false,
+    "plugin": ["typedoc-theme-hierarchy"],
+    "theme": "hierarchy"
+  }
+}

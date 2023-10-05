@@ -7,6 +7,7 @@
     "dist"
   ],
   "main": "./dist/canvas-animation.umd.js",
+  "types": "./dist/canvas-animation.es.d.ts",
   "module": "./dist/canvas-animation.es.js",
   "exports": {
     ".": {
@@ -15,17 +16,23 @@
     }
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite build --watch",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "docs": "jsdoc --readme README.md -c jsdoc.json"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
     "@types/node": "^20.8.2",
+    "better-docs": "^2.7.2",
     "jest": "^29.7.0",
+    "jsdoc": "^4.0.2",
+    "taffydb": "^2.7.3",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
+    "typedoc": "^0.25.1",
+    "typedoc-theme-hierarchy": "^4.1.2",
     "vite": "^4.4.10",
     "vite-plugin-dts": "^3.6.0"
   }

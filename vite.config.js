@@ -10,5 +10,10 @@ module.exports = defineConfig({
       fileName: (format) => `canvas-animation.${format}.js`,
     },
   },
-  plugins: [dts()],
+  plugins: [
+    dts({
+      insertTypesEntry: true,
+      include: 'lib/**',
+    }),
+  ],
 });
