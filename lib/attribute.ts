@@ -2,6 +2,11 @@ import { Transform } from 'stream';
 import { Animator, PreloadableAnimator } from './animator';
 import { TimeProvider, approxEquals } from './utils';
 
+export type AttributeListener<T, U, V> = (
+  attribute: Attribute<T, U, V>,
+  animated: boolean
+) => void;
+
 /**
  * Options to create an `Attribute`.
  * @memberof Attribute
@@ -103,6 +108,12 @@ export class Attribute<
   private _timeProvider: TimeProvider = null; // REQUIRED for animation
   private currentTime = 0;
 
+  private _listeners: AttributeListener<
+    TransformedValueType,
+    ValueType,
+    ComputeArgumentType
+  >[] = [];
+
   /**
    *
    * @param info Arguments describing how to populate the attribute, or a single
@@ -145,6 +156,27 @@ export class Attribute<
       this.precompute = args.precompute || false; // if this is true, always compute this on advance()
       this.lazy = args.lazy || false; // if true, only updates computed value on animate() or compute()
     }
+  }
+
+  addListener(
+    listener: AttributeListener<
+      TransformedValueType,
+      ValueType,
+      ComputeArgumentType
+    >
+  ) {
+    this._listeners.push(listener);
+  }
+
+  removeListener(
+    listener: AttributeListener<
+      TransformedValueType,
+      ValueType,
+      ComputeArgumentType
+    >
+  ) {
+    let idx = this._listeners.indexOf(listener);
+    if (idx >= 0) this._listeners = this._listeners.splice(idx, 1);
   }
 
   setTimeProvider(timeProvider) {
@@ -376,6 +408,7 @@ export class Attribute<
       this._getterValue = null;
     }
     this.needsUpdate = true;
+    this._listeners.forEach((l) => l(this, false));
   }
 
   /**
@@ -406,6 +439,7 @@ export class Attribute<
     }
 
     if (this._getterValue != null) return this._getterValue;
+    if (this.value !== undefined) return this.value;
     return this._computedLastValue;
   }
 
@@ -453,5 +487,6 @@ export class Attribute<
       start: this.currentTime,
     };
     this._computeAnimation();
+    this._listeners.forEach((l) => l(this, true));
   }
 }

@@ -1,3 +1,5 @@
+import Color from 'colorjs.io';
+
 export type AnimationCurve = (t: number) => number;
 
 export function curveLinear(t: number): number {
@@ -14,13 +16,16 @@ export function curveEaseInOut(t: number): number {
  * 0 to 1). The function returns a value of the same type as the initial value
  * representing the interpolated value.
  */
-export type Interpolator<T> = (initialValue: T, interpolant: number) => T;
+export interface Interpolator<T> {
+  interpolate: (initialValue: T, interpolant: number) => T;
+}
 
-// TODO convert this to a subtype of Interpolator with an attached finalValue property
-export type DeterminateInterpolator<T> = {
+/**
+ * A type representing an interpolator that has a definite final value.
+ */
+export interface DeterminateInterpolator<T> extends Interpolator<T> {
   finalValue: T;
-  interpolator: Interpolator<T>;
-};
+}
 
 export type MixingFunction<T> = (v1: T, p1: number, v2: T, p2: number) => T;
 
@@ -31,6 +36,45 @@ export function numericalMixingFunction<T>(
   p2: number
 ): T {
   return ((v1 as number) * p1 + (v2 as number) * p2) as T;
+}
+
+export function colorMixingFunction(
+  v1: Color,
+  p1: number,
+  v2: Color,
+  p2: number
+): string {
+  let result = [
+    Math.round((v1.r * p1 + v2.r * p2) * 255),
+    Math.round((v1.g * p1 + v2.g * p2) * 255),
+    Math.round((v1.b * p1 + v2.b * p2) * 255),
+  ];
+  return `rgb(${result[0]}, ${result[1]}, ${result[2]})`;
+}
+
+export function autoMixingFunction<T>(
+  finalValue: T
+): (v1: T, p1: number, v2: T, p2: number) => T {
+  if (typeof finalValue === 'number') {
+    return numericalMixingFunction;
+  } else if (typeof finalValue === 'string') {
+    // store colors in a cache associated with the function to save on repeated
+    // parsing of the color values
+    let cache: { [key: string]: any } = {};
+    return (v1: T, p1: number, v2: T, p2: number): T => {
+      if (!cache[v1 as string])
+        cache[v1 as string] = new Color(v1 as string).srgb;
+      if (!cache[v2 as string])
+        cache[v2 as string] = new Color(v2 as string).srgb;
+      return colorMixingFunction(
+        cache[v1 as string],
+        p1,
+        cache[v2 as string],
+        p2
+      ) as T;
+    };
+  }
+  return (v1: T, p1: number, v2: T, p2: number): T => (p1 < 1 ? v1 : v2);
 }
 
 /**
@@ -44,14 +88,13 @@ export function numericalMixingFunction<T>(
  */
 export function interpolateTo<T>(
   finalValue: T,
-  mixingFunction: MixingFunction<T> = numericalMixingFunction
+  mixingFunction: MixingFunction<T> | undefined = undefined
 ): DeterminateInterpolator<T> {
+  if (mixingFunction === undefined)
+    mixingFunction = autoMixingFunction(finalValue);
   return {
     finalValue,
-    interpolator: (initialValue: T, interpolant: number) => {
-      if (typeof initialValue != 'number' || typeof finalValue != 'number') {
-        return finalValue;
-      }
+    interpolate: (initialValue: T, interpolant: number) => {
       return mixingFunction(
         initialValue,
         1 - Math.min(interpolant, 1.0),
@@ -74,15 +117,17 @@ export function interpolateTo<T>(
  */
 export function interpolateToFunction<T>(
   finalValueFn: () => T,
-  mixingFunction: MixingFunction<T> = numericalMixingFunction
+  mixingFunction: MixingFunction<T> = autoMixingFunction
 ): Interpolator<T> {
-  return (initialValue: T, interpolant: number) =>
-    mixingFunction(
-      initialValue,
-      1 - Math.min(interpolant, 1.0),
-      finalValueFn(),
-      Math.min(interpolant, 1.0)
-    );
+  return {
+    interpolate: (initialValue: T, interpolant: number) =>
+      mixingFunction(
+        initialValue,
+        1 - Math.min(interpolant, 1.0),
+        finalValueFn(),
+        Math.min(interpolant, 1.0)
+      ),
+  };
 }
 
 /**
@@ -99,25 +144,30 @@ export function interpolateToFunction<T>(
  */
 export function interpolateAlongPath<T>(
   path: T[],
-  mixingFunction: MixingFunction<T> = numericalMixingFunction
+  mixingFunction: MixingFunction<T> = autoMixingFunction
 ): Interpolator<T> {
-  return (initialValue: T, interpolant: number) => {
-    let interpIndex = Math.min(interpolant, 1.0) * (path.length - 1) - 1;
-    let stepInterpolant = Math.min(interpIndex - Math.floor(interpIndex), 1.0);
-    if (interpIndex < 0.0)
-      return mixingFunction(
-        initialValue,
-        1 - stepInterpolant,
-        path[0],
-        stepInterpolant
+  return {
+    interpolate: (initialValue: T, interpolant: number) => {
+      let interpIndex = Math.min(interpolant, 1.0) * (path.length - 1) - 1;
+      let stepInterpolant = Math.min(
+        interpIndex - Math.floor(interpIndex),
+        1.0
       );
-    else
-      return mixingFunction(
-        path[Math.floor(interpIndex)],
-        1 - stepInterpolant,
-        path[Math.floor(interpIndex) + 1],
-        stepInterpolant
-      );
+      if (interpIndex < 0.0)
+        return mixingFunction(
+          initialValue,
+          1 - stepInterpolant,
+          path[0],
+          stepInterpolant
+        );
+      else
+        return mixingFunction(
+          path[Math.floor(interpIndex)],
+          1 - stepInterpolant,
+          path[Math.floor(interpIndex) + 1],
+          stepInterpolant
+        );
+    },
   };
 }
 
@@ -132,28 +182,24 @@ export class Animator<T> {
   curve: AnimationCurve;
 
   constructor(
-    interpolator: Interpolator<T> | DeterminateInterpolator<T>,
+    interpolator: Interpolator<T>,
     duration = 1000,
     curve: AnimationCurve = curveLinear
   ) {
     this.duration = duration;
     if (interpolator.hasOwnProperty('finalValue')) {
       this.finalValue = (interpolator as DeterminateInterpolator<T>).finalValue;
-      this.interpolator = (
-        interpolator as DeterminateInterpolator<T>
-      ).interpolator;
     } else {
       this.finalValue = undefined;
-      this.interpolator = interpolator as Interpolator<T>;
     }
+    this.interpolator = interpolator;
 
     this.curve = curve;
   }
 
   evaluate(initialValue: T, dt: number) {
     let t = this.curve(this.duration > 0 ? dt / this.duration : 1.0);
-    console.log(t, initialValue, this.interpolator(initialValue, t));
-    return this.interpolator(initialValue, t);
+    return this.interpolator.interpolate(initialValue, t);
   }
 }
 

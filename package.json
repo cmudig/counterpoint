@@ -35,5 +35,8 @@
     "typedoc-theme-hierarchy": "^4.1.2",
     "vite": "^4.4.10",
     "vite-plugin-dts": "^3.6.0"
+  },
+  "dependencies": {
+    "colorjs.io": "^0.4.5"
   }
 }

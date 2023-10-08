@@ -1,12 +1,29 @@
-import { Animator } from './animator';
-import { Attribute } from './attribute';
-import { TimeProvider } from './utils';
+import {
+  AnimationCurve,
+  Animator,
+  Interpolator,
+  curveEaseInOut,
+  interpolateTo,
+} from './animator';
+import { Attribute, AttributeListener } from './attribute';
+import { TimeProvider, approxEquals } from './utils';
 
 const ExcessiveUpdateThreshold = 5000;
 
 interface MarkBase {}
 
+export type MarkListener<T extends AttributeSetBase> = (
+  mark: Mark<T>,
+  attrName: keyof T,
+  animated: boolean
+) => void;
+
 export type AttributeSetBase = { [key: string]: Attribute<any, any, MarkBase> };
+
+type SimpleAnimationOptions = { duration?: number; curve?: AnimationCurve };
+type AnimationOptions<ValueType> = SimpleAnimationOptions & {
+  interpolator?: Interpolator<ValueType>;
+};
 
 /**
  * Base interface describing attributes that a mark can have.
@@ -26,7 +43,10 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
 {
   private _timeProvider: TimeProvider = null;
   public id: any;
-  protected attributes: AttributeSet;
+  public attributes: AttributeSet;
+  private _listeners: MarkListener<AttributeSet>[] = [];
+  private _defaultDuration: number = 1000;
+  private _defaultCurve: AnimationCurve = curveEaseInOut;
 
   constructor(id: any, attributes: AttributeSet) {
     this.id = id;
@@ -38,17 +58,56 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
             computeArg: this,
           })
         );
+        attrib.addListener((a, animated) =>
+          this._attributesChanged(attrName, animated)
+        );
         attribs[attrName] = attrib as AttributeSet[K];
       }
     );
     this.attributes = attribs;
   }
 
-  setTimeProvider(timeProvider: TimeProvider) {
+  /**
+   * Applies configuration options to the mark.
+   *
+   * @param opts Options for the mark group, including:
+   *  - `animationDuration`: the default animation duration in milliseconds
+   *    (default 1000)
+   *  - `animationCurve`: the default animation curve to use (default ease-in-out)
+   * @returns this render group
+   */
+  configure(opts: {
+    animationDuration?: number;
+    animationCurve?: AnimationCurve;
+  }): Mark<AttributeSet> {
+    if (opts.animationDuration !== undefined)
+      this._defaultDuration = opts.animationDuration;
+    if (opts.animationCurve !== undefined)
+      this._defaultCurve = opts.animationCurve;
+    return this;
+  }
+
+  addListener(listener: MarkListener<AttributeSet>): Mark<AttributeSet> {
+    this._listeners.push(listener);
+    return this;
+  }
+
+  removeListener(listener: MarkListener<AttributeSet>): Mark<AttributeSet> {
+    let idx = this._listeners.indexOf(listener);
+    if (idx >= 0) this._listeners = this._listeners.splice(idx, 1);
+    return this;
+  }
+
+  private _attributesChanged(attrName: keyof AttributeSet, animated: boolean) {
+    this._listeners.forEach((l) => l(this, attrName, animated));
+  }
+
+  setTimeProvider(timeProvider: TimeProvider): Mark<AttributeSet> {
     this._timeProvider = timeProvider;
     Object.values(this.attributes).forEach((attr) =>
       attr.setTimeProvider(this._timeProvider)
     );
+    return this;
   }
 
   // Warning system to detect when an attribute is being listed as animated
@@ -81,19 +140,35 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   }
 
   /**
-   * Instantaneously sets the value of an attribute.
+   * Instantaneously sets the value of an attribute, either taking the new
+   * provided value or re-computing the value.
    *
    * @param attrName Attribute name to update.
-   * @param newValue The new value of the attribute.
+   * @param newValue The new value of the attribute, or undefined if the
+   *  attribute should recompute its value using its value function.
    */
   setAttr<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K,
-    newValue: AttributeType['value']
-  ) {
-    // Set the value in case there will be an animation from this point
-    (this.attributes[attrName] as AttributeType).set(newValue);
+    newValue: AttributeType['value'] | undefined = undefined
+  ): Mark<AttributeSet> {
+    let attr = this.attributes[attrName] as AttributeType;
+    let oldValue = attr.last();
+    if (newValue === undefined) attr.compute();
+    else attr.set(newValue);
+
+    if (!approxEquals(oldValue, attr.data()))
+      this._listeners.forEach((l) => l(this, attrName, false));
+    return this;
   }
 
+  /**
+   * Gets the (potentially transformed) value of an attribute.
+   *
+   * @param attrName Name of the attribute to retrieve.
+   * @returns The value of the attribute
+   *
+   * * @see Attribute.get
+   */
   attr<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K
   ): ReturnType<AttributeType['get']> {
@@ -103,33 +178,117 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     return (this.attributes[attrName] as AttributeType).get();
   }
 
-  // Gets the true data value (non-animated)
+  /**
+   * Gets the true data value (non-animated) for an attribute.
+   *
+   * @param attrName Name of the attribute to retrieve.
+   * @returns The non-animated value of the attribute
+   *
+   * @see Attribute.data
+   */
   data<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K
   ): AttributeType['value'] {
     return (this.attributes[attrName] as AttributeType).data();
   }
 
-  // Marks that the transform has changed for the given attribute
-  updateTransform<K extends keyof AttributeSet>(attrName: K) {
+  /**
+   * Marks that the transform has changed for the given attribute.
+   *
+   * @param attrName Name of the attribute for which to update the transform.
+   * @returns this mark
+   *
+   * @see Attribute.updateTransform
+   */
+  updateTransform<K extends keyof AttributeSet>(
+    attrName: K
+  ): Mark<AttributeSet> {
     (this.attributes[attrName] as Attribute<any, any, any>).updateTransform();
+    return this;
   }
 
-  // Animations should have an evaluate()
-  // method that takes as parameter an initial value and a time
-  // delta from start (in msec) and returns a new value for the
-  // attribute, and a duration property in msec
-  animate<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
+  animateTo<
+    K extends keyof AttributeSet,
+    AttributeType extends AttributeSet[K]
+  >(
     attrName: K,
-    animation: Animator<AttributeType['value']>
-  ) {
+    finalValue:
+      | AttributeType['value']
+      | ((computeArg: AttributeType['computeArg']) => AttributeType['value']),
+    options: SimpleAnimationOptions = {}
+  ): Mark<AttributeSet> {
+    if (typeof finalValue === 'function') {
+      // set all the value functions and animate computed
+      (this.attributes[attrName] as AttributeType).set(finalValue);
+      this.animate(attrName, {
+        duration: options.duration,
+        curve: options.curve,
+      });
+      return this;
+    }
+
     if (!this.attributes.hasOwnProperty(attrName)) {
       console.error(
         `Attempting to animate undefined property ${String(attrName)}`
       );
-      return;
+      return this;
+    }
+
+    let duration =
+      options.duration === undefined ? this._defaultDuration : options.duration;
+    let curve =
+      options.curve === undefined ? this._defaultCurve : options.curve;
+
+    let animation = new Animator(interpolateTo(finalValue), duration, curve);
+
+    (this.attributes[attrName] as AttributeType).animate(animation);
+    return this;
+  }
+
+  animate<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
+    attrName: K,
+    options:
+      | AnimationOptions<AttributeType['value']>
+      | Animator<AttributeType['value']> = {}
+  ): Mark<AttributeSet> {
+    if (!this.attributes.hasOwnProperty(attrName)) {
+      console.error(
+        `Attempting to animate undefined property ${String(attrName)}`
+      );
+      return this;
+    }
+
+    let animation: Animator<AttributeType['value']>;
+    if (options instanceof Animator) {
+      animation = options as Animator<AttributeType['value']>;
+    } else if (options.interpolator !== undefined) {
+      let interpolator = options.interpolator;
+      if (!!interpolator) {
+        animation = new Animator(
+          interpolator,
+          options.duration !== undefined
+            ? options.duration
+            : this._defaultDuration,
+          options.curve !== undefined ? options.curve : this._defaultCurve
+        );
+      }
+    } else {
+      let newValue = this.data(attrName);
+      if (
+        !approxEquals(newValue, this.attributes[attrName].last()) ||
+        !approxEquals(newValue, this.attributes[attrName].future())
+      ) {
+        animation = new Animator(
+          interpolateTo(newValue),
+          options.duration !== undefined
+            ? options.duration
+            : this._defaultDuration,
+          options.curve !== undefined ? options.curve : this._defaultCurve
+        );
+      } else return this;
     }
 
     (this.attributes[attrName] as AttributeType).animate(animation);
+    return this;
   }
 }

@@ -2,23 +2,25 @@
   import {
     Attribute,
     Mark,
-    MarkSet,
+    MarkRenderGroup,
     curveEaseInOut,
     interpolateTo,
-    type MarkAttributes,
   } from 'canvas-animation';
 
   let canvas: HTMLCanvasElement;
-  let markSet: MarkSet = new MarkSet([
-    new Mark(1, {
-      x: new Attribute(100),
-      y: new Attribute(100),
-    }),
-    new Mark(1, {
-      x: new Attribute(400),
-      y: new Attribute(400),
-    }),
-  ]);
+  let markSet = new MarkRenderGroup(
+    new Array(100).fill(0).map(
+      (_, i) =>
+        new Mark(i, {
+          x: new Attribute(Math.random() * 500),
+          y: new Attribute(Math.random() * 500),
+          color: new Attribute('#ff0000'),
+        })
+    )
+  ).configure({
+    animationDuration: 500,
+    animationCurve: curveEaseInOut,
+  });
 
   let lastDrawTime: number | undefined = undefined;
 
@@ -31,9 +33,11 @@
         ctx.fillStyle = '#9999ff40';
         ctx.strokeStyle = 'black';
         ctx.lineWidth = 1.0;
-        markSet.forEach((mark: Mark<MarkAttributes>) => {
+        markSet.forEach((mark) => {
           let x = mark.attr('x');
           let y = mark.attr('y');
+          let color = mark.attr('color');
+          ctx!.fillStyle = color;
           ctx?.beginPath();
           ctx?.ellipse(x, y, 5, 5, 0, 0, 2 * Math.PI, false);
           ctx?.fill();
@@ -60,13 +64,17 @@
     animationCallback(window.performance.now());
   }
 
+  let colorIdx = 0;
+
+  function getColor(mark: (typeof markSet)['marks'][number]) {
+    return colorIdx % 2 == 0 ? '#ff0000' : '#0000ff';
+  }
+
   function animatePoints() {
-    markSet.animateAll(
-      'x',
-      (mark) => interpolateTo((mark.attr('x') + 100) % 500),
-      500,
-      curveEaseInOut
-    );
+    colorIdx++;
+    markSet
+      .animateTo('x', (mark) => (mark.attr('x') + 100) % 500)
+      .animateTo('color', (mark) => getColor);
     animationCallback(window.performance.now());
   }
 </script>
