@@ -18,3 +18,17 @@ export function makeTimeProvider(): TimeProvider {
     },
   });
 }
+
+/**
+ * Enumerates all methods of an object.
+ * @param obj the object to inspect
+ * @returns a `Set` containing all methods that can be called on the object
+ */
+export function getAllMethodNames(obj: any): Set<string | symbol> {
+  let methods = new Set<string | symbol>();
+  while ((obj = Reflect.getPrototypeOf(obj))) {
+    let keys = Reflect.ownKeys(obj);
+    keys.forEach((k) => methods.add(k));
+  }
+  return methods;
+}

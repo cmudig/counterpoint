@@ -20,8 +20,11 @@ export type MarkListener<T extends AttributeSetBase> = (
 
 export type AttributeSetBase = { [key: string]: Attribute<any, any, MarkBase> };
 
-type SimpleAnimationOptions = { duration?: number; curve?: AnimationCurve };
-type AnimationOptions<ValueType> = SimpleAnimationOptions & {
+export type SimpleAnimationOptions = {
+  duration?: number;
+  curve?: AnimationCurve;
+};
+export type AnimationOptions<ValueType> = SimpleAnimationOptions & {
   interpolator?: Interpolator<ValueType>;
 };
 

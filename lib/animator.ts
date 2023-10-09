@@ -117,8 +117,10 @@ export function interpolateTo<T>(
  */
 export function interpolateToFunction<T>(
   finalValueFn: () => T,
-  mixingFunction: MixingFunction<T> = autoMixingFunction
+  mixingFunction: MixingFunction<T> | undefined = undefined
 ): Interpolator<T> {
+  if (mixingFunction === undefined)
+    mixingFunction = autoMixingFunction(finalValueFn());
   return {
     interpolate: (initialValue: T, interpolant: number) =>
       mixingFunction(
@@ -144,8 +146,10 @@ export function interpolateToFunction<T>(
  */
 export function interpolateAlongPath<T>(
   path: T[],
-  mixingFunction: MixingFunction<T> = autoMixingFunction
+  mixingFunction: MixingFunction<T> | undefined = undefined
 ): Interpolator<T> {
+  if (mixingFunction === undefined)
+    mixingFunction = autoMixingFunction(path[0]);
   return {
     interpolate: (initialValue: T, interpolant: number) => {
       let interpIndex = Math.min(interpolant, 1.0) * (path.length - 1) - 1;

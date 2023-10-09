@@ -3,16 +3,13 @@ import {
   Mark,
   MarkAttributes,
   SimpleAnimationOptions,
-  AnimationOptions,
 } from './mark';
-import { TimeProvider, approxEquals, makeTimeProvider } from './utils';
+import { TimeProvider, getAllMethodNames, makeTimeProvider } from './utils';
 import {
   AnimationCurve,
-  Animator,
   Interpolator,
   PreloadableAnimator,
   curveEaseInOut,
-  curveLinear,
   interpolateTo,
 } from './animator';
 
@@ -77,7 +74,7 @@ export class MarkRenderGroup<
    * @param opts Options for the mark group (see {@link configure})
    */
   constructor(
-    marks: Mark<AttributeSet>[],
+    marks: Mark<AttributeSet>[] = [],
     opts: RenderGroupOptions = {
       animationDuration: 1000,
       animationCurve: curveEaseInOut,
@@ -92,6 +89,10 @@ export class MarkRenderGroup<
     this.marks = marks;
     this.marksByID = new Map();
     this.marks.forEach((m) => {
+      if (this.marksByID.has(m.id)) {
+        console.error(`ID '${m.id}' is duplicated in mark render group`);
+        return;
+      }
       this.marksByID.set(m.id, m);
       m.setTimeProvider(this.timeProvider);
       m.configure({
@@ -144,6 +145,9 @@ export class MarkRenderGroup<
     return this;
   }
 
+  /**
+   * @returns The set of marks that this render group knows about
+   */
   getMarks(): Mark<AttributeSet>[] {
     return this.marks;
   }
@@ -211,17 +215,31 @@ export class MarkRenderGroup<
     return this.animatingMarks.size > 0;
   }
 
+  /**
+   * Animates all marks to the value defined by the given function.
+   *
+   * @param attrName the attribute name to update
+   * @param finalValueFn a function that takes a mark and its index, and returns
+   *  a value or value function for that mark
+   * @param options options for the animation, including the duration and curve
+   *  to use
+   * @returns this render group
+   */
   animateTo<
     K extends keyof AttributeSet,
     AttributeType extends AttributeSet[K]
   >(
     attrName: K,
-    finalValueFn: (
-      mark: Mark<AttributeSet>,
-      i: number
-    ) =>
+    finalValueFn:
       | AttributeType['value']
-      | ((computeArg: AttributeType['computeArg']) => AttributeType['value']),
+      | ((
+          mark: Mark<AttributeSet>,
+          i: number
+        ) =>
+          | AttributeType['value']
+          | ((
+              computeArg: AttributeType['computeArg']
+            ) => AttributeType['value'])),
     options: SimpleAnimationOptions = {}
   ): MarkRenderGroup<AttributeSet> {
     let preloadable = this.preloadableProperties.has(attrName);
@@ -236,19 +254,40 @@ export class MarkRenderGroup<
       this.forEach((mark, i) =>
         mark.animate(
           attrName,
-          new PreloadableAnimator(finalValueFn(mark, i), duration)
+          new PreloadableAnimator(
+            typeof finalValueFn === 'function'
+              ? (finalValueFn as Function)(mark, i)
+              : finalValueFn,
+            duration
+          )
         )
       );
     } else {
       // this.animatingMarks = new Set(this.getMarks());
       this.forEach((mark, i) =>
-        mark.animateTo(attrName, finalValueFn(mark, i), options)
+        mark.animateTo(
+          attrName,
+          typeof finalValueFn === 'function'
+            ? (finalValueFn as Function)(mark, i)
+            : finalValueFn,
+          options
+        )
       );
     }
 
     return this;
   }
 
+  /**
+   * Animates all marks to their new computed value, or uses a custom
+   * interpolator.
+   *
+   * @param attrName the attribute name to update
+   * @param options options for the animation, including the duration and curve
+   *  to use. The `interpolator` option takes a function that allows you to
+   *  specify a custom interpolator for each mark.
+   * @returns this render group
+   */
   animate<
     K extends keyof AttributeSet,
     ValueType extends AttributeSet[K]['value']
@@ -281,7 +320,7 @@ export class MarkRenderGroup<
           interpolator:
             options.interpolator !== undefined
               ? options.interpolator(mark, i)
-              : interpolateTo,
+              : undefined,
         });
       }
     });
@@ -289,16 +328,38 @@ export class MarkRenderGroup<
     return this;
   }
 
+  /**
+   * Updates the value of the given attribute in every mark.
+   *
+   * @param attrName the attribute name to update
+   * @param newValueFn an optional function that takes a mark and its index, and
+   *  returns the new value or value function for that mark. If not provided,
+   *  the attribute values will be recomputed using the existing value or value
+   *  function.
+   * @returns this render group
+   */
   update<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K,
     newValueFn:
-      | ((mark: Mark<AttributeSet>, i: number) => AttributeType['value'])
+      | AttributeType['value']
+      | ((
+          mark: Mark<AttributeSet>,
+          i: number
+        ) =>
+          | AttributeType['value']
+          | ((
+              computeArg: AttributeType['computeArg']
+            ) => AttributeType['value']))
       | undefined = undefined
   ): MarkRenderGroup<AttributeSet> {
     this.forEach((mark, i) => {
       mark.setAttr(
         attrName,
-        newValueFn === undefined ? undefined : newValueFn(mark, i)
+        newValueFn === undefined
+          ? undefined
+          : typeof newValueFn === 'function'
+          ? (newValueFn as Function)(mark, i)
+          : newValueFn
       );
     });
     return this;
@@ -334,14 +395,51 @@ export class MarkRenderGroup<
     return this.getMarks().map(mapper);
   }
 
+  /**
+   * Filters the marks so that a subsequent action can be performed.
+   *
+   * @example ```markSet.filter([...]).animateTo("alpha", 0.0)
+   * @param filterer Predicate function
+   * @returns a view of the render group with only a subset of the marks
+   */
   filter(
     filterer: (
       value: Mark<AttributeSet>,
       index: number,
       array: Mark<AttributeSet>[]
     ) => boolean
-  ): Mark<AttributeSet>[] {
-    return this.getMarks().filter(filterer);
+  ): MarkRenderGroup<AttributeSet> {
+    // Create a proxy object that replicates the behavior of the render group
+    // exactly, but swaps out the marks and mark ID mapping before every method
+    // call.
+    let proxy = Object.assign({}, this);
+    let newMarkSet = this.getMarks().filter(filterer);
+    Object.keys(this).forEach((key) => {
+      proxy[key] = this[key];
+    });
+    proxy.marks = newMarkSet;
+    proxy.marksByID = new Map();
+    newMarkSet.forEach((m) => {
+      proxy.marksByID.set(m.id, m);
+    });
+
+    getAllMethodNames(this).forEach((methodName) => {
+      if (methodName == 'getMarks') {
+        proxy[methodName] = () => {
+          return newMarkSet;
+        };
+      } else {
+        proxy[methodName] = (...args) => {
+          let oldMarks = this.getMarks();
+          this.marks = newMarkSet;
+          let ret = this[methodName](...args);
+          this.marks = oldMarks;
+          if (ret === this) return proxy;
+          return ret;
+        };
+      }
+    });
+    return proxy as MarkRenderGroup<AttributeSet>;
   }
 
   /**

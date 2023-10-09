@@ -3,12 +3,13 @@
     Attribute,
     Mark,
     MarkRenderGroup,
+    createRenderGroup,
     curveEaseInOut,
     interpolateTo,
   } from 'canvas-animation';
 
   let canvas: HTMLCanvasElement;
-  let markSet = new MarkRenderGroup(
+  let markSet = createRenderGroup(
     new Array(100).fill(0).map(
       (_, i) =>
         new Mark(i, {
@@ -66,15 +67,16 @@
 
   let colorIdx = 0;
 
-  function getColor(mark: (typeof markSet)['marks'][number]) {
+  function getColor(): string {
     return colorIdx % 2 == 0 ? '#ff0000' : '#0000ff';
   }
 
   function animatePoints() {
     colorIdx++;
     markSet
+      .filter((mark, i) => i % 2 == 0)
       .animateTo('x', (mark) => (mark.attr('x') + 100) % 500)
-      .animateTo('color', (mark) => getColor);
+      .animateTo('color', getColor());
     animationCallback(window.performance.now());
   }
 </script>
