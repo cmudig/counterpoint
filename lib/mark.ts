@@ -6,6 +6,7 @@ import {
   interpolateTo,
 } from './animator';
 import { Attribute, AttributeListener } from './attribute';
+import { Advanceable } from './ticker';
 import { TimeProvider, approxEquals } from './utils';
 
 const ExcessiveUpdateThreshold = 5000;
@@ -42,7 +43,7 @@ export interface MarkAttributes extends AttributeSetBase {
  * one or more `Attribute`s.
  */
 export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
-  implements MarkBase
+  implements MarkBase, Advanceable
 {
   private _timeProvider: TimeProvider = null;
   public id: any;

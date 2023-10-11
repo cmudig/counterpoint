@@ -12,6 +12,7 @@ import {
   curveEaseInOut,
   interpolateTo,
 } from './animator';
+import { Advanceable } from './ticker';
 
 type RenderGroupOptions = {
   timeProvider?: TimeProvider;
@@ -37,7 +38,8 @@ type GroupAnimationOptions<
  */
 export class MarkRenderGroup<
   AttributeSet extends AttributeSetBase = MarkAttributes
-> {
+> implements Advanceable
+{
   private timeProvider: TimeProvider = null;
 
   /**

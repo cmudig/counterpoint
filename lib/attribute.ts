@@ -1,6 +1,7 @@
 import { Transform } from 'stream';
 import { Animator, PreloadableAnimator } from './animator';
 import { Deferred, TimeProvider, approxEquals } from './utils';
+import { Advanceable } from './ticker';
 
 export type AttributeListener<T, U, V> = (
   attribute: Attribute<T, U, V>,
@@ -80,7 +81,8 @@ export class Attribute<
   ValueType = TransformedValueType,
   ComputeArgumentType = Attribute<TransformedValueType, ValueType, any>
 > implements
-    AttributeDefinition<TransformedValueType, ValueType, ComputeArgumentType>
+    AttributeDefinition<TransformedValueType, ValueType, ComputeArgumentType>,
+    Advanceable
 {
   public value: ValueType;
   public valueFn: ((computeArg: ComputeArgumentType) => ValueType) | undefined =

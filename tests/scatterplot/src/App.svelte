@@ -1,12 +1,12 @@
 <script lang="ts">
   import {
     Attribute,
+    LazyTicker,
     Mark,
-    MarkRenderGroup,
     createRenderGroup,
     curveEaseInOut,
-    interpolateTo,
   } from 'canvas-animation';
+  import { onDestroy } from 'svelte';
 
   let canvas: HTMLCanvasElement;
   let markSet = createRenderGroup(
@@ -23,8 +23,7 @@
     animationCurve: curveEaseInOut,
     lazyUpdates: true,
   });
-
-  let lastDrawTime: number | undefined = undefined;
+  let ticker = new LazyTicker(markSet, draw);
 
   function draw() {
     if (!!canvas) {
@@ -50,21 +49,11 @@
     }
   }
 
-  function animationCallback(t: number) {
-    if (lastDrawTime === undefined) {
-      lastDrawTime = window.performance.now();
-    }
-    if (markSet.advance(t - lastDrawTime)) {
-      draw();
-    }
-    requestAnimationFrame(animationCallback);
-    lastDrawTime = t;
-  }
-
   $: if (!!canvas) {
     draw();
-    animationCallback(window.performance.now());
   }
+
+  onDestroy(() => ticker.stop());
 
   let colorIdx = 0;
 
@@ -84,7 +73,7 @@
       .catch(() => {
         console.log('reject');
       });
-    animationCallback(window.performance.now());
+    ticker.start();
   }
 </script>
 
