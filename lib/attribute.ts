@@ -1,6 +1,6 @@
 import { Transform } from 'stream';
 import { Animator, PreloadableAnimator } from './animator';
-import { TimeProvider, approxEquals } from './utils';
+import { Deferred, TimeProvider, approxEquals } from './utils';
 
 export type AttributeListener<T, U, V> = (
   attribute: Attribute<T, U, V>,
@@ -114,6 +114,10 @@ export class Attribute<
     ComputeArgumentType
   >[] = [];
 
+  private _animationCompleteCallbacks: Deferred<
+    Attribute<TransformedValueType, ValueType, ComputeArgumentType>
+  >[] = [];
+
   /**
    *
    * @param info Arguments describing how to populate the attribute, or a single
@@ -206,6 +210,14 @@ export class Attribute<
       else this.currentTime = this._timeProvider();
     }
 
+    if (this.animation == null && this._animationCompleteCallbacks.length > 0) {
+      // Clean up animation callbacks for animations that were somehow removed
+      console.warn(
+        'Found animation-complete callbacks for a non-existent animation'
+      );
+      this._cleanUpAnimation(true);
+    }
+
     if (this._animationFinished()) {
       this._computeAnimation();
     }
@@ -233,7 +245,7 @@ export class Attribute<
     if (this._animationFinished() && recomputeOnComplete) {
       if (!!this.valueFn) this.compute();
       else this.value = value;
-      this.animation = null;
+      this._cleanUpAnimation(false);
       this._getterValue = null;
     } else {
       this._getterValue = value;
@@ -267,6 +279,15 @@ export class Attribute<
       }
     } else transformedValue = value as unknown as TransformedValueType;
     return transformedValue;
+  }
+
+  _cleanUpAnimation(canceled = false) {
+    this.animation = null;
+    this._animationCompleteCallbacks.forEach((cb) => {
+      if (!canceled || !cb.info.rejectOnCancel) cb.resolve(this);
+      else cb.reject({ newValue: this.last() });
+    });
+    this._animationCompleteCallbacks = [];
   }
 
   /**
@@ -480,6 +501,7 @@ export class Attribute<
       } else {
         this._computedLastValue = this.last();
       }
+      this._cleanUpAnimation(true);
     }
 
     this.animation = {
@@ -488,5 +510,29 @@ export class Attribute<
     };
     this._computeAnimation();
     this._listeners.forEach((l) => l(this, true));
+  }
+
+  /**
+   * Wait until the attribute's current animation has finished.
+   *
+   * @param rejectOnCancel Whether or not to throw a promise rejection if the
+   *  animation is canceled. The default is true.
+   * @returns A `Promise` that resolves when the animation has completed, and
+   *  rejects if the animation is canceled or superseded by a different animation.
+   *  If `rejectOnCancel` is set to `false`, the promise resolves in both
+   *  situations. If there is no active animation, the promise resolves immediately.
+   */
+  wait(
+    rejectOnCancel: boolean = true
+  ): Promise<Attribute<TransformedValueType, ValueType, ComputeArgumentType>> {
+    if (!this.animation) {
+      // Simply resolve the promise as there is nothing to wait for
+      return new Promise((resolve, reject) => resolve(this));
+    }
+    let cb = new Deferred<
+      Attribute<TransformedValueType, ValueType, ComputeArgumentType>
+    >({ rejectOnCancel });
+    this._animationCompleteCallbacks.push(cb);
+    return cb.promise;
   }
 }

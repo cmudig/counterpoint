@@ -15,12 +15,13 @@
         new Mark(i, {
           x: new Attribute(Math.random() * 500),
           y: new Attribute(Math.random() * 500),
-          color: new Attribute('#ff0000'),
+          color: new Attribute({ valueFn: getColor }),
         })
     )
   ).configure({
     animationDuration: 500,
     animationCurve: curveEaseInOut,
+    lazyUpdates: true,
   });
 
   let lastDrawTime: number | undefined = undefined;
@@ -72,11 +73,17 @@
   }
 
   function animatePoints() {
-    colorIdx++;
     markSet
       .filter((mark, i) => i % 2 == 0)
       .animateTo('x', (mark) => (mark.attr('x') + 100) % 500)
-      .animateTo('color', getColor());
+      .wait('x')
+      .then(() => {
+        colorIdx++;
+        markSet.animate('color');
+      })
+      .catch(() => {
+        console.log('reject');
+      });
     animationCallback(window.performance.now());
   }
 </script>

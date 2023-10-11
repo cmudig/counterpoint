@@ -32,3 +32,24 @@ export function getAllMethodNames(obj: any): Set<string | symbol> {
   }
   return methods;
 }
+
+/**
+ * A utility to create "deferred" actions such as callbacks, allowing for
+ * async/await syntax.
+ *
+ * source: https://stackoverflow.com/a/34637436/2152503
+ */
+export class Deferred<T> {
+  promise: Promise<T>;
+  info: any;
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason: any) => void;
+
+  constructor(info: any = undefined) {
+    this.info = info;
+    this.promise = new Promise((resolve, reject) => {
+      this.reject = reject;
+      this.resolve = resolve;
+    });
+  }
+}

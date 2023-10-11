@@ -50,6 +50,11 @@ export class MarkRenderGroup<
    * every call to `advance()`. If set to `true`, only the marks that have
    * been explicitly changed through a call to `set...` or `animate...` will
    * be advanced. The default is `false`.
+   *
+   * @note Even if lazy updates are turned on, computed mark attributes will
+   * still reflect updated values when their value functions change. This means
+   * that if a drawing loop always iterates over all marks, they will all be
+   * updated even if only a subset has `advance` called.
    */
   public lazyUpdates: boolean = false;
 
@@ -184,10 +189,13 @@ export class MarkRenderGroup<
   advance(dt: number): boolean {
     this.timeProvider.advance(dt);
 
+    let marksToUpdate = this.lazyUpdates
+      ? [...this.animatingMarks, ...this.updatedMarks]
+      : this.getMarks();
     this.updatedMarks = new Set();
-    if (this.animatingMarks.size == 0 && !this._forceUpdate) return false;
+    if (marksToUpdate.length == 0 && !this._forceUpdate) return false;
 
-    for (let mark of this.animatingMarks) {
+    for (let mark of marksToUpdate) {
       if (!mark.advance()) {
         this.animatingMarks.delete(mark);
       }
@@ -363,6 +371,27 @@ export class MarkRenderGroup<
       );
     });
     return this;
+  }
+
+  /**
+   * Waits for the animations on the specified attribute name(s) to complete.
+   *
+   * @param attrNames An attribute name or array of attribute names to wait for.
+   * @param rejectOnCancel If true (default), reject the promise if any animation is
+   *  canceled or superseded. If false, resolve the promise in this case.
+   * @returns a `Promise` that resolves when all the animations for the given
+   *  attributes have completed, and rejects if any of their animations are
+   *  canceled or superseded by another animation (unless `rejectOnCancel` is set
+   *  to `false`). If none of the listed attributes have an active animation,
+   *  the promise resolves immediately.
+   */
+  wait<K extends keyof AttributeSet>(
+    attrNames: K | K[],
+    rejectOnCancel: boolean = true
+  ): Promise<any> {
+    return Promise.all(
+      this.map((mark) => mark.wait(attrNames, rejectOnCancel))
+    );
   }
 
   /**

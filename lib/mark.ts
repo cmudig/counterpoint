@@ -294,4 +294,26 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     (this.attributes[attrName] as AttributeType).animate(animation);
     return this;
   }
+
+  /**
+   * Waits for the animations on the specified attribute name(s) to complete.
+   *
+   * @param attrNames An attribute name or array of attribute names to wait for.
+   * @param rejectOnCancel If true (default), reject the promise if any animation is
+   *  canceled or superseded. If false, resolve the promise in this case.
+   * @returns a `Promise` that resolves when all the animations for the given
+   *  attributes have completed, and rejects if any of their animations are
+   *  canceled or superseded by another animation (unless `rejectOnCancel` is set
+   *  to `false`). If none of the listed attributes have an active animation,
+   *  the promise resolves immediately.
+   */
+  wait<K extends keyof AttributeSet>(
+    attrNames: K | K[],
+    rejectOnCancel: boolean = true
+  ): Promise<any> {
+    let names: K[] = Array.isArray(attrNames) ? attrNames : [attrNames];
+    return Promise.all(
+      names.map((name) => this.attributes[name].wait(rejectOnCancel))
+    );
+  }
 }
