@@ -13,7 +13,8 @@
      */
     "allowJs": true,
     "checkJs": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "outDir": "./dist"
   },
   "exclude": ["../../dist", "../../node_modules", "../../docs"],
   "include": [

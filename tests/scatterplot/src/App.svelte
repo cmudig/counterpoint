@@ -15,7 +15,7 @@
         new Mark(i, {
           x: new Attribute(Math.random() * 500),
           y: new Attribute(Math.random() * 500),
-          color: new Attribute({ valueFn: getColor }),
+          color: new Attribute<string>({ valueFn: getColor }),
         })
     )
   ).configure({

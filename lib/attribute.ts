@@ -13,7 +13,7 @@ export type AttributeListener<T, U, V> = (
  * @memberof Attribute
  */
 export interface AttributeDefinition<
-  TransformedValueType,
+  TransformedValueType extends Exclude<any, Function>,
   ValueType = TransformedValueType,
   ComputeArgumentType = any
 > {
