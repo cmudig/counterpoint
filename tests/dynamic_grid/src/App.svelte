@@ -48,6 +48,9 @@
         ctx.resetTransform();
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        ctx.globalAlpha = 1.0;
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
         ctx.fillStyle = '#3388ff';
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1.0;
@@ -92,8 +95,15 @@
   }
 </script>
 
+<div>Click to show/hide colored squares</div>
 <canvas
-  style="width: 100vw; height: 100vh;"
+  style="width: 100vw; height: 500px;"
   bind:this={canvas}
   on:click={onClick}
 />
+
+<style>
+  :global(body) {
+    margin: 0;
+  }
+</style>
