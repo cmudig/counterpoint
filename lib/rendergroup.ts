@@ -187,6 +187,13 @@ export class MarkRenderGroup<
   }
 
   /**
+   * @returns The current time that all contained marks have
+   */
+  currentTime(): number {
+    return this.timeProvider();
+  }
+
+  /**
    * @returns The set of marks that this render group knows about
    */
   getMarks(): Mark<AttributeSet>[] {
@@ -557,6 +564,13 @@ export class MarkRenderGroup<
     this.marks.splice(idx, 1);
     this.marksByID.delete(mark.id);
     this._markListChanged = true;
+  }
+
+  /**
+   * @returns the number of marks in the render group
+   */
+  count(): number {
+    return this.getMarks().length;
   }
 }
 
