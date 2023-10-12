@@ -71,6 +71,7 @@ export class MarkRenderGroup<
   private preloadableProperties: Set<keyof AttributeSet> = new Set();
 
   private _forceUpdate = false;
+  private _markListChanged = false;
 
   private _defaultDuration: number;
   private _defaultCurve: AnimationCurve;
@@ -101,16 +102,7 @@ export class MarkRenderGroup<
         return;
       }
       this.marksByID.set(m.id, m);
-      m.setTimeProvider(this.timeProvider);
-      m.configure({
-        animationDuration: this._defaultDuration,
-        animationCurve: this._defaultCurve,
-      });
-      m.addListener((mark, attrName, animated) => {
-        this.updatedMarks.add(mark);
-        if (!this.preloadableProperties.has(attrName) && animated)
-          this.animatingMarks.add(mark);
-      });
+      this._configureMark(m);
     });
   }
 
@@ -135,7 +127,25 @@ export class MarkRenderGroup<
       this._defaultDuration = opts.animationDuration;
     if (opts.animationCurve !== undefined)
       this._defaultCurve = opts.animationCurve;
+    if (!!this.marks) this.getMarks().forEach((m) => this._configureMark(m));
     return this;
+  }
+
+  /**
+   * Configures a mark's callbacks and default properties.
+   * @param m the mark to configure
+   */
+  _configureMark(m: Mark<AttributeSet>) {
+    m.setTimeProvider(this.timeProvider);
+    m.configure({
+      animationDuration: this._defaultDuration,
+      animationCurve: this._defaultCurve,
+    });
+    m.addListener((mark, attrName, animated) => {
+      this.updatedMarks.add(mark);
+      if (!this.preloadableProperties.has(attrName) && animated)
+        this.animatingMarks.add(mark);
+    });
   }
 
   /**
@@ -195,7 +205,12 @@ export class MarkRenderGroup<
       ? [...this.animatingMarks, ...this.updatedMarks]
       : this.getMarks();
     this.updatedMarks = new Set();
-    if (marksToUpdate.length == 0 && !this._forceUpdate) return false;
+    if (
+      marksToUpdate.length == 0 &&
+      !this._forceUpdate &&
+      !this._markListChanged
+    )
+      return false;
 
     for (let mark of marksToUpdate) {
       if (!mark.advance()) {
@@ -204,6 +219,7 @@ export class MarkRenderGroup<
     }
 
     this._forceUpdate = false;
+    this._markListChanged = false;
 
     return true;
   }
@@ -214,7 +230,9 @@ export class MarkRenderGroup<
    * is on a non-preloadable property, this also returns `true`.
    */
   marksChanged(): boolean {
-    return this.updatedMarks.size > 0 || this._forceUpdate;
+    return (
+      this.updatedMarks.size > 0 || this._forceUpdate || this._markListChanged
+    );
   }
 
   /**
@@ -485,10 +503,44 @@ export class MarkRenderGroup<
     this.getMarks().forEach((m) => m.updateTransform(attrName));
     return this;
   }
+
+  /**
+   * Adds a mark to the render group.
+   *
+   * @param mark the mark to add
+   * @returns this render group
+   */
+  addMark(mark: Mark<AttributeSet>): MarkRenderGroup<AttributeSet> {
+    if (this.marksByID.has(mark.id)) {
+      console.error('Attempted to add mark with ID that exists:', mark.id);
+      return this;
+    }
+    this.marks.push(mark);
+    this.marksByID.set(mark.id, mark);
+    this._configureMark(mark);
+    this._markListChanged = true;
+  }
+
+  /**
+   * Removes a mark from the render group.
+   *
+   * @param mark the mark to remove
+   * @returns this render group
+   */
+  removeMark(mark: Mark<AttributeSet>): MarkRenderGroup<AttributeSet> {
+    let idx = this.marks.indexOf(mark);
+    if (idx < 0) {
+      console.warn('Attempted to remove mark that does not exist');
+      return this;
+    }
+    this.marks.splice(idx, 1);
+    this.marksByID.delete(mark.id);
+    this._markListChanged = true;
+  }
 }
 
 export function createRenderGroup<AttributeSet extends AttributeSetBase>(
-  marks: Mark<AttributeSet>[]
+  marks: Mark<AttributeSet>[] = []
 ): MarkRenderGroup<AttributeSet> {
   return new MarkRenderGroup(marks);
 }

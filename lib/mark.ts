@@ -19,7 +19,7 @@ export type MarkListener<T extends AttributeSetBase> = (
   animated: boolean
 ) => void;
 
-export type AttributeSetBase = { [key: string]: Attribute<any, any, MarkBase> };
+export type AttributeSetBase = { [key: string]: Attribute<any, any, any> };
 
 export type SimpleAnimationOptions = {
   duration?: number;
@@ -33,9 +33,9 @@ export type AnimationOptions<ValueType> = SimpleAnimationOptions & {
  * Base interface describing attributes that a mark can have.
  */
 export interface MarkAttributes extends AttributeSetBase {
-  x?: Attribute<number, number, MarkBase>;
-  y?: Attribute<number, number, MarkBase>;
-  alpha?: Attribute<number, number, MarkBase>;
+  x?: Attribute<number, number, any>;
+  y?: Attribute<number, number, any>;
+  alpha?: Attribute<number, number, any>;
 }
 
 /**

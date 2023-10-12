@@ -15,7 +15,7 @@ export type AttributeListener<T, U, V> = (
 export interface AttributeDefinition<
   TransformedValueType,
   ValueType = TransformedValueType,
-  ComputeArgumentType = Attribute<TransformedValueType, ValueType, any>
+  ComputeArgumentType = any
 > {
   /**
    * The value of the attribute, if it is not updated using a dynamic function.
@@ -79,7 +79,7 @@ export type PreloadAttributeValue<T> = {
 export class Attribute<
   TransformedValueType,
   ValueType = TransformedValueType,
-  ComputeArgumentType = Attribute<TransformedValueType, ValueType, any>
+  ComputeArgumentType = any
 > implements
     AttributeDefinition<TransformedValueType, ValueType, ComputeArgumentType>,
     Advanceable
