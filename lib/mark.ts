@@ -24,6 +24,7 @@ export type AttributeSetBase = { [key: string]: Attribute<any, any, any> };
 export type SimpleAnimationOptions = {
   duration?: number;
   curve?: AnimationCurve;
+  delay?: number;
 };
 export type AnimationOptions<ValueType> = SimpleAnimationOptions & {
   interpolator?: Interpolator<ValueType>;
@@ -243,7 +244,11 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     let curve =
       options.curve === undefined ? this._defaultCurve : options.curve;
 
-    let animation = new Animator(interpolateTo(finalValue), duration, curve);
+    let animation = new Animator(
+      interpolateTo(finalValue),
+      duration,
+      curve
+    ).withDelay(options.delay || 0);
 
     (this.attributes[attrName] as AttributeType).animate(animation);
     return this;
@@ -267,15 +272,13 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       animation = options as Animator<AttributeType['value']>;
     } else if (options.interpolator !== undefined) {
       let interpolator = options.interpolator;
-      if (!!interpolator) {
-        animation = new Animator(
-          interpolator,
-          options.duration !== undefined
-            ? options.duration
-            : this._defaultDuration,
-          options.curve !== undefined ? options.curve : this._defaultCurve
-        );
-      }
+      animation = new Animator(
+        interpolator,
+        options.duration !== undefined
+          ? options.duration
+          : this._defaultDuration,
+        options.curve !== undefined ? options.curve : this._defaultCurve
+      ).withDelay(options.delay || 0);
     } else {
       let newValue = this.data(attrName);
       if (
@@ -288,7 +291,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
             ? options.duration
             : this._defaultDuration,
           options.curve !== undefined ? options.curve : this._defaultCurve
-        );
+        ).withDelay(options.delay || 0);
       } else return this;
     }
 

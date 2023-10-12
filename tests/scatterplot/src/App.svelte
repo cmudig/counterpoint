@@ -30,9 +30,10 @@
       let ctx = canvas.getContext('2d');
 
       if (!!ctx) {
+        ctx.resetTransform();
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-        ctx.fillStyle = '#9999ff40';
-        ctx.strokeStyle = 'black';
+        ctx.strokeStyle = 'white';
         ctx.lineWidth = 1.0;
         markSet.forEach((mark) => {
           let x = mark.attr('x');
@@ -50,6 +51,8 @@
   }
 
   $: if (!!canvas) {
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
     draw();
   }
 
@@ -58,26 +61,29 @@
   let colorIdx = 0;
 
   function getColor(): string {
-    return colorIdx % 2 == 0 ? '#ff0000' : '#0000ff';
+    return colorIdx % 2 == 0 ? '#9f1239' : '#4338ca';
   }
 
   function animatePoints() {
     markSet
       .filter((mark, i) => i % 2 == 0)
-      .animateTo('x', (mark) => (mark.attr('x') + 100) % 500)
+      .animateTo('x', (mark) => (mark.attr('x') + 100) % 500, {
+        delay: (_, i) => i * 10,
+      })
       .wait('x')
       .then(() => {
         colorIdx++;
         markSet.animate('color');
       })
       .catch(() => {
-        console.log('reject');
+        console.log('animation canceled');
       });
+    // because we used a lazy ticker, we have to restart it every time we do an animation
     ticker.start();
   }
 </script>
 
 <main>
-  <canvas width="500px" height="500px" bind:this={canvas} />
+  <canvas style="width: 500px; height: 500px;" bind:this={canvas} />
   <button on:click={animatePoints}>Animate</button>
 </main>

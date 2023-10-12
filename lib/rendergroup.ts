@@ -1,4 +1,5 @@
 import {
+  AnimationOptions,
   AttributeSetBase,
   Mark,
   MarkAttributes,
@@ -10,7 +11,6 @@ import {
   Interpolator,
   PreloadableAnimator,
   curveEaseInOut,
-  interpolateTo,
 } from './animator';
 import { Advanceable } from './ticker';
 
@@ -21,15 +21,39 @@ type RenderGroupOptions = {
   animationCurve?: AnimationCurve;
 };
 
-type GroupAnimationOptions<
+type GroupOptions<T, AttributeSet extends AttributeSetBase> = {
+  [P in keyof T]: T[P] | ((mark: Mark<AttributeSet>, i: number) => T[P]);
+};
+
+export type GroupSimpleAnimationOptions<AttributeSet extends AttributeSetBase> =
+  GroupOptions<SimpleAnimationOptions, AttributeSet>;
+
+export type GroupAnimationOptions<
   AttributeSet extends AttributeSetBase,
   ValueType
-> = SimpleAnimationOptions & {
-  interpolator?: (
-    mark: Mark<AttributeSet>,
-    i: number
-  ) => Interpolator<ValueType> | undefined | null;
-};
+> = GroupOptions<AnimationOptions<ValueType>, AttributeSet>;
+
+/**
+ * Returns an options object suitable for passing to an individual mark by
+ * evaluating any option that is provided as a function.
+ *
+ * @param options A grouped options object, where some key values may be functions.
+ * @param mark The mark to evaluate the options for
+ * @param i The index of the mark to evaluate the options for
+ * @returns Options for the provided mark
+ */
+function _evaluateGroupOptions<T, AttributeSet extends AttributeSetBase>(
+  options: GroupOptions<T, AttributeSet>,
+  mark: Mark<AttributeSet>,
+  i: number
+): T {
+  return Object.fromEntries(
+    Object.entries(options).map(([key, val]) => [
+      key,
+      typeof val === 'function' ? val(mark, i) : val,
+    ])
+  ) as T;
+}
 
 /**
  * Keeps track of a set of marks. This is helpful to track which
@@ -268,18 +292,18 @@ export class MarkRenderGroup<
           | ((
               computeArg: AttributeType['computeArg']
             ) => AttributeType['value'])),
-    options: SimpleAnimationOptions = {}
+    options: GroupSimpleAnimationOptions<AttributeSet> = {}
   ): MarkRenderGroup<AttributeSet> {
     let preloadable = this.preloadableProperties.has(attrName);
     // this.updatedMarks = new Set(this.getMarks());
 
     if (preloadable) {
-      let duration =
-        options.duration === undefined
-          ? this._defaultDuration
-          : options.duration;
-
-      this.forEach((mark, i) =>
+      this.forEach((mark, i) => {
+        let markOptions = _evaluateGroupOptions(options, mark, i);
+        let duration =
+          markOptions.duration === undefined
+            ? this._defaultDuration
+            : markOptions.duration;
         mark.animate(
           attrName,
           new PreloadableAnimator(
@@ -287,20 +311,20 @@ export class MarkRenderGroup<
               ? (finalValueFn as Function)(mark, i)
               : finalValueFn,
             duration
-          )
-        )
-      );
+          ).withDelay(markOptions.delay || 0)
+        );
+      });
     } else {
       // this.animatingMarks = new Set(this.getMarks());
-      this.forEach((mark, i) =>
+      this.forEach((mark, i) => {
         mark.animateTo(
           attrName,
           typeof finalValueFn === 'function'
             ? (finalValueFn as Function)(mark, i)
             : finalValueFn,
-          options
-        )
-      );
+          _evaluateGroupOptions(options, mark, i)
+        );
+      });
     }
 
     return this;
@@ -321,10 +345,7 @@ export class MarkRenderGroup<
     ValueType extends AttributeSet[K]['value']
   >(
     attrName: K,
-    options: GroupAnimationOptions<AttributeSet, ValueType> = {
-      duration: 1000,
-      curve: curveEaseInOut,
-    }
+    options: GroupAnimationOptions<AttributeSet, ValueType> = {}
   ): MarkRenderGroup<AttributeSet> {
     let preloadable = this.preloadableProperties.has(attrName);
     if (preloadable && !!options.interpolator) {
@@ -335,21 +356,21 @@ export class MarkRenderGroup<
     }
 
     this.forEach((mark, i) => {
+      let markOptions = _evaluateGroupOptions(options, mark, i);
       if (preloadable) {
         let duration =
-          options.duration === undefined
+          markOptions.duration === undefined
             ? this._defaultDuration
-            : options.duration;
+            : markOptions.duration;
         let newValue = mark.data(attrName);
-        mark.animate(attrName, new PreloadableAnimator(newValue, duration));
+        mark.animate(
+          attrName,
+          new PreloadableAnimator(newValue, duration).withDelay(
+            markOptions.delay || 0
+          )
+        );
       } else {
-        mark.animate(attrName, {
-          ...options,
-          interpolator:
-            options.interpolator !== undefined
-              ? options.interpolator(mark, i)
-              : undefined,
-        });
+        mark.animate(attrName, markOptions);
       }
     });
 

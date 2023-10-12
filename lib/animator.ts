@@ -205,6 +205,11 @@ export class Animator<T> {
     let t = this.curve(this.duration > 0 ? dt / this.duration : 1.0);
     return this.interpolator.interpolate(initialValue, t);
   }
+
+  withDelay(delay: number): Animator<T> {
+    if (!delay) return this;
+    return new DelayedAnimator<T>(this, delay);
+  }
 }
 
 /**
@@ -215,5 +220,28 @@ export class Animator<T> {
 export class PreloadableAnimator<T> extends Animator<T> {
   constructor(finalValue: T, duration: number) {
     super(interpolateTo(finalValue), duration, curveEaseInOut);
+  }
+}
+
+/**
+ * Defines an animator that begins after a specified delay.
+ */
+class DelayedAnimator<T> extends Animator<T> {
+  /**
+   * Time before the animation should start, in milliseconds.
+   */
+  public delay: number;
+
+  constructor(animator: Animator<T>, delay: number) {
+    super(animator.interpolator, animator.duration + delay, animator.curve);
+    this.delay = delay;
+  }
+
+  evaluate(initialValue: T, dt: number): T {
+    if (dt <= this.delay) return initialValue;
+    return super.evaluate(
+      initialValue,
+      ((dt - this.delay) * this.duration) / (this.duration - this.delay)
+    );
   }
 }
