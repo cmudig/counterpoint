@@ -21,7 +21,6 @@
   ).configure({
     animationDuration: 500,
     animationCurve: curveEaseInOut,
-    lazyUpdates: true,
   });
   let ticker = new LazyTicker(markSet, draw);
 

@@ -75,14 +75,16 @@ export class MarkRenderGroup<
    * Controls whether the mark group iterates over the entire set of marks in
    * every call to `advance()`. If set to `true`, only the marks that have
    * been explicitly changed through a call to `set...` or `animate...` will
-   * be advanced. The default is `false`.
+   * be advanced. The default is `true`, and in most cases should not affect
+   * behavior (unless an animation is being applied that the render group does
+   * not know about).
    *
    * @note Even if lazy updates are turned on, computed mark attributes will
    * still reflect updated values when their value functions change. This means
    * that if a drawing loop always iterates over all marks, they will all be
    * updated even if only a subset has `advance` called.
    */
-  public lazyUpdates: boolean = false;
+  public lazyUpdates: boolean = true;
 
   private marksByID: Map<any, Mark<AttributeSet>>;
 
@@ -113,7 +115,7 @@ export class MarkRenderGroup<
     }
   ) {
     this.timeProvider = makeTimeProvider();
-    this.lazyUpdates = false;
+    this.lazyUpdates = true;
     this._defaultDuration = 1000;
     this._defaultCurve = curveEaseInOut;
     this.configure(opts);

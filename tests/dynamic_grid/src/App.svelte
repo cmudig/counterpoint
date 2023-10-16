@@ -20,7 +20,6 @@
   }>().configure({
     animationDuration: 500,
     animationCurve: curveEaseInOut,
-    lazyUpdates: true,
   });
   let stager = new StageManager({
     create: (id, info) =>

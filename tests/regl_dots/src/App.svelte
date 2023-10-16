@@ -31,7 +31,6 @@
     .configure({
       animationDuration: 2000,
       animationCurve: curveEaseInOut,
-      lazyUpdates: true, // this ensures that our updateBuffers command doesn't run every frame
     })
     .registerPreloadableProperty('x')
     .registerPreloadableProperty('y');
