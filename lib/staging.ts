@@ -1,15 +1,6 @@
 import { AttributeSetBase, Mark } from './mark';
 import { MarkRenderGroup } from './rendergroup';
 
-/**
- *
- * *   - create(id, info):
- *   - show(element): Show the given element and return a Promise that resolves
- *       after the animation would be completed.
- *   - hide(element): Hide the given element and return a Promise that resolves
- *       after the animation would be completed.
- *   - destroy(element): Destroy the element.
- */
 export type StageManagerCallback<MarkType> = {
   /**
    * Create an element based on the given ID and info. The returned element
