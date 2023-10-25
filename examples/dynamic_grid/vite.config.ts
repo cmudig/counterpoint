@@ -10,7 +10,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      'canvas-animation': path.resolve(__dirname, '../../lib/main.ts'),
+      'canvas-animation': path.resolve(
+        __dirname,
+        '../../canvas-animation/lib/main.ts'
+      ),
     },
   },
 });
