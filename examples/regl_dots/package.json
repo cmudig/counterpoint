@@ -19,6 +19,7 @@
     "vite": "^4.4.5"
   },
   "dependencies": {
+    "canvas-animation": "file:../../canvas-animation",
     "regl": "^2.1.0"
   }
 }
