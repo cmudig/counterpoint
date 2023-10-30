@@ -1,6 +1,11 @@
 import { Transform } from 'stream';
 import { Animator, PreloadableAnimator } from './animator';
-import { Deferred, TimeProvider, approxEquals } from './utils';
+import {
+  Deferred,
+  TimeProvider,
+  approxEquals,
+  makeTimeProvider,
+} from './utils';
 import { Advanceable } from './ticker';
 
 export type AttributeListener<T, U, V> = (
@@ -208,7 +213,7 @@ export class Attribute<
   // and returns whether or not a redraw is needed
   advance(dt: number | undefined = undefined): boolean {
     if (this.animation != null || this.needsUpdate || !!this.valueFn) {
-      if (dt === undefined) this.currentTime += dt;
+      if (this._timeProvider === null) this.currentTime += dt;
       else this.currentTime = this._timeProvider();
     }
 
@@ -423,7 +428,7 @@ export class Attribute<
     if (typeof newValue == 'function') {
       if (this.value != null) this._computedLastValue = this.value;
       this.valueFn = newValue as (computeArg: ComputeArgumentType) => ValueType;
-      this.value = null;
+      this.value = undefined;
       this._getterValue = null;
     } else {
       this.value = newValue;

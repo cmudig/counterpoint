@@ -12,13 +12,15 @@ export interface Advanceable {
  * `true` or when the ticker is started, signifying that an update is needed.
  */
 export class Ticker {
-  private toAdvance: Advanceable;
+  private toAdvance: Advanceable[];
   private _callback: () => void;
   private _lastTick: number | undefined = undefined;
   public stopped: boolean = true;
 
-  constructor(toAdvance: Advanceable, callback: () => void) {
-    this.toAdvance = toAdvance;
+  constructor(toAdvance: Advanceable | Advanceable[], callback: () => void) {
+    if (toAdvance.hasOwnProperty('advance'))
+      this.toAdvance = [toAdvance as Advanceable];
+    else this.toAdvance = toAdvance as Advanceable[];
     this._callback = callback;
     this.start();
   }
@@ -37,7 +39,12 @@ export class Ticker {
 
   tick(t: number) {
     if (this._lastTick === undefined) this._lastTick = window.performance.now();
-    if (this.toAdvance.advance(t - this._lastTick)) this._callback();
+    if (
+      this.toAdvance
+        .map((item) => item.advance(t - this._lastTick))
+        .some((v) => v)
+    )
+      this._callback();
     if (!this.stopped) requestAnimationFrame((t) => this.tick(t));
     this._lastTick = t;
   }
@@ -52,13 +59,15 @@ export class Ticker {
  * started, signifying that an update is needed.
  */
 export class LazyTicker {
-  private toAdvance: Advanceable;
+  private toAdvance: Advanceable[];
   private _callback: () => void;
   private _lastTick: number | undefined = undefined;
   public stopped: boolean = true;
 
-  constructor(toAdvance: Advanceable, callback: () => void) {
-    this.toAdvance = toAdvance;
+  constructor(toAdvance: Advanceable | Advanceable[], callback: () => void) {
+    if (toAdvance.hasOwnProperty('advance'))
+      this.toAdvance = [toAdvance as Advanceable];
+    else this.toAdvance = toAdvance as Advanceable[];
     this._callback = callback;
     this.start();
   }
@@ -78,7 +87,11 @@ export class LazyTicker {
 
   tick(t: number) {
     if (this._lastTick === undefined) this._lastTick = window.performance.now();
-    if (this.toAdvance.advance(t - this._lastTick)) {
+    if (
+      this.toAdvance
+        .map((item) => item.advance(t - this._lastTick))
+        .some((v) => v)
+    ) {
       this._callback();
       if (!this.stopped) requestAnimationFrame((t) => this.tick(t));
       this._lastTick = t;

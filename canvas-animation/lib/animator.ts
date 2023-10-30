@@ -245,3 +245,20 @@ class DelayedAnimator<T> extends Animator<T> {
     );
   }
 }
+
+/**
+ * Shorthand for a basic interpolating animation with a given duration and
+ * easing function.
+ *
+ * @param finalValue The final value to animate to
+ * @param duration The duration of the animation in milliseconds
+ * @param curve The animation curve or easing function (default is linear)
+ * @returns An `{@link Animator}` object representing the animation
+ */
+export function basicAnimationTo<T>(
+  finalValue: T,
+  duration: number = 1000,
+  curve: AnimationCurve = curveLinear
+): Animator<T> {
+  return new Animator(interpolateTo(finalValue), duration, curve);
+}
