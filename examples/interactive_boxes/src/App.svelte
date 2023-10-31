@@ -20,12 +20,8 @@
         new Mark(i, {
           x: new Attribute(Math.random() * 500),
           y: new Attribute(Math.random() * 500),
-          strokeWidth: new Attribute({
-            valueFn: () => (hoveredID === i ? 4 : 1),
-          }),
-          width: new Attribute({
-            valueFn: () => itemWidth * (draggingID === i ? 1.2 : 1),
-          }),
+          strokeWidth: new Attribute(() => (hoveredID === i ? 4 : 1)),
+          width: new Attribute(() => itemWidth * (draggingID === i ? 1.2 : 1)),
         })
     )
   ).configure({
@@ -92,7 +88,13 @@
       e.clientY - canvas.getBoundingClientRect().top,
     ];
     let nearest = positionMap.marksNear(initialMousePos, itemWidth * 0.5);
-    if (nearest.length > 0) draggingID = nearest[0].id;
+    if (nearest.length > 0) {
+      draggingID = nearest[0].id;
+      // Freeze the mark's x and y attributes in case they are animating. This
+      // allows us to click and drag even while the nodes are moving
+      let mark = markSet.getMarkByID(draggingID)!;
+      mark.setAttr('x', mark.attr('x')).setAttr('y', mark.attr('y'));
+    }
   }
 
   function onMouseover(e: MouseEvent) {
@@ -139,5 +141,8 @@
     on:mouseup={onMouseup}
   />
   <button on:click={animate}>Shuffle</button>
-  <p>Click and drag to move a node around.</p>
+  <p>
+    Click and drag to move a node around. (Try moving a node right after
+    clicking Shuffle!)
+  </p>
 </main>

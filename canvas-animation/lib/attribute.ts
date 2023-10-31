@@ -129,11 +129,12 @@ export class Attribute<
   /**
    *
    * @param info Arguments describing how to populate the attribute, or a single
-   *    value that should be stored as the `value` of the attribute.
+   *    value that should be stored as the `value` or `valueFn` of the attribute.
    */
   constructor(
     info:
       | TransformedValueType
+      | ((computeArg: ComputeArgumentType) => ValueType)
       | AttributeDefinition<
           TransformedValueType,
           ValueType,
@@ -145,7 +146,9 @@ export class Attribute<
       info == null ||
       !(info.hasOwnProperty('value') || info.hasOwnProperty('valueFn'))
     ) {
-      this.value = info as ValueType;
+      if (typeof info === 'function')
+        this.valueFn = info as (computeArg: ComputeArgumentType) => ValueType;
+      else this.value = info as ValueType;
     } else {
       let args = info as AttributeDefinition<
         TransformedValueType,
@@ -439,6 +442,7 @@ export class Attribute<
       this._getterValue = null;
     }
     this.needsUpdate = true;
+    if (this.animation) this._cleanUpAnimation(true);
     this._listeners.forEach((l) => l(this, false));
   }
 
