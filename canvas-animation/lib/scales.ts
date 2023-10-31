@@ -1,17 +1,7 @@
-import {
-  Animator,
-  basicAnimationTo,
-  curveEaseInOut,
-  interpolateTo,
-} from './animator';
+import { Animator, curveEaseInOut, interpolateTo } from './animator';
 import { Attribute } from './attribute';
 import { Mark, MarkAttributes } from './mark';
-import {
-  TimeProvider,
-  boundingBox,
-  makeTimeProvider,
-  padExtent,
-} from './utils';
+import { TimeProvider, boundingBox, makeTimeProvider } from './utils';
 
 export type ScalesOptions = {
   animationDuration?: number;
@@ -51,12 +41,8 @@ export class Scales {
   squareAspect: boolean = true;
   _xDomain: [number, number];
   _yDomain: [number, number];
-  _xDExtent: number;
-  _yDExtent: number;
   _xRange: [number, number];
   _yRange: [number, number];
-  _xRExtent: number;
-  _yRExtent: number;
   minScale: number;
   maxScale: number;
 
@@ -78,7 +64,7 @@ export class Scales {
     this.xScale = Object.assign(
       (val: number): number => {
         let base =
-          ((val - this._xDomain[0]) * this._xRExtent) / this._xDExtent +
+          ((val - this._xDomain[0]) * this.xRSpan()) / this.xDSpan() +
           this._xRange[0];
         return base * this._xScaleFactor.get() + this._translateX.get();
       },
@@ -88,7 +74,6 @@ export class Scales {
         ): LinearScale | [number, number] => {
           if (extent === undefined) return this._xDomain;
           this._xDomain = extent;
-          this._xDExtent = this._xDomain[1] - this._xDomain[0];
           return this.xScale;
         }) as ReadWriteExtent,
         range: ((
@@ -96,13 +81,12 @@ export class Scales {
         ): LinearScale | [number, number] => {
           if (extent === undefined) return this._xRange;
           this._xRange = extent;
-          this._xRExtent = this._xRange[1] - this._xRange[0];
           return this.xScale;
         }) as ReadWriteExtent,
         invert: (val: number): number => {
           let base = (val - this._translateX.get()) / this._xScaleFactor.get();
           return (
-            ((base - this._xRange[0]) * this._xDExtent) / this._xRExtent +
+            ((base - this._xRange[0]) * this.xDSpan()) / this.xRSpan() +
             this._xDomain[0]
           );
         },
@@ -111,7 +95,7 @@ export class Scales {
     this.yScale = Object.assign(
       (val: number): number => {
         let base =
-          ((val - this._yDomain[0]) * this._yRExtent) / this._yDExtent +
+          ((val - this._yDomain[0]) * this.yRSpan()) / this.yDSpan() +
           this._yRange[0];
         return base * this._yScaleFactor.get() + this._translateY.get();
       },
@@ -121,7 +105,6 @@ export class Scales {
         ): LinearScale | [number, number] => {
           if (extent === undefined) return this._yDomain;
           this._yDomain = extent;
-          this._yDExtent = this._yDomain[1] - this._yDomain[0];
           return this.yScale;
         }) as ReadWriteExtent,
         range: ((
@@ -129,13 +112,12 @@ export class Scales {
         ): LinearScale | [number, number] => {
           if (extent === undefined) return this._yRange;
           this._yRange = extent;
-          this._yRExtent = this._yRange[1] - this._yRange[0];
           return this.yScale;
         }) as ReadWriteExtent,
         invert: (val: number): number => {
           let base = (val - this._translateY.get()) / this._yScaleFactor.get();
           return (
-            ((base - this._yRange[0]) * this._yDExtent) / this._yRExtent +
+            ((base - this._yRange[0]) * this.yDSpan()) / this.yRSpan() +
             this._yDomain[0]
           );
         },
@@ -162,7 +144,7 @@ export class Scales {
   }
 
   xDomain(extent: [number, number]): Scales;
-  xDomain(extent: undefined): [number, number];
+  xDomain(): [number, number];
   xDomain(
     extent: [number, number] | undefined = undefined
   ): Scales | [number, number] {
@@ -172,7 +154,7 @@ export class Scales {
   }
 
   yDomain(extent: [number, number]): Scales;
-  yDomain(extent: undefined): [number, number];
+  yDomain(): [number, number];
   yDomain(
     extent: [number, number] | undefined = undefined
   ): Scales | [number, number] {
@@ -182,7 +164,7 @@ export class Scales {
   }
 
   xRange(extent: [number, number]): Scales;
-  xRange(extent: undefined): [number, number];
+  xRange(): [number, number];
   xRange(
     extent: [number, number] | undefined = undefined
   ): Scales | [number, number] {
@@ -192,13 +174,26 @@ export class Scales {
   }
 
   yRange(extent: [number, number]): Scales;
-  yRange(extent: undefined): [number, number];
+  yRange(): [number, number];
   yRange(
     extent: [number, number] | undefined = undefined
   ): Scales | [number, number] {
     if (extent === undefined) return this.yScale.range();
     this.yScale.range(extent);
     return this;
+  }
+
+  xDSpan(): number {
+    return this._xDomain[1] - this._xDomain[0];
+  }
+  yDSpan(): number {
+    return this._yDomain[1] - this._yDomain[0];
+  }
+  xRSpan(): number {
+    return this._xRange[1] - this._xRange[0];
+  }
+  yRSpan(): number {
+    return this._yRange[1] - this._yRange[0];
   }
 
   /**
@@ -208,15 +203,15 @@ export class Scales {
    */
   makeSquareAspect(): Scales {
     // Rescale one to the other based on whichever has the smallest scale factor
-    let xScale = this._xRExtent / this._xDExtent;
-    let yScale = this._yRExtent / this._yDExtent;
+    let xScale = this.xRSpan() / this.xDSpan();
+    let yScale = this.yRSpan() / this.yDSpan();
     if (xScale < yScale) {
       let yMid = (this._yDomain[0] + this._yDomain[1]) * 0.5;
-      let newWidth = this._yRExtent / xScale;
+      let newWidth = this.yRSpan() / xScale;
       this.yDomain([yMid - newWidth * 0.5, yMid + newWidth * 0.5]);
     } else {
       let xMid = (this._xDomain[0] + this._xDomain[1]) * 0.5;
-      let newWidth = this._xRExtent / yScale;
+      let newWidth = this.xRSpan() / yScale;
       this.xDomain([xMid - newWidth * 0.5, xMid + newWidth * 0.5]);
     }
     return this;
@@ -358,14 +353,22 @@ export class Scales {
     }
   }
 
+  /**
+   * Resets the zoom transform to the identity transform.
+   * @param animated Whether to animate the change
+   * @returns this `Scales` instance
+   */
   reset(animated: boolean = false): Scales {
     return this.transform({ k: 1, x: 0, y: 0 }, animated);
   }
 
   /**
-   * Animates the scale and translate factors to show the given marks.
+   * Animates or changes the scale and translate factors to change to the
+   * viewport specified by the given controller. The controller is not followed
+   * or saved after the initial transformation.
    *
-   * @param marks An array of marks to zoom to.
+   * @param controller An object specifying the new zoom transform through the
+   *    `transform()` method
    * @param animated Whether to animate the transition (default `true`)
    *
    * @returns this `Scales` instance
@@ -542,15 +545,15 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
     // only update scales if there is a nonzero bounding box in that direction
     if (Math.abs(xExtent[1] - xExtent[0]) > 0) {
       xScale =
-        (scales._xRExtent - this.padding * 2) /
+        (Math.abs(scales.xRSpan()) - this.padding * 2) /
         (xExtent[1] - xExtent[0]) /
-        (scales._xRExtent / scales._xDExtent);
+        (Math.abs(scales.xRSpan()) / Math.abs(scales.xDSpan()));
     } else xScale = currentTransform.kx;
     if (Math.abs(yExtent[1] - yExtent[0]) > 0) {
       yScale =
-        (scales._yRExtent - this.padding * 2) /
+        (Math.abs(scales.yRSpan()) - this.padding * 2) /
         (yExtent[1] - yExtent[0]) /
-        (scales._yRExtent / scales._yDExtent);
+        (Math.abs(scales.yRSpan()) / Math.abs(scales.yDSpan()));
     } else yScale = currentTransform.ky;
 
     // Calculate new scale x and y preserving existing aspect ratio
@@ -571,19 +574,17 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
 
     // in range space
     newCenterX =
-      ((newCenterX - scales._xDomain[0]) * scales._xRExtent) /
-        scales._xDExtent +
-      scales._xRange[0];
+      ((newCenterX - scales.xDomain()[0]) * scales.xRSpan()) / scales.xDSpan() +
+      scales.xRange()[0];
     newCenterY =
-      ((newCenterY - scales._yDomain[0]) * scales._yRExtent) /
-        scales._yDExtent +
-      scales._yRange[0];
+      ((newCenterY - scales.yDomain()[0]) * scales.yRSpan()) / scales.yDSpan() +
+      scales.yRange()[0];
 
     // translated from center to origin and accounting for scale
     let newTranslateX =
-      -newCenterX * newScaleX + (scales._xRange[0] + scales._xRange[1]) * 0.5;
+      -newCenterX * newScaleX + (scales.xRange()[0] + scales.xRange()[1]) * 0.5;
     let newTranslateY =
-      -newCenterY * newScaleY + (scales._yRange[0] + scales._yRange[1]) * 0.5;
+      -newCenterY * newScaleY + (scales.yRange()[0] + scales.yRange()[1]) * 0.5;
 
     let result = {
       kx: newScaleX,
