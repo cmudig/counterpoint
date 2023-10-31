@@ -8,6 +8,24 @@ type MarkCollectionType =
   | (() => Mark<any>)
   | (() => Mark<any>[]);
 
+export type PositionMapOptions = {
+  /** The names of the attributes to use for coordinates from each mark */
+  coordinateAttributes?: string[];
+  /**
+   * The approximate average number of marks to place in each bin. This is used
+   * to determine the bin size. If the number of marks will be very large, it is
+   * recommended to set this to a higher number to prevent a very sparse hash map.
+   */
+  marksPerBin?: number;
+  /**
+   * Whether or not to run the transform function on each coordinate. If set to
+   * `false`, this can allow the position map to run in untransformed coordinates
+   * and thus be invariant to pan and zoom interactions, if the transform
+   * function performs pan/zoom scaling.
+   */
+  transformCoordinates?: boolean;
+};
+
 /**
  * A class that manages a hash table of positioned marks. After adding a
  * collection of marks from either render group(s) or other mark sets, you can
@@ -26,14 +44,12 @@ export class PositionMap {
   private _numMarks: number | null = null;
   private _transformCoordinates: boolean;
 
-  private _avgMarksPerBin: number = 2;
+  private _avgMarksPerBin: number | null = null;
 
-  constructor(
-    coordinateAttrs: string[] = ['x', 'y'],
-    transformCoordinates: boolean = true
-  ) {
-    this._coordinateAttributes = coordinateAttrs;
-    this._transformCoordinates = transformCoordinates;
+  constructor(opts: PositionMapOptions = {}) {
+    this._coordinateAttributes = opts.coordinateAttributes ?? ['x', 'y'];
+    this._transformCoordinates = opts.transformCoordinates ?? true;
+    this._avgMarksPerBin = opts.marksPerBin ?? null;
   }
 
   /**
@@ -110,7 +126,11 @@ export class PositionMap {
     if (this._numMarks == 0) return this;
 
     // Calculate bin sizes based on _avgMarksPerBin
-    this._numBins = Math.round(this._numMarks / this._avgMarksPerBin);
+    this._numBins = Math.round(
+      this._numMarks /
+        (this._avgMarksPerBin ??
+          Math.min(Math.max(1, this._numMarks / 100), 10))
+    );
     this._binSizes = this._extents.map((e) =>
       Math.ceil((e[1] - e[0]) / this._numBins)
     );
