@@ -598,12 +598,8 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
 
   _getMarkLocation(mark: Mark<AttributeSet>): { x: number; y: number } {
     let loc = {
-      x: (this.transformCoordinates
-        ? mark.attr(this.xAttr)
-        : mark.attributes[this.xAttr].getUntransformed()) as number,
-      y: (this.transformCoordinates
-        ? mark.attr(this.yAttr)
-        : mark.attributes[this.yAttr].getUntransformed()) as number,
+      x: mark.attr(this.xAttr, this.transformCoordinates) as number,
+      y: mark.attr(this.yAttr, this.transformCoordinates) as number,
     };
     return loc;
   }

@@ -37,7 +37,7 @@
       mark.animateTo('alpha', 0.0, { duration: 500 }).wait('alpha'),
   }).attach(markSet);
 
-  let ticker = new Ticker(markSet, draw);
+  let ticker = new Ticker(markSet).onChange(draw);
 
   function draw() {
     if (!!canvas) {

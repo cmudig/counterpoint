@@ -97,7 +97,8 @@ export class MarkRenderGroup<
   private preloadableProperties: Set<keyof AttributeSet> = new Set();
 
   private _forceUpdate = false;
-  private _markListChanged = false;
+  private _markListChanged = false; // flag for changes BEFORE advance
+  private _changedLastTick = false; // flag for changes AFTER advance
 
   private _defaultDuration: number;
   private _defaultCurve: AnimationCurve;
@@ -171,6 +172,7 @@ export class MarkRenderGroup<
       this.updatedMarks.add(mark);
       if (!this.preloadableProperties.has(attrName) && animated)
         this.animatingMarks.add(mark);
+      this._changedLastTick = true;
     });
   }
 
@@ -242,8 +244,10 @@ export class MarkRenderGroup<
       marksToUpdate.length == 0 &&
       !this._forceUpdate &&
       !this._markListChanged
-    )
+    ) {
+      this._changedLastTick = false;
       return false;
+    }
 
     for (let mark of marksToUpdate) {
       if (!mark.advance()) {
@@ -253,19 +257,9 @@ export class MarkRenderGroup<
 
     this._forceUpdate = false;
     this._markListChanged = false;
+    this._changedLastTick = true;
 
     return true;
-  }
-
-  /**
-   * @returns whether any mark properties have been changed since the last
-   * `advance()` call, or if any animations have been added. If an animation
-   * is on a non-preloadable property, this also returns `true`.
-   */
-  marksChanged(): boolean {
-    return (
-      this.updatedMarks.size > 0 || this._forceUpdate || this._markListChanged
-    );
   }
 
   /**
@@ -573,6 +567,22 @@ export class MarkRenderGroup<
    */
   count(): number {
     return this.getMarks().length;
+  }
+
+  /**
+   * @param attrNames the attributes to check for changes in (if none provided,
+   *  checks all attributes)
+   *
+   * @returns whether or not any mark in the render group changed value (due to
+   *  animation or other updates) on the last call to `advance`
+   */
+  changed<K extends keyof AttributeSet>(
+    attrNames: K | K[] | undefined = undefined
+  ): boolean {
+    if (attrNames === undefined) return this._changedLastTick;
+    return (
+      this._changedLastTick && this.getMarks().some((m) => m.changed(attrNames))
+    );
   }
 }
 

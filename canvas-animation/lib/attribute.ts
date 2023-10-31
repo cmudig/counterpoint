@@ -114,6 +114,7 @@ export class Attribute<
   private _hasComputed = false;
   private _timeProvider: TimeProvider = null; // REQUIRED for animation
   private currentTime = 0;
+  private _changedLastTick = false;
 
   private _listeners: AttributeListener<
     TransformedValueType,
@@ -230,10 +231,12 @@ export class Attribute<
     }
     if (this.animation != null || this.needsUpdate) {
       this.needsUpdate = false;
+      this._changedLastTick = true;
       return true;
     } else if (this.precompute) {
       this.compute();
     }
+    this._changedLastTick = false;
     return false;
   }
 
@@ -541,5 +544,13 @@ export class Attribute<
     >({ rejectOnCancel });
     this._animationCompleteCallbacks.push(cb);
     return cb.promise;
+  }
+
+  /**
+   * @returns whether or not this attribute changed value (due to animation or
+   * other updates) on the last call to `advance`
+   */
+  changed(): boolean {
+    return this._changedLastTick;
   }
 }

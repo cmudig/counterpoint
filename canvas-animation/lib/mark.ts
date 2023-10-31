@@ -52,6 +52,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   private _listeners: MarkListener<AttributeSet>[] = [];
   private _defaultDuration: number = 1000;
   private _defaultCurve: AnimationCurve = curveEaseInOut;
+  private _changedLastTick: boolean = false;
 
   constructor(id: any, attributes: AttributeSet) {
     this.id = id;
@@ -104,6 +105,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   }
 
   private _attributesChanged(attrName: keyof AttributeSet, animated: boolean) {
+    this._changedLastTick = true;
     this._listeners.forEach((l) => l(this, attrName, animated));
   }
 
@@ -138,9 +140,11 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       if (this.framesWithUpdate > ExcessiveUpdateThreshold) {
         console.warn('Marks are being updated excessively!');
       }
+      this._changedLastTick = true;
       return true;
     }
     this.framesWithUpdate = 0;
+    this._changedLastTick = false;
     return false;
   }
 
@@ -174,13 +178,21 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    *
    * * @see Attribute.get
    */
-  attr<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
-    attrName: K
-  ): ReturnType<AttributeType['get']> {
+  attr<
+    K extends keyof AttributeSet,
+    AttributeType extends AttributeSet[K],
+    T extends Boolean
+  >(
+    attrName: K,
+    transformed: T = true as T
+  ): T extends true
+    ? ReturnType<AttributeType['get']>
+    : ReturnType<AttributeType['getUntransformed']> {
     if (!this.attributes[attrName]) {
       return undefined;
     }
-    return (this.attributes[attrName] as AttributeType).get();
+    if (transformed) return (this.attributes[attrName] as AttributeType).get();
+    else return (this.attributes[attrName] as AttributeType).getUntransformed();
   }
 
   /**
@@ -319,5 +331,25 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     return Promise.all(
       names.map((name) => this.attributes[name].wait(rejectOnCancel))
     );
+  }
+
+  /**
+   * @param attrNames the attributes to check for changes in (if none provided,
+   *  checks all attributes)
+   *
+   * @returns whether or not this mark changed value (due to animation or
+   * other updates) on the last call to `advance`
+   */
+  changed<K extends keyof AttributeSet>(
+    attrNames: K | K[] | undefined = undefined
+  ): boolean {
+    if (attrNames === undefined) return this._changedLastTick;
+    if (Array.isArray(attrNames))
+      return (
+        this._changedLastTick &&
+        attrNames.some((attr) => this.attributes[attr].changed())
+      );
+
+    return this._changedLastTick && this.attributes[attrNames as K].changed();
   }
 }

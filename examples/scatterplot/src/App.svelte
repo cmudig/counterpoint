@@ -22,7 +22,7 @@
     animationDuration: 500,
     animationCurve: curveEaseInOut,
   });
-  let ticker = new LazyTicker(markSet, draw);
+  let ticker = new LazyTicker(markSet).onChange(draw);
 
   function draw() {
     if (!!canvas) {

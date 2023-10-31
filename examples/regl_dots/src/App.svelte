@@ -40,7 +40,7 @@
   let xBuffer: any;
   let yBuffer: any;
 
-  let ticker = new Ticker(markSet, updateBuffers);
+  let ticker = new Ticker(markSet).onChange(updateBuffers);
 
   $: if (!!canvas && !regl) {
     regl = createREGL(canvas);

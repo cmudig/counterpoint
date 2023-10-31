@@ -13,28 +13,34 @@ export interface Advanceable {
  */
 export class Ticker {
   private toAdvance: Advanceable[];
-  private _callback: () => void;
+  private _callbacks: (() => void)[] = [];
   private _lastTick: number | undefined = undefined;
   public stopped: boolean = true;
 
-  constructor(toAdvance: Advanceable | Advanceable[], callback: () => void) {
-    if (toAdvance.hasOwnProperty('advance'))
+  constructor(toAdvance: Advanceable | Advanceable[]) {
+    if (typeof (toAdvance as Advanceable).advance === 'function')
       this.toAdvance = [toAdvance as Advanceable];
     else this.toAdvance = toAdvance as Advanceable[];
-    this._callback = callback;
     this.start();
   }
 
-  start() {
-    this._lastTick = window.performance.now();
-    this.stopped = false;
-    this._callback();
-    requestAnimationFrame((t) => this.tick(t));
+  onChange(cb: () => void): Ticker {
+    this._callbacks.push(cb);
+    return this;
   }
 
-  stop() {
+  start(): Ticker {
+    this._lastTick = window.performance.now();
+    this.stopped = false;
+    this._callbacks.forEach((cb) => cb());
+    requestAnimationFrame((t) => this.tick(t));
+    return this;
+  }
+
+  stop(): Ticker {
     this._lastTick = undefined;
     this.stopped = true;
+    return this;
   }
 
   tick(t: number) {
@@ -44,7 +50,7 @@ export class Ticker {
         .map((item) => item.advance(t - this._lastTick))
         .some((v) => v)
     )
-      this._callback();
+      this._callbacks.forEach((cb) => cb());
     if (!this.stopped) requestAnimationFrame((t) => this.tick(t));
     this._lastTick = t;
   }
@@ -60,29 +66,35 @@ export class Ticker {
  */
 export class LazyTicker {
   private toAdvance: Advanceable[];
-  private _callback: () => void;
+  private _callbacks: (() => void)[] = [];
   private _lastTick: number | undefined = undefined;
   public stopped: boolean = true;
 
-  constructor(toAdvance: Advanceable | Advanceable[], callback: () => void) {
-    if (toAdvance.hasOwnProperty('advance'))
+  constructor(toAdvance: Advanceable | Advanceable[]) {
+    if (typeof (toAdvance as Advanceable).advance === 'function')
       this.toAdvance = [toAdvance as Advanceable];
     else this.toAdvance = toAdvance as Advanceable[];
-    this._callback = callback;
     this.start();
   }
 
-  start() {
+  onChange(cb: () => void): LazyTicker {
+    this._callbacks.push(cb);
+    return this;
+  }
+
+  start(): LazyTicker {
     if (!this.stopped) return;
     this._lastTick = window.performance.now();
     this.stopped = false;
-    this._callback();
+    this._callbacks.forEach((cb) => cb());
     requestAnimationFrame((t) => this.tick(t));
+    return this;
   }
 
-  stop() {
+  stop(): LazyTicker {
     this._lastTick = undefined;
     this.stopped = true;
+    return this;
   }
 
   tick(t: number) {
@@ -92,7 +104,7 @@ export class LazyTicker {
         .map((item) => item.advance(t - this._lastTick))
         .some((v) => v)
     ) {
-      this._callback();
+      this._callbacks.forEach((cb) => cb());
       if (!this.stopped) requestAnimationFrame((t) => this.tick(t));
       this._lastTick = t;
     } else {

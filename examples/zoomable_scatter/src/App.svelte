@@ -59,7 +59,7 @@
     animationCurve: curveEaseInOut,
   });
 
-  let ticker = new Ticker([markSet, scales], draw);
+  let ticker = new Ticker([markSet, scales]).onChange(draw);
 
   // We use a d3 zoom object to simplify the gesture handling, but supply the
   // output transform to our Scales instance
@@ -158,16 +158,16 @@
 
   function onMousedown(e: MouseEvent) {
     lastMousePos = [
-      e.screenX - canvas.getBoundingClientRect().left,
-      e.screenY - canvas.getBoundingClientRect().top,
+      e.clientX - canvas.getBoundingClientRect().left,
+      e.clientY - canvas.getBoundingClientRect().top,
     ];
   }
 
   function onMousemove(e: MouseEvent) {
     if (lastMousePos != null) {
       let newMousePos: [number, number] = [
-        e.screenX - canvas.getBoundingClientRect().left,
-        e.screenY - canvas.getBoundingClientRect().top,
+        e.clientX - canvas.getBoundingClientRect().left,
+        e.clientY - canvas.getBoundingClientRect().top,
       ];
       scales.translateBy(
         newMousePos[0] - lastMousePos[0],
