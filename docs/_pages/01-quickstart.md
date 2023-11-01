@@ -212,7 +212,7 @@ interpolate to the new values.
 > Since the `draw()` function will get called about 60 times per second, it's 
 > important to make sure it runs fast and doesn't perform any unnecessary
 > calculations. Plus, you can configure Canvas Animation to redraw only when
-> needed, improving performance and saving energy. See [Optimizing Performance]({% link _pages/06-optimizing-performance.md %}) 
+> needed, improving performance and saving energy. See [Optimizing Performance]({% link _pages/07-optimizing-performance.md %}) 
 > to learn more.
 > 
 >
@@ -301,6 +301,6 @@ from one to the next with no jitter.
 From here, you can check out further documentation to learn about [how to use attributes and marks effectively]({% link _pages/02-marks-and-rendergroups.md %}),
 [make more complex animations]({% link _pages/03-animation-timing.md %}), 
 [add and remove marks dynamically]({% link _pages/04-staging.md %}),
-[make your canvases non-visually accessible]({% link _pages/05-accessible-navigation.md %}), and more.
+[make your canvases non-visually accessible]({% link _pages/06-accessible-navigation.md %}), and more.
 
 We've also provided some more complete examples (TODO).
