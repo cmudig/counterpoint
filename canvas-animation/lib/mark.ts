@@ -56,6 +56,10 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
 
   constructor(id: any, attributes: AttributeSet) {
     this.id = id;
+    if (attributes === undefined)
+      console.error(
+        `Mark constructor requires an ID and an object defining attributes`
+      );
     let attribs = {} as AttributeSet;
     Object.keys(attributes).forEach(
       <K extends keyof AttributeSet>(attrName: K) => {
@@ -161,6 +165,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     newValue: AttributeType['value'] | undefined = undefined
   ): Mark<AttributeSet> {
     let attr = this.attributes[attrName] as AttributeType;
+    if (attr === undefined)
+      console.error(`No attribute named '${String(attrName)}'`);
     let oldValue = attr.last();
     if (newValue === undefined) attr.compute();
     else attr.set(newValue);
@@ -189,7 +195,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     ? ReturnType<AttributeType['get']>
     : ReturnType<AttributeType['getUntransformed']> {
     if (!this.attributes[attrName]) {
-      return undefined;
+      console.error(`No attribute named '${String(attrName)}'`);
     }
     if (transformed) return (this.attributes[attrName] as AttributeType).get();
     else return (this.attributes[attrName] as AttributeType).getUntransformed();
@@ -206,6 +212,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   data<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K
   ): AttributeType['value'] {
+    if (this.attributes[attrName] === undefined)
+      console.error(`No attribute named '${String(attrName)}'`);
     return (this.attributes[attrName] as AttributeType).data();
   }
 
@@ -220,6 +228,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   updateTransform<K extends keyof AttributeSet>(
     attrName: K
   ): Mark<AttributeSet> {
+    if (this.attributes[attrName] === undefined)
+      console.error(`No attribute named '${String(attrName)}'`);
     (this.attributes[attrName] as Attribute<any, any, any>).updateTransform();
     return this;
   }
@@ -234,6 +244,10 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       | ((computeArg: AttributeType['computeArg']) => AttributeType['value']),
     options: SimpleAnimationOptions = {}
   ): Mark<AttributeSet> {
+    if (!this.attributes.hasOwnProperty(attrName)) {
+      console.error(`No attribute named '${String(attrName)}'`);
+      return this;
+    }
     if (typeof finalValue === 'function') {
       // set all the value functions and animate computed
       (this.attributes[attrName] as AttributeType).set(finalValue);
@@ -241,13 +255,6 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
         duration: options.duration,
         curve: options.curve,
       });
-      return this;
-    }
-
-    if (!this.attributes.hasOwnProperty(attrName)) {
-      console.error(
-        `Attempting to animate undefined property ${String(attrName)}`
-      );
       return this;
     }
 

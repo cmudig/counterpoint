@@ -155,12 +155,17 @@ export class PositionMap {
         collection.forEach(cb);
       } else if (collection instanceof Mark) {
         cb(collection);
-      } else if (Array.isArray(collection)) {
-        collection.forEach(cb);
+      } else if (typeof (collection as Mark<any>[]).forEach === 'function') {
+        (collection as Mark<any>[]).forEach(cb);
       } else if (typeof collection === 'function') {
         let marks = collection();
         if (marks instanceof Mark) cb(marks);
         else marks.forEach(cb);
+      } else {
+        console.error(
+          'Unrecognized mark collection type in position map:',
+          collection
+        );
       }
     });
   }
