@@ -17,20 +17,18 @@
   },
   "scripts": {
     "dev": "vite build --watch",
-    "build": "vite build && browserify ./dist/canvas-animation.cjs.js -o ./dist/canvas-animation.js",
+    "build": "vite build",
     "preview": "vite preview",
     "test": "jest"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
     "@types/node": "^20.8.2",
-    "browserify": "^17.0.0",
     "jest": "^29.7.0",
     "taffydb": "^2.7.3",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
     "vite": "^4.4.10",
-    "vite-plugin-commonjs": "^0.10.0",
     "vite-plugin-dts": "^3.6.0"
   },
   "dependencies": {
