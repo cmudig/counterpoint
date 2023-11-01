@@ -53,7 +53,7 @@ kramdown:
   syntax_highlighter_opts:
     guess_lang: true
 
-syntax_highlighter_style: base16
+syntax_highlighter_style: github
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to
