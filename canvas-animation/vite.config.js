@@ -8,6 +8,7 @@ module.exports = defineConfig({
       entry: path.resolve(__dirname, 'lib/main.ts'),
       name: 'canvas-animation',
       fileName: (format) => `canvas-animation.${format}.js`,
+      formats: ['cjs', 'es', 'umd'],
     },
   },
   plugins: [
