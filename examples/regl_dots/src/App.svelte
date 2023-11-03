@@ -5,6 +5,7 @@
     Mark,
     createRenderGroup,
     curveEaseInOut,
+    AttributeRecompute,
   } from 'canvas-animation';
   import createREGL from 'regl';
   import { onDestroy } from 'svelte';
@@ -19,11 +20,11 @@
         new Mark(i, {
           x: new Attribute({
             valueFn: (m) => getCoordinate(pointLayout, 'x'),
-            lazy: true, // this ensures that we don't recompute coordinates every frame, since our coordinates are random
+            recompute: AttributeRecompute.WHEN_UPDATED, // this ensures that we don't recompute coordinates every frame, since our coordinates are random
           }),
           y: new Attribute({
             valueFn: (m) => getCoordinate(pointLayout, 'y'),
-            lazy: true,
+            recompute: AttributeRecompute.WHEN_UPDATED,
           }),
         })
     )

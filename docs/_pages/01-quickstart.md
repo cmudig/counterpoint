@@ -3,11 +3,10 @@ layout: post
 title: 'Quickstart and Tutorial'
 ---
 
-Canvas Animation is an easy-to-use library that makes developing animated,
-interactive canvas-based web interfaces extremely easy. It's best suited for
-people who are building data-driven interfaces with custom or non-standard
-rendering requirements, such as D3.js users looking for additional flexibility
-and simpler canvas support.
+Canvas Animation is an easy-to-use library for developing animated, interactive 
+canvas-based web interfaces. It's best suited for people who are building data-
+driven interfaces with custom or non-standard rendering requirements, such as 
+D3.js users looking for additional flexibility and simpler canvas support.
 
 ## Installation
 
@@ -101,7 +100,7 @@ The canvas should now look like this:
 
 </div>
 
-## Defining Marks and Mark Sets
+## Defining Marks and a Render Group
 
 At this point, if we wanted to manually create multiple circles and have them
 animate, we would have to create a data structure to hold the point coordinates,
@@ -145,20 +144,22 @@ over the render group and get each mark's coordinates using the `Mark.attr()`
 method.
 
 ```javascript
-const ctx = canvas.getContext('2d');
+function draw() {
+  const ctx = canvas.getContext('2d');
 
-// scaling for 2x devices
-ctx.resetTransform();
-ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+  // scaling for 2x devices
+  ctx.resetTransform();
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
-ctx.fillStyle = 'blue';
-// iterate over the marks in the render group and draw them
-renderGroup.forEach((mark) => {
-  ctx.beginPath();
-  ctx.ellipse(mark.attr('x'), mark.attr('y'), 20, 20, 0, 0, 2 * Math.PI, false);
-  ctx.fill();
-});
+  ctx.fillStyle = 'blue';
+  // iterate over the marks in the render group and draw them
+  renderGroup.forEach((mark) => {
+    ctx.beginPath();
+    ctx.ellipse(mark.attr('x'), mark.attr('y'), 20, 20, 0, 0, 2 * Math.PI, false);
+    ctx.fill();
+  });
+}
 ```
 
 <div>
@@ -209,7 +210,7 @@ interpolate to the new values.
 
 > **TIP: Keeping it Fast**
 > 
-> Since the `draw()` function will get called about 60 times per second, it's 
+> Since the `draw()` function will get called about 60 times per second during animations, it's 
 > important to make sure it runs fast and doesn't perform any unnecessary
 > calculations. Plus, you can configure Canvas Animation to redraw only when
 > needed, improving performance and saving energy. See [Optimizing Performance]({% link _pages/07-optimizing-performance.md %}) 
@@ -298,9 +299,9 @@ from one to the next with no jitter.
 
 ## Next Steps
 
-From here, you can check out further documentation to learn about [how to use attributes and marks effectively]({% link _pages/02-marks-and-rendergroups.md %}),
-[make more complex animations]({% link _pages/03-animation-timing.md %}), 
-[add and remove marks dynamically]({% link _pages/04-staging.md %}),
-[make your canvases non-visually accessible]({% link _pages/06-accessible-navigation.md %}), and more.
+From here, you can check out further documentation to learn about [how to use attributes and marks effectively]({{ site.baseurl }}/pages/02-marks-and-rendergroups),
+[make more complex animations]({{ site.baseurl }}/pages/03-animation-timing), 
+[add and remove marks dynamically]({{ site.baseurl }}/pages/04-staging),
+[make your canvases non-visually accessible]({{ site.baseurl }}/pages/06-accessible-navigation), and more.
 
 We've also provided some more complete examples (TODO).

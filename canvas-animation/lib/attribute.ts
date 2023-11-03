@@ -13,6 +13,12 @@ export type AttributeListener<T, U, V> = (
   animated: boolean
 ) => void;
 
+export enum AttributeRecompute {
+  DEFAULT = 0,
+  ALWAYS,
+  WHEN_UPDATED,
+}
+
 /**
  * Options to create an `Attribute`.
  * @memberof Attribute
@@ -47,27 +53,23 @@ export interface AttributeDefinition<
    * the value is requested - suitable when the transform function's behavior
    * may change from frame to frame. When the value is cached, the transform can
    * be updated by calling `updateTransform()` on the attribute.
-   *
-   * TODO rename this
    */
-  cached?: boolean;
+  cacheTransform?: boolean;
   /**
    * An argument to be passed to the attribute's `valueFn`. If undefined,
    * the attribute itself is passed as the argument.
    */
   computeArg?: ComputeArgumentType | undefined;
   /**
-   * If true, compute the value of the attribute (e.g. using the `valueFn`)
-   * _every_ time the `advance()` method is called.
-   *
-   * TODO rename this and make it mutually exclusive with lazy
+   * Defines the behavior of the attribute's computation when specified using a
+   * value function. The default value of `AttributeRecompute.DEFAULT` causes the
+   * value function to be called every time `get()`, `compute()`, or `animate()`
+   * is called. If set to `AttributeRecompute.ALWAYS`, the value function is
+   * called every time the `advance()` method is called (i.e. every tick). If
+   * set to `AttributeRecompute.WHEN_UPDATED`, it will only be called when `compute()`
+   * or `animate()` is called.
    */
-  precompute?: boolean;
-  /**
-   * If true, only compute the value of the attribute (e.g. using the `valueFn`)
-   * when the `get()` method is called.
-   */
-  lazy?: boolean;
+  recompute?: AttributeRecompute;
 }
 
 export type PreloadAttributeValue<T> = {
@@ -98,14 +100,13 @@ export class Attribute<
         computeArg: ComputeArgumentType
       ) => TransformedValueType)
     | undefined = undefined;
-  public cached = false;
+  public cacheTransform = false;
   private _cachedValue: {
     raw: ValueType;
     result: TransformedValueType;
   } | null = null;
   public computeArg: ComputeArgumentType | undefined = undefined;
-  public precompute = false;
-  public lazy = false;
+  public recompute: AttributeRecompute = AttributeRecompute.DEFAULT;
   private needsUpdate = false;
   private animation = null;
   public label = null; // for debugging
@@ -164,12 +165,11 @@ export class Attribute<
           'One of `value` or `valueFn` must be defined to create an Attribute'
         );
       }
-      this.transform = args.transform || null;
-      this.cached = args.cached || false;
+      this.transform = args.transform ?? null;
+      this.cacheTransform = args.cacheTransform ?? false;
       this._cachedValue = null;
-      this.computeArg = args.computeArg || null;
-      this.precompute = args.precompute || false; // if this is true, always compute this on advance()
-      this.lazy = args.lazy || false; // if true, only updates computed value on animate() or compute()
+      this.computeArg = args.computeArg ?? null;
+      this.recompute = args.recompute ?? AttributeRecompute.DEFAULT;
     }
   }
 
@@ -236,7 +236,7 @@ export class Attribute<
       this.needsUpdate = false;
       this._changedLastTick = true;
       return true;
-    } else if (this.precompute) {
+    } else if (this.recompute === AttributeRecompute.ALWAYS) {
       this.compute();
     }
     this._changedLastTick = false;
@@ -283,7 +283,7 @@ export class Attribute<
         let raw = value;
         transformedValue = this.transform(value, this._getComputeArg());
 
-        if (this.cached) {
+        if (this.cacheTransform) {
           this._cachedValue = {
             raw,
             result: transformedValue,
@@ -319,7 +319,10 @@ export class Attribute<
     let value: ValueType;
     if (this._getterValue != null) value = this._getterValue;
     else if (!!this.valueFn) {
-      if (!this.lazy || !this._hasComputed) {
+      if (
+        this.recompute !== AttributeRecompute.WHEN_UPDATED ||
+        !this._hasComputed
+      ) {
         this.compute();
         this._hasComputed = true;
       }
@@ -405,7 +408,10 @@ export class Attribute<
 
     let rawValue: ValueType;
     if (!!this.valueFn) {
-      if (!this.lazy || !this._hasComputed) {
+      if (
+        this.recompute !== AttributeRecompute.WHEN_UPDATED ||
+        !this._hasComputed
+      ) {
         this.compute();
         this._hasComputed = true;
       }

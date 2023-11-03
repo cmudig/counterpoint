@@ -1,0 +1,35 @@
+.color-theme-2 pre.highlight * {
+  background: #282a39 !important;
+}
+
+.highlight .c1 {
+  color: #b5b5c5 !important;
+}
+.highlight .p,
+.highlight .nx,
+.highlight .o {
+  color: #4a4a51 !important;
+}
+.highlight .kd,
+.highlight .k {
+  font-weight: 600;
+}
+
+.color-theme-1 pre.highlight {
+  background-color: #fdf6e3 !important;
+}
+.color-theme-1 .highlight .c1 {
+  color: #b5b5c5 !important;
+}
+.color-theme-1 .highlight .p,
+.color-theme-1 .highlight .nx {
+  color: inherit !important;
+}
+
+.color-theme-2 .highlight .c1 {
+  color: #b5b5c5 !important;
+}
+.color-theme-2 .highlight .p,
+.color-theme-2 .highlight .nx {
+  color: inherit !important;
+}

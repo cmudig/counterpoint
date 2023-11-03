@@ -1,4 +1,4 @@
 ---
 layout: post
-title: 'Timing and Sequencing Animations'
+title: 'Animations, Timing, and Sequencing'
 ---
