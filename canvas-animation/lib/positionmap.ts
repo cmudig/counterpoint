@@ -227,6 +227,7 @@ export class PositionMap {
     });
     return withDistances
       .filter(([_, dist]) => dist <= distance)
+      .sort((a, b) => a[1] - b[1])
       .map(([mark, _]) => mark);
   }
 
@@ -251,7 +252,7 @@ export class PositionMap {
     binsToWalk.forEach((binLocation) => {
       result = [
         ...result,
-        ...this._recursiveBinWalk(location, numBinsEachDirection, [
+        ...this._recursiveBinWalk(location, distance, [
           ...coordSubset,
           binLocation,
         ]),

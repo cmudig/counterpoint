@@ -1,6 +1,6 @@
-var mr = Object.defineProperty;
-var gr = (r, t, e) => t in r ? mr(r, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[t] = e;
-var Tt = (r, t, e) => (gr(r, typeof t != "symbol" ? t + "" : t, e), e);
+var pr = Object.defineProperty;
+var _r = (r, t, e) => t in r ? pr(r, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[t] = e;
+var Tt = (r, t, e) => (_r(r, typeof t != "symbol" ? t + "" : t, e), e);
 function M(r, t) {
   let e = r.length;
   Array.isArray(r[0]) || (r = [r]), Array.isArray(t[0]) || (t = t.map((n) => [n]));
@@ -18,12 +18,12 @@ function M(r, t) {
   return e === 1 && (s = s[0]), i === 1 ? s.map((n) => n[0]) : s;
 }
 function it(r) {
-  return $(r) === "string";
+  return O(r) === "string";
 }
-function $(r) {
+function O(r) {
   return (Object.prototype.toString.call(r).match(/^\[object\s+(.*?)\]$/)[1] || "").toLowerCase();
 }
-function _t(r, t) {
+function bt(r, t) {
   r = +r, t = +t;
   let e = (Math.floor(r) + "").length;
   if (t > e)
@@ -33,7 +33,7 @@ function _t(r, t) {
     return Math.round(r / i) * i;
   }
 }
-function Re(r) {
+function Ee(r) {
   if (!r)
     return;
   r = r.trim();
@@ -53,19 +53,19 @@ function Re(r) {
     };
   }
 }
-function Ee(r) {
+function Be(r) {
   return r[r.length - 1];
 }
-function bt(r, t, e) {
+function yt(r, t, e) {
   return isNaN(r) ? t : isNaN(t) ? r : r + (t - r) * e;
 }
-function Be(r, t, e) {
+function ze(r, t, e) {
   return (e - r) / (t - r);
 }
-function qt(r, t, e) {
-  return bt(t[0], t[1], Be(r[0], r[1], e));
+function Gt(r, t, e) {
+  return yt(t[0], t[1], ze(r[0], r[1], e));
 }
-function ze(r) {
+function Fe(r) {
   return r.map((t) => t.split("|").map((e) => {
     e = e.trim();
     let i = e.match(/^(<[a-z]+>)\[(-?[.\d]+),\s*(-?[.\d]+)\]?$/);
@@ -76,20 +76,20 @@ function ze(r) {
     return e;
   }));
 }
-var pr = /* @__PURE__ */ Object.freeze({
+var br = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  interpolate: bt,
-  interpolateInv: Be,
+  interpolate: yt,
+  interpolateInv: ze,
   isString: it,
-  last: Ee,
-  mapRange: qt,
+  last: Be,
+  mapRange: Gt,
   multiplyMatrices: M,
-  parseCoordGrammar: ze,
-  parseFunction: Re,
-  toPrecision: _t,
-  type: $
+  parseCoordGrammar: Fe,
+  parseFunction: Ee,
+  toPrecision: bt,
+  type: O
 });
-class _r {
+class yr {
   add(t, e, i) {
     if (typeof arguments[0] != "string") {
       for (var t in arguments[0])
@@ -106,43 +106,43 @@ class _r {
     });
   }
 }
-const O = new _r();
-var B = {
+const X = new yr();
+var F = {
   gamut_mapping: "lch.c",
   precision: 5,
   deltaE: "76"
   // Default deltaE method
 };
-const R = {
+const E = {
   // for compatibility, the four-digit chromaticity-derived ones everyone else uses
   D50: [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585],
   D65: [0.3127 / 0.329, 1, (1 - 0.3127 - 0.329) / 0.329]
 };
 function Yt(r) {
-  return Array.isArray(r) ? r : R[r];
+  return Array.isArray(r) ? r : E[r];
 }
-function yt(r, t, e, i = {}) {
+function Mt(r, t, e, i = {}) {
   if (r = Yt(r), t = Yt(t), !r || !t)
     throw new TypeError(`Missing white point to convert ${r ? "" : "from"}${!r && !t ? "/" : ""}${t ? "" : "to"}`);
   if (r === t)
     return e;
   let a = { W1: r, W2: t, XYZ: e, options: i };
-  if (O.run("chromatic-adaptation-start", a), a.M || (a.W1 === R.D65 && a.W2 === R.D50 ? a.M = [
+  if (X.run("chromatic-adaptation-start", a), a.M || (a.W1 === E.D65 && a.W2 === E.D50 ? a.M = [
     [1.0479298208405488, 0.022946793341019088, -0.05019222954313557],
     [0.029627815688159344, 0.990434484573249, -0.01707382502938514],
     [-0.009243058152591178, 0.015055144896577895, 0.7518742899580008]
-  ] : a.W1 === R.D50 && a.W2 === R.D65 && (a.M = [
+  ] : a.W1 === E.D50 && a.W2 === E.D65 && (a.M = [
     [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
     [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
     [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
-  ])), O.run("chromatic-adaptation-end", a), a.M)
+  ])), X.run("chromatic-adaptation-end", a), a.M)
     return M(a.M, a.XYZ);
   throw new TypeError("Only Bradford CAT with white points D50 and D65 supported for now.");
 }
-const br = 75e-6, S = class S {
+const Mr = 75e-6, C = class C {
   constructor(t) {
     var a, s, n;
-    this.id = t.id, this.name = t.name, this.base = t.base ? S.get(t.base) : null, this.aliases = t.aliases, this.base && (this.fromBase = t.fromBase, this.toBase = t.toBase);
+    this.id = t.id, this.name = t.name, this.base = t.base ? C.get(t.base) : null, this.aliases = t.aliases, this.base && (this.fromBase = t.fromBase, this.toBase = t.toBase);
     let e = t.coords ?? this.base.coords;
     for (let o in e)
       "name" in e[o] || (e[o].name = o);
@@ -154,13 +154,13 @@ const br = 75e-6, S = class S {
       l.type || (l.type = "function"), l.name || (l.name = o);
     }
     t.cssId && !((a = this.formats.functions) != null && a.color) ? (this.formats.color = { id: t.cssId }, Object.defineProperty(this, "cssId", { value: t.cssId })) : (s = this.formats) != null && s.color && !((n = this.formats) != null && n.color.id) && (this.formats.color.id = this.id), this.referred = t.referred, Object.defineProperty(this, "path", {
-      value: yr(this).reverse(),
+      value: vr(this).reverse(),
       writable: !1,
       enumerable: !0,
       configurable: !0
-    }), O.run("colorspace-init-end", this);
+    }), X.run("colorspace-init-end", this);
   }
-  inGamut(t, { epsilon: e = br } = {}) {
+  inGamut(t, { epsilon: e = Mr } = {}) {
     if (this.isPolar)
       return t = this.toBase(t), this.base.inGamut(t, { epsilon: e });
     let i = Object.values(this.coords);
@@ -187,16 +187,16 @@ const br = 75e-6, S = class S {
   }
   getFormat(t) {
     if (typeof t == "object")
-      return t = te(t, this), t;
+      return t = ee(t, this), t;
     let e;
-    return t === "default" ? e = Object.values(this.formats)[0] : e = this.formats[t], e ? (e = te(e, this), e) : null;
+    return t === "default" ? e = Object.values(this.formats)[0] : e = this.formats[t], e ? (e = ee(e, this), e) : null;
   }
   // We cannot rely on simple === because then ColorSpace objects cannot be proxied
   equals(t) {
     return t ? this === t || this.id === t.id : !1;
   }
   to(t, e) {
-    if (arguments.length === 1 && ([t, e] = [t.space, t.coords]), t = S.get(t), this.equals(t))
+    if (arguments.length === 1 && ([t, e] = [t.space, t.coords]), t = C.get(t), this.equals(t))
       return e;
     e = e.map((o) => Number.isNaN(o) ? 0 : o);
     let i = this.path, a = t.path, s, n;
@@ -211,7 +211,7 @@ const br = 75e-6, S = class S {
     return e;
   }
   from(t, e) {
-    return arguments.length === 1 && ([t, e] = [t.space, t.coords]), t = S.get(t), t.to(this, e);
+    return arguments.length === 1 && ([t, e] = [t.space, t.coords]), t = C.get(t), t.to(this, e);
   }
   toString() {
     return `${this.name} (${this.id})`;
@@ -226,7 +226,7 @@ const br = 75e-6, S = class S {
   }
   // Returns array of unique color spaces
   static get all() {
-    return [...new Set(Object.values(S.registry))];
+    return [...new Set(Object.values(C.registry))];
   }
   static register(t, e) {
     if (arguments.length === 1 && (e = arguments[0], t = e.id), e = this.get(e), this.registry[t] && this.registry[t] !== e)
@@ -241,16 +241,16 @@ const br = 75e-6, S = class S {
    * @param {ColorSpace | string} name
    */
   static get(t, ...e) {
-    if (!t || t instanceof S)
+    if (!t || t instanceof C)
       return t;
-    if ($(t) === "string") {
-      let a = S.registry[t.toLowerCase()];
+    if (O(t) === "string") {
+      let a = C.registry[t.toLowerCase()];
       if (!a)
         throw new TypeError(`No color space found with id = "${t}"`);
       return a;
     }
     if (e.length)
-      return S.get(...e);
+      return C.get(...e);
     throw new TypeError(`${t} is not a valid color space`);
   }
   /**
@@ -263,15 +263,15 @@ const br = 75e-6, S = class S {
    */
   static resolveCoord(t, e) {
     var l;
-    let i = $(t), a, s;
-    if (i === "string" ? t.includes(".") ? [a, s] = t.split(".") : [a, s] = [, t] : Array.isArray(t) ? [a, s] = t : (a = t.space, s = t.coordId), a = S.get(a), a || (a = e), !a)
+    let i = O(t), a, s;
+    if (i === "string" ? t.includes(".") ? [a, s] = t.split(".") : [a, s] = [, t] : Array.isArray(t) ? [a, s] = t : (a = t.space, s = t.coordId), a = C.get(a), a || (a = e), !a)
       throw new TypeError(`Cannot resolve coordinate reference ${t}: No color space specified and relative references are not allowed here`);
-    if (i = $(s), i === "number" || i === "string" && s >= 0) {
+    if (i = O(s), i === "number" || i === "string" && s >= 0) {
       let h = Object.entries(a.coords)[s];
       if (h)
         return { space: a, id: h[0], index: s, ...h[1] };
     }
-    a = S.get(a);
+    a = C.get(a);
     let n = s.toLowerCase(), o = 0;
     for (let h in a.coords) {
       let u = a.coords[h];
@@ -282,32 +282,32 @@ const br = 75e-6, S = class S {
     throw new TypeError(`No "${s}" coordinate found in ${a.name}. Its coordinates are: ${Object.keys(a.coords).join(", ")}`);
   }
 };
-Tt(S, "registry", {}), Tt(S, "DEFAULT_FORMAT", {
+Tt(C, "registry", {}), Tt(C, "DEFAULT_FORMAT", {
   type: "functions",
   name: "color"
 });
-let f = S;
-function yr(r) {
+let f = C;
+function vr(r) {
   let t = [r];
   for (let e = r; e = e.base; )
     t.push(e);
   return t;
 }
-function te(r, { coords: t } = {}) {
+function ee(r, { coords: t } = {}) {
   if (r.coords && !r.coordGrammar) {
-    r.type || (r.type = "function"), r.name || (r.name = "color"), r.coordGrammar = ze(r.coords);
+    r.type || (r.type = "function"), r.name || (r.name = "color"), r.coordGrammar = Fe(r.coords);
     let e = Object.entries(t).map(([i, a], s) => {
       let n = r.coordGrammar[s][0], o = a.range || a.refRange, l = n.range, h = "";
       return n == "<percentage>" ? (l = [0, 100], h = "%") : n == "<angle>" && (h = "deg"), { fromRange: o, toRange: l, suffix: h };
     });
     r.serializeCoords = (i, a) => i.map((s, n) => {
       let { fromRange: o, toRange: l, suffix: h } = e[n];
-      return o && l && (s = qt(o, l, s)), s = _t(s, a), h && (s += h), s;
+      return o && l && (s = Gt(o, l, s)), s = bt(s, a), h && (s += h), s;
     });
   }
   return r;
 }
-var D = new f({
+var L = new f({
   id: "xyz-d65",
   name: "XYZ D65",
   coords: {
@@ -347,18 +347,18 @@ class k extends f {
         range: [0, 1],
         name: "Blue"
       }
-    }), t.base || (t.base = D), t.toXYZ_M && t.fromXYZ_M && (t.toBase ?? (t.toBase = (e) => {
+    }), t.base || (t.base = L), t.toXYZ_M && t.fromXYZ_M && (t.toBase ?? (t.toBase = (e) => {
       let i = M(t.toXYZ_M, e);
-      return this.white !== this.base.white && (i = yt(this.white, this.base.white, i)), i;
-    }), t.fromBase ?? (t.fromBase = (e) => (e = yt(this.base.white, this.white, e), M(t.fromXYZ_M, e)))), t.referred ?? (t.referred = "display"), super(t);
+      return this.white !== this.base.white && (i = Mt(this.white, this.base.white, i)), i;
+    }), t.fromBase ?? (t.fromBase = (e) => (e = Mt(this.base.white, this.white, e), M(t.fromXYZ_M, e)))), t.referred ?? (t.referred = "display"), super(t);
   }
 }
 function Ye(r, { meta: t } = {}) {
   var i, a, s, n, o;
   let e = { str: (i = String(r)) == null ? void 0 : i.trim() };
-  if (O.run("parse-start", e), e.color)
+  if (X.run("parse-start", e), e.color)
     return e.color;
-  if (e.parsed = Re(e.str), e.parsed) {
+  if (e.parsed = Ee(e.str), e.parsed) {
     let l = e.parsed.name;
     if (l === "color") {
       let h = e.parsed.args.shift(), u = e.parsed.rawArgs.indexOf("/") > 0 ? e.parsed.args.pop() : 1;
@@ -380,19 +380,19 @@ function Ye(r, { meta: t } = {}) {
         let u = h.getFormat(l);
         if (u && u.type === "function") {
           let c = 1;
-          (u.lastAlpha || Ee(e.parsed.args).alpha) && (c = e.parsed.args.pop());
+          (u.lastAlpha || Be(e.parsed.args).alpha) && (c = e.parsed.args.pop());
           let d = e.parsed.args, m;
           return u.coordGrammar && (m = Object.entries(h.coords).map(([p, b], y) => {
-            var q;
-            let v = u.coordGrammar[y], w = (q = d[y]) == null ? void 0 : q.type, A = v.find((F) => F == w);
+            var U;
+            let v = u.coordGrammar[y], w = (U = d[y]) == null ? void 0 : U.type, A = v.find(($) => $ == w);
             if (!A) {
-              let F = b.name || p;
-              throw new TypeError(`${w} not allowed for ${F} in ${l}()`);
+              let $ = b.name || p;
+              throw new TypeError(`${w} not allowed for ${$} in ${l}()`);
             }
             let x = A.range;
             w === "<percentage>" && (x || (x = [0, 1]));
             let P = b.range || b.refRange;
-            return x && P && (d[y] = qt(x, P, d[y])), A;
+            return x && P && (d[y] = Gt(x, P, d[y])), A;
           })), t && Object.assign(t, { formatId: u.name, types: m }), {
             spaceId: h.id,
             coords: d,
@@ -422,39 +422,39 @@ function g(r) {
 function at(r, t) {
   return t = f.get(t), t.from(r);
 }
-function L(r, t) {
+function R(r, t) {
   let { space: e, index: i } = f.resolveCoord(t, r.space);
   return at(r, e)[i];
 }
-function Fe(r, t, e) {
+function $e(r, t, e) {
   return t = f.get(t), r.coords = t.to(r.space, e), r;
 }
-function X(r, t, e) {
-  if (r = g(r), arguments.length === 2 && $(arguments[1]) === "object") {
+function I(r, t, e) {
+  if (r = g(r), arguments.length === 2 && O(arguments[1]) === "object") {
     let i = arguments[1];
     for (let a in i)
-      X(r, a, i[a]);
+      I(r, a, i[a]);
   } else {
-    typeof e == "function" && (e = e(L(r, t)));
+    typeof e == "function" && (e = e(R(r, t)));
     let { space: i, index: a } = f.resolveCoord(t, r.space), s = at(r, i);
-    s[a] = e, Fe(r, i, s);
+    s[a] = e, $e(r, i, s);
   }
   return r;
 }
-var Gt = new f({
+var Zt = new f({
   id: "xyz-d50",
   name: "XYZ D50",
   white: "D50",
-  base: D,
-  fromBase: (r) => yt(D.white, "D50", r),
-  toBase: (r) => yt("D50", D.white, r),
+  base: L,
+  fromBase: (r) => Mt(L.white, "D50", r),
+  toBase: (r) => Mt("D50", L.white, r),
   formats: {
     color: {}
   }
 });
-const Mr = 216 / 24389, ee = 24 / 116, ot = 24389 / 27;
-let Dt = R.D50;
-var C = new f({
+const wr = 216 / 24389, re = 24 / 116, ot = 24389 / 27;
+let Lt = E.D50;
+var D = new f({
   id: "lab",
   name: "Lab",
   coords: {
@@ -471,12 +471,12 @@ var C = new f({
   },
   // Assuming XYZ is relative to D50, convert to CIE Lab
   // from CIE standard, which now defines these as a rational fraction
-  white: Dt,
-  base: Gt,
+  white: Lt,
+  base: Zt,
   // Convert D50-adapted XYX to Lab
   //  CIE 15.3:2004 section 8.2.1.1
   fromBase(r) {
-    let e = r.map((i, a) => i / Dt[a]).map((i) => i > Mr ? Math.cbrt(i) : (ot * i + 16) / 116);
+    let e = r.map((i, a) => i / Lt[a]).map((i) => i > wr ? Math.cbrt(i) : (ot * i + 16) / 116);
     return [
       116 * e[1] - 16,
       // L
@@ -492,10 +492,10 @@ var C = new f({
   toBase(r) {
     let t = [];
     return t[1] = (r[0] + 16) / 116, t[0] = r[1] / 500 + t[1], t[2] = t[1] - r[2] / 200, [
-      t[0] > ee ? Math.pow(t[0], 3) : (116 * t[0] - 16) / ot,
+      t[0] > re ? Math.pow(t[0], 3) : (116 * t[0] - 16) / ot,
       r[0] > 8 ? Math.pow((r[0] + 16) / 116, 3) : r[0] / ot,
-      t[2] > ee ? Math.pow(t[2], 3) : (116 * t[2] - 16) / ot
-    ].map((i, a) => i * Dt[a]);
+      t[2] > re ? Math.pow(t[2], 3) : (116 * t[2] - 16) / ot
+    ].map((i, a) => i * Lt[a]);
   },
   formats: {
     lab: {
@@ -503,13 +503,13 @@ var C = new f({
     }
   }
 });
-function xt(r) {
+function St(r) {
   return (r % 360 + 360) % 360;
 }
-function vr(r, t) {
+function kr(r, t) {
   if (r === "raw")
     return t;
-  let [e, i] = t.map(xt), a = i - e;
+  let [e, i] = t.map(St), a = i - e;
   return r === "increasing" ? a < 0 && (i += 360) : r === "decreasing" ? a > 0 && (e += 360) : r === "longer" ? -180 < a && a < 180 && (a > 0 ? e += 360 : i += 360) : r === "shorter" && (a > 180 ? e += 360 : a < -180 && (i += 360)), [e, i];
 }
 var tt = new f({
@@ -530,7 +530,7 @@ var tt = new f({
       name: "Hue"
     }
   },
-  base: C,
+  base: D,
   fromBase(r) {
     let [t, e, i] = r, a;
     const s = 0.02;
@@ -539,7 +539,7 @@ var tt = new f({
       // L is still L
       Math.sqrt(e ** 2 + i ** 2),
       // Chroma
-      xt(a)
+      St(a)
       // Hue, in degrees [0 to 360)
     ];
   },
@@ -560,23 +560,23 @@ var tt = new f({
     }
   }
 });
-const re = 25 ** 7, Mt = Math.PI, ie = 180 / Mt, G = Mt / 180;
-function Ft(r, t, { kL: e = 1, kC: i = 1, kH: a = 1 } = {}) {
-  let [s, n, o] = C.from(r), l = tt.from(C, [s, n, o])[1], [h, u, c] = C.from(t), d = tt.from(C, [h, u, c])[1];
+const ie = 25 ** 7, vt = Math.PI, ae = 180 / vt, N = vt / 180;
+function $t(r, t, { kL: e = 1, kC: i = 1, kH: a = 1 } = {}) {
+  let [s, n, o] = D.from(r), l = tt.from(D, [s, n, o])[1], [h, u, c] = D.from(t), d = tt.from(D, [h, u, c])[1];
   l < 0 && (l = 0), d < 0 && (d = 0);
-  let p = ((l + d) / 2) ** 7, b = 0.5 * (1 - Math.sqrt(p / (p + re))), y = (1 + b) * n, v = (1 + b) * u, w = Math.sqrt(y ** 2 + o ** 2), A = Math.sqrt(v ** 2 + c ** 2), x = y === 0 && o === 0 ? 0 : Math.atan2(o, y), P = v === 0 && c === 0 ? 0 : Math.atan2(c, v);
-  x < 0 && (x += 2 * Mt), P < 0 && (P += 2 * Mt), x *= ie, P *= ie;
-  let q = h - s, F = A - w, E = P - x, H = x + P, Ht = Math.abs(E), V;
-  w * A === 0 ? V = 0 : Ht <= 180 ? V = E : E > 180 ? V = E - 360 : E < -180 ? V = E + 360 : console.log("the unthinkable has happened");
-  let Vt = 2 * Math.sqrt(A * w) * Math.sin(V * G / 2), hr = (s + h) / 2, At = (w + A) / 2, Wt = Math.pow(At, 7), z;
-  w * A === 0 ? z = H : Ht <= 180 ? z = H / 2 : H < 360 ? z = (H + 360) / 2 : z = (H - 360) / 2;
-  let Jt = (hr - 50) ** 2, ur = 1 + 0.015 * Jt / Math.sqrt(20 + Jt), Qt = 1 + 0.045 * At, W = 1;
-  W -= 0.17 * Math.cos((z - 30) * G), W += 0.24 * Math.cos(2 * z * G), W += 0.32 * Math.cos((3 * z + 6) * G), W -= 0.2 * Math.cos((4 * z - 63) * G);
-  let Kt = 1 + 0.015 * At * W, cr = 30 * Math.exp(-1 * ((z - 275) / 25) ** 2), dr = 2 * Math.sqrt(Wt / (Wt + re)), fr = -1 * Math.sin(2 * cr * G) * dr, nt = (q / (e * ur)) ** 2;
-  return nt += (F / (i * Qt)) ** 2, nt += (Vt / (a * Kt)) ** 2, nt += fr * (F / (i * Qt)) * (Vt / (a * Kt)), Math.sqrt(nt);
+  let p = ((l + d) / 2) ** 7, b = 0.5 * (1 - Math.sqrt(p / (p + ie))), y = (1 + b) * n, v = (1 + b) * u, w = Math.sqrt(y ** 2 + o ** 2), A = Math.sqrt(v ** 2 + c ** 2), x = y === 0 && o === 0 ? 0 : Math.atan2(o, y), P = v === 0 && c === 0 ? 0 : Math.atan2(c, v);
+  x < 0 && (x += 2 * vt), P < 0 && (P += 2 * vt), x *= ae, P *= ae;
+  let U = h - s, $ = A - w, z = P - x, W = x + P, Wt = Math.abs(z), V;
+  w * A === 0 ? V = 0 : Wt <= 180 ? V = z : z > 180 ? V = z - 360 : z < -180 ? V = z + 360 : console.log("the unthinkable has happened");
+  let Vt = 2 * Math.sqrt(A * w) * Math.sin(V * N / 2), cr = (s + h) / 2, At = (w + A) / 2, Jt = Math.pow(At, 7), Y;
+  w * A === 0 ? Y = W : Wt <= 180 ? Y = W / 2 : W < 360 ? Y = (W + 360) / 2 : Y = (W - 360) / 2;
+  let Qt = (cr - 50) ** 2, dr = 1 + 0.015 * Qt / Math.sqrt(20 + Qt), Kt = 1 + 0.045 * At, J = 1;
+  J -= 0.17 * Math.cos((Y - 30) * N), J += 0.24 * Math.cos(2 * Y * N), J += 0.32 * Math.cos((3 * Y + 6) * N), J -= 0.2 * Math.cos((4 * Y - 63) * N);
+  let te = 1 + 0.015 * At * J, fr = 30 * Math.exp(-1 * ((Y - 275) / 25) ** 2), mr = 2 * Math.sqrt(Jt / (Jt + ie)), gr = -1 * Math.sin(2 * fr * N) * mr, nt = (U / (e * dr)) ** 2;
+  return nt += ($ / (i * Kt)) ** 2, nt += (Vt / (a * te)) ** 2, nt += gr * ($ / (i * Kt)) * (Vt / (a * te)), Math.sqrt(nt);
 }
-const wr = 75e-6;
-function K(r, t = r.space, { epsilon: e = wr } = {}) {
+const xr = 75e-6;
+function K(r, t = r.space, { epsilon: e = xr } = {}) {
   r = g(r), t = f.get(t);
   let i = r.coords;
   return t !== r.space && (i = t.from(r)), t.inGamut(i, { epsilon: e });
@@ -588,17 +588,17 @@ function et(r) {
     alpha: r.alpha
   };
 }
-function I(r, { method: t = B.gamut_mapping, space: e = r.space } = {}) {
+function j(r, { method: t = F.gamut_mapping, space: e = r.space } = {}) {
   if (it(arguments[1]) && (e = arguments[1]), e = f.get(e), K(r, e, { epsilon: 0 }))
     return g(r);
   let i = T(r, e);
   if (t !== "clip" && !K(r, e)) {
-    let a = I(et(i), { method: "clip", space: e });
-    if (Ft(r, a) > 2) {
-      let s = f.resolveCoord(t), n = s.space, o = s.id, l = T(i, n), u = (s.range || s.refRange)[0], c = 0.01, d = u, m = L(l, o);
+    let a = j(et(i), { method: "clip", space: e });
+    if ($t(r, a) > 2) {
+      let s = f.resolveCoord(t), n = s.space, o = s.id, l = T(i, n), u = (s.range || s.refRange)[0], c = 0.01, d = u, m = R(l, o);
       for (; m - d > c; ) {
         let p = et(l);
-        p = I(p, { space: e, method: "clip" }), Ft(l, p) - 2 < c ? d = L(l, o) : m = L(l, o), X(l, o, (d + m) / 2);
+        p = j(p, { space: e, method: "clip" }), $t(l, p) - 2 < c ? d = R(l, o) : m = R(l, o), I(l, o, (d + m) / 2);
       }
       i = T(l, e);
     } else
@@ -613,15 +613,15 @@ function I(r, { method: t = B.gamut_mapping, space: e = r.space } = {}) {
   }
   return e !== r.space && (i = T(i, r.space)), r.coords = i.coords, r;
 }
-I.returns = "color";
+j.returns = "color";
 function T(r, t, { inGamut: e } = {}) {
   r = g(r), t = f.get(t);
   let i = t.from(r), a = { space: t, coords: i, alpha: r.alpha };
-  return e && (a = I(a)), a;
+  return e && (a = j(a)), a;
 }
 T.returns = "color";
-function vt(r, {
-  precision: t = B.precision,
+function wt(r, {
+  precision: t = F.precision,
   format: e = "default",
   inGamut: i = !0,
   ...a
@@ -632,100 +632,100 @@ function vt(r, {
   let n = e;
   e = r.space.getFormat(e) ?? r.space.getFormat("default") ?? f.DEFAULT_FORMAT, i || (i = e.toGamut);
   let o = r.coords;
-  if (o = o.map((h) => h || 0), i && !K(r) && (o = I(et(r), i === !0 ? void 0 : i).coords), e.type === "custom")
+  if (o = o.map((h) => h || 0), i && !K(r) && (o = j(et(r), i === !0 ? void 0 : i).coords), e.type === "custom")
     if (a.precision = t, e.serialize)
       s = e.serialize(o, r.alpha, a);
     else
       throw new TypeError(`format ${n} can only be used to parse colors, not for serialization`);
   else {
     let h = e.name || "color";
-    e.serializeCoords ? o = e.serializeCoords(o, t) : t !== null && (o = o.map((m) => _t(m, t)));
+    e.serializeCoords ? o = e.serializeCoords(o, t) : t !== null && (o = o.map((m) => bt(m, t)));
     let u = [...o];
     if (h === "color") {
       let m = e.id || ((l = e.ids) == null ? void 0 : l[0]) || r.space.id;
       u.unshift(m);
     }
     let c = r.alpha;
-    t !== null && (c = _t(c, t));
+    t !== null && (c = bt(c, t));
     let d = r.alpha < 1 && !e.noAlpha ? `${e.commas ? "," : " /"} ${c}` : "";
     s = `${h}(${u.join(e.commas ? ", " : " ")}${d})`;
   }
   return s;
 }
-const kr = [
+const Sr = [
   [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
   [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
   [0, 0.028072693049087428, 1.060985057710791]
-], xr = [
+], Cr = [
   [1.716651187971268, -0.355670783776392, -0.25336628137366],
   [-0.666684351832489, 1.616481236634939, 0.0157685458139111],
   [0.017639857445311, -0.042770613257809, 0.942103121235474]
 ];
-var St = new k({
+var Ct = new k({
   id: "rec2020-linear",
   name: "Linear REC.2020",
   white: "D65",
-  toXYZ_M: kr,
-  fromXYZ_M: xr,
+  toXYZ_M: Sr,
+  fromXYZ_M: Cr,
   formats: {
     color: {}
   }
 });
-const lt = 1.09929682680944, ae = 0.018053968510807;
-var $e = new k({
+const lt = 1.09929682680944, se = 0.018053968510807;
+var Oe = new k({
   id: "rec2020",
   name: "REC.2020",
-  base: St,
+  base: Ct,
   // Non-linear transfer function from Rec. ITU-R BT.2020-2 table 4
   toBase(r) {
     return r.map(function(t) {
-      return t < ae * 4.5 ? t / 4.5 : Math.pow((t + lt - 1) / lt, 1 / 0.45);
+      return t < se * 4.5 ? t / 4.5 : Math.pow((t + lt - 1) / lt, 1 / 0.45);
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      return t >= ae ? lt * Math.pow(t, 0.45) - (lt - 1) : 4.5 * t;
+      return t >= se ? lt * Math.pow(t, 0.45) - (lt - 1) : 4.5 * t;
     });
   },
   formats: {
     color: {}
   }
 });
-const Sr = [
+const Dr = [
   [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
   [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
   [0, 0.04511338185890264, 1.043944368900976]
-], Cr = [
+], Ar = [
   [2.493496911941425, -0.9313836179191239, -0.40271078445071684],
   [-0.8294889695615747, 1.7626640603183463, 0.023624685841943577],
   [0.03584583024378447, -0.07617238926804182, 0.9568845240076872]
 ];
-var Oe = new k({
+var Xe = new k({
   id: "p3-linear",
   name: "Linear P3",
   white: "D65",
-  toXYZ_M: Sr,
-  fromXYZ_M: Cr
+  toXYZ_M: Dr,
+  fromXYZ_M: Ar
 });
-const Ar = [
+const Tr = [
   [0.41239079926595934, 0.357584339383878, 0.1804807884018343],
   [0.21263900587151027, 0.715168678767756, 0.07219231536073371],
   [0.01933081871559182, 0.11919477979462598, 0.9505321522496607]
-], Tr = [
+], Lr = [
   [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
   [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
   [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
 ];
-var Xe = new k({
+var Ie = new k({
   id: "srgb-linear",
   name: "Linear sRGB",
   white: "D65",
-  toXYZ_M: Ar,
-  fromXYZ_M: Tr,
+  toXYZ_M: Tr,
+  fromXYZ_M: Lr,
   formats: {
     color: {}
   }
-}), se = {
+}), ne = {
   aliceblue: [240 / 255, 248 / 255, 1],
   antiquewhite: [250 / 255, 235 / 255, 215 / 255],
   aqua: [0, 1, 1],
@@ -875,11 +875,11 @@ var Xe = new k({
   yellow: [1, 1, 0],
   yellowgreen: [154 / 255, 205 / 255, 50 / 255]
 };
-let ne = Array(3).fill("<percentage> | <number>[0, 255]"), oe = Array(3).fill("<number>[0, 255]");
+let oe = Array(3).fill("<percentage> | <number>[0, 255]"), le = Array(3).fill("<number>[0, 255]");
 var rt = new k({
   id: "srgb",
   name: "sRGB",
-  base: Xe,
+  base: Ie,
   fromBase: (r) => r.map((t) => {
     let e = t < 0 ? -1 : 1, i = t * e;
     return i > 31308e-7 ? e * (1.055 * i ** (1 / 2.4) - 0.055) : 12.92 * t;
@@ -890,26 +890,26 @@ var rt = new k({
   }),
   formats: {
     rgb: {
-      coords: ne
+      coords: oe
     },
     rgb_number: {
       name: "rgb",
       commas: !0,
-      coords: oe,
+      coords: le,
       noAlpha: !0
     },
     color: {
       /* use defaults */
     },
     rgba: {
-      coords: ne,
+      coords: oe,
       commas: !0,
       lastAlpha: !0
     },
     rgba_number: {
       name: "rgba",
       commas: !0,
-      coords: oe
+      coords: le
     },
     hex: {
       type: "custom",
@@ -941,15 +941,15 @@ var rt = new k({
       parse(r) {
         r = r.toLowerCase();
         let t = { spaceId: "srgb", coords: null, alpha: 1 };
-        if (r === "transparent" ? (t.coords = se.black, t.alpha = 0) : t.coords = se[r], t.coords)
+        if (r === "transparent" ? (t.coords = ne.black, t.alpha = 0) : t.coords = ne[r], t.coords)
           return t;
       }
     }
   }
-}), Ie = new k({
+}), je = new k({
   id: "p3",
   name: "P3",
-  base: Oe,
+  base: Xe,
   // Gamma encoding/decoding is the same as sRGB
   fromBase: rt.fromBase,
   toBase: rt.toBase,
@@ -959,26 +959,26 @@ var rt = new k({
     }
   }
 });
-B.display_space = rt;
+F.display_space = rt;
 if (typeof CSS < "u" && CSS.supports)
-  for (let r of [C, $e, Ie]) {
-    let t = r.getMinCoords(), i = vt({ space: r, coords: t, alpha: 1 });
+  for (let r of [D, Oe, je]) {
+    let t = r.getMinCoords(), i = wt({ space: r, coords: t, alpha: 1 });
     if (CSS.supports("color", i)) {
-      B.display_space = r;
+      F.display_space = r;
       break;
     }
   }
-function Dr(r, { space: t = B.display_space, ...e } = {}) {
-  let i = vt(r, e);
-  if (typeof CSS > "u" || CSS.supports("color", i) || !B.display_space)
+function Rr(r, { space: t = F.display_space, ...e } = {}) {
+  let i = wt(r, e);
+  if (typeof CSS > "u" || CSS.supports("color", i) || !F.display_space)
     i = new String(i), i.color = r;
   else {
     let a = T(r, t);
-    i = new String(vt(a, e)), i.color = a;
+    i = new String(wt(a, e)), i.color = a;
   }
   return i;
 }
-function je(r, t, e = "lab") {
+function qe(r, t, e = "lab") {
   e = f.get(e);
   let i = e.from(r), a = e.from(t);
   return Math.sqrt(i.reduce((s, n, o) => {
@@ -986,74 +986,74 @@ function je(r, t, e = "lab") {
     return isNaN(n) || isNaN(l) ? s : s + (l - n) ** 2;
   }, 0));
 }
-function Lr(r, t) {
+function Pr(r, t) {
   return r = g(r), t = g(t), r.space === t.space && r.alpha === t.alpha && r.coords.every((e, i) => e === t.coords[i]);
 }
-function j(r) {
-  return L(r, [D, "y"]);
+function q(r) {
+  return R(r, [L, "y"]);
 }
-function qe(r, t) {
-  X(r, [D, "y"], t);
+function Ge(r, t) {
+  I(r, [L, "y"], t);
 }
-function Pr(r) {
+function Er(r) {
   Object.defineProperty(r.prototype, "luminance", {
     get() {
-      return j(this);
+      return q(this);
     },
     set(t) {
-      qe(this, t);
+      Ge(this, t);
     }
   });
 }
-var Rr = /* @__PURE__ */ Object.freeze({
+var Br = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  getLuminance: j,
-  register: Pr,
-  setLuminance: qe
+  getLuminance: q,
+  register: Er,
+  setLuminance: Ge
 });
-function Er(r, t) {
+function zr(r, t) {
   r = g(r), t = g(t);
-  let e = Math.max(j(r), 0), i = Math.max(j(t), 0);
+  let e = Math.max(q(r), 0), i = Math.max(q(t), 0);
   return i > e && ([e, i] = [i, e]), (e + 0.05) / (i + 0.05);
 }
-const Br = 0.56, zr = 0.57, Yr = 0.62, Fr = 0.65, le = 0.022, $r = 1.414, Or = 0.1, Xr = 5e-4, Ir = 1.14, he = 0.027, jr = 1.14;
-function ue(r) {
-  return r >= le ? r : r + (le - r) ** $r;
+const Fr = 0.56, Yr = 0.57, $r = 0.62, Or = 0.65, he = 0.022, Xr = 1.414, Ir = 0.1, jr = 5e-4, qr = 1.14, ue = 0.027, Gr = 1.14;
+function ce(r) {
+  return r >= he ? r : r + (he - r) ** Xr;
 }
-function Z(r) {
+function H(r) {
   let t = r < 0 ? -1 : 1, e = Math.abs(r);
   return t * Math.pow(e, 2.4);
 }
-function qr(r, t) {
+function Zr(r, t) {
   t = g(t), r = g(r);
   let e, i, a, s, n, o;
   t = T(t, "srgb"), [s, n, o] = t.coords;
-  let l = Z(s) * 0.2126729 + Z(n) * 0.7151522 + Z(o) * 0.072175;
+  let l = H(s) * 0.2126729 + H(n) * 0.7151522 + H(o) * 0.072175;
   r = T(r, "srgb"), [s, n, o] = r.coords;
-  let h = Z(s) * 0.2126729 + Z(n) * 0.7151522 + Z(o) * 0.072175, u = ue(l), c = ue(h), d = c > u;
-  return Math.abs(c - u) < Xr ? i = 0 : d ? (e = c ** Br - u ** zr, i = e * Ir) : (e = c ** Fr - u ** Yr, i = e * jr), Math.abs(i) < Or ? a = 0 : i > 0 ? a = i - he : a = i + he, a * 100;
+  let h = H(s) * 0.2126729 + H(n) * 0.7151522 + H(o) * 0.072175, u = ce(l), c = ce(h), d = c > u;
+  return Math.abs(c - u) < jr ? i = 0 : d ? (e = c ** Fr - u ** Yr, i = e * qr) : (e = c ** Or - u ** $r, i = e * Gr), Math.abs(i) < Ir ? a = 0 : i > 0 ? a = i - ue : a = i + ue, a * 100;
 }
-function Gr(r, t) {
+function Ur(r, t) {
   r = g(r), t = g(t);
-  let e = Math.max(j(r), 0), i = Math.max(j(t), 0);
+  let e = Math.max(q(r), 0), i = Math.max(q(t), 0);
   i > e && ([e, i] = [i, e]);
   let a = e + i;
   return a === 0 ? 0 : (e - i) / a;
 }
-const Zr = 5e4;
-function Ur(r, t) {
+const Nr = 5e4;
+function Hr(r, t) {
   r = g(r), t = g(t);
-  let e = Math.max(j(r), 0), i = Math.max(j(t), 0);
-  return i > e && ([e, i] = [i, e]), i === 0 ? Zr : (e - i) / i;
+  let e = Math.max(q(r), 0), i = Math.max(q(t), 0);
+  return i > e && ([e, i] = [i, e]), i === 0 ? Nr : (e - i) / i;
 }
-function Nr(r, t) {
+function Wr(r, t) {
   r = g(r), t = g(t);
-  let e = L(r, [C, "l"]), i = L(t, [C, "l"]);
+  let e = R(r, [D, "l"]), i = R(t, [D, "l"]);
   return Math.abs(e - i);
 }
-const Hr = 216 / 24389, ce = 24 / 116, ht = 24389 / 27;
-let Lt = R.D65;
-var $t = new f({
+const Vr = 216 / 24389, de = 24 / 116, ht = 24389 / 27;
+let Rt = E.D65;
+var Ot = new f({
   id: "lab-d65",
   name: "Lab D65",
   coords: {
@@ -1070,12 +1070,12 @@ var $t = new f({
   },
   // Assuming XYZ is relative to D65, convert to CIE Lab
   // from CIE standard, which now defines these as a rational fraction
-  white: Lt,
-  base: D,
+  white: Rt,
+  base: L,
   // Convert D65-adapted XYZ to Lab
   //  CIE 15.3:2004 section 8.2.1.1
   fromBase(r) {
-    let e = r.map((i, a) => i / Lt[a]).map((i) => i > Hr ? Math.cbrt(i) : (ht * i + 16) / 116);
+    let e = r.map((i, a) => i / Rt[a]).map((i) => i > Vr ? Math.cbrt(i) : (ht * i + 16) / 116);
     return [
       116 * e[1] - 16,
       // L
@@ -1091,10 +1091,10 @@ var $t = new f({
   toBase(r) {
     let t = [];
     return t[1] = (r[0] + 16) / 116, t[0] = r[1] / 500 + t[1], t[2] = t[1] - r[2] / 200, [
-      t[0] > ce ? Math.pow(t[0], 3) : (116 * t[0] - 16) / ht,
+      t[0] > de ? Math.pow(t[0], 3) : (116 * t[0] - 16) / ht,
       r[0] > 8 ? Math.pow((r[0] + 16) / 116, 3) : r[0] / ht,
-      t[2] > ce ? Math.pow(t[2], 3) : (116 * t[2] - 16) / ht
-    ].map((i, a) => i * Lt[a]);
+      t[2] > de ? Math.pow(t[2], 3) : (116 * t[2] - 16) / ht
+    ].map((i, a) => i * Rt[a]);
   },
   formats: {
     "lab-d65": {
@@ -1103,74 +1103,74 @@ var $t = new f({
   }
 });
 const Pt = Math.pow(5, 0.5) * 0.5 + 0.5;
-function Vr(r, t) {
+function Jr(r, t) {
   r = g(r), t = g(t);
-  let e = L(r, [$t, "l"]), i = L(t, [$t, "l"]), a = Math.abs(Math.pow(e, Pt) - Math.pow(i, Pt)), s = Math.pow(a, 1 / Pt) * Math.SQRT2 - 40;
+  let e = R(r, [Ot, "l"]), i = R(t, [Ot, "l"]), a = Math.abs(Math.pow(e, Pt) - Math.pow(i, Pt)), s = Math.pow(a, 1 / Pt) * Math.SQRT2 - 40;
   return s < 7.5 ? 0 : s;
 }
-var gt = /* @__PURE__ */ Object.freeze({
+var pt = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  contrastAPCA: qr,
-  contrastDeltaPhi: Vr,
-  contrastLstar: Nr,
-  contrastMichelson: Gr,
-  contrastWCAG21: Er,
-  contrastWeber: Ur
+  contrastAPCA: Zr,
+  contrastDeltaPhi: Jr,
+  contrastLstar: Wr,
+  contrastMichelson: Ur,
+  contrastWCAG21: zr,
+  contrastWeber: Hr
 });
-function Wr(r, t, e = {}) {
+function Qr(r, t, e = {}) {
   it(e) && (e = { algorithm: e });
   let { algorithm: i, ...a } = e;
   if (!i) {
-    let s = Object.keys(gt).map((n) => n.replace(/^contrast/, "")).join(", ");
+    let s = Object.keys(pt).map((n) => n.replace(/^contrast/, "")).join(", ");
     throw new TypeError(`contrast() function needs a contrast algorithm. Please specify one of: ${s}`);
   }
   r = g(r), t = g(t);
-  for (let s in gt)
+  for (let s in pt)
     if ("contrast" + i.toLowerCase() === s.toLowerCase())
-      return gt[s](r, t, a);
+      return pt[s](r, t, a);
   throw new TypeError(`Unknown contrast algorithm: ${i}`);
 }
-function Ge(r) {
-  let [t, e, i] = at(r, D), a = t + 15 * e + 3 * i;
+function Ze(r) {
+  let [t, e, i] = at(r, L), a = t + 15 * e + 3 * i;
   return [4 * t / a, 9 * e / a];
 }
-function Ze(r) {
-  let [t, e, i] = at(r, D), a = t + e + i;
+function Ue(r) {
+  let [t, e, i] = at(r, L), a = t + e + i;
   return [t / a, e / a];
 }
-function Jr(r) {
+function Kr(r) {
   Object.defineProperty(r.prototype, "uv", {
-    get() {
-      return Ge(this);
-    }
-  }), Object.defineProperty(r.prototype, "xy", {
     get() {
       return Ze(this);
     }
+  }), Object.defineProperty(r.prototype, "xy", {
+    get() {
+      return Ue(this);
+    }
   });
 }
-var Qr = /* @__PURE__ */ Object.freeze({
+var ti = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  register: Jr,
-  uv: Ge,
-  xy: Ze
+  register: Kr,
+  uv: Ze,
+  xy: Ue
 });
-function Kr(r, t) {
-  return je(r, t, "lab");
+function ei(r, t) {
+  return qe(r, t, "lab");
 }
-const ti = Math.PI, de = ti / 180;
-function ei(r, t, { l: e = 2, c: i = 1 } = {}) {
-  let [a, s, n] = C.from(r), [, o, l] = tt.from(C, [a, s, n]), [h, u, c] = C.from(t), d = tt.from(C, [h, u, c])[1];
+const ri = Math.PI, fe = ri / 180;
+function ii(r, t, { l: e = 2, c: i = 1 } = {}) {
+  let [a, s, n] = D.from(r), [, o, l] = tt.from(D, [a, s, n]), [h, u, c] = D.from(t), d = tt.from(D, [h, u, c])[1];
   o < 0 && (o = 0), d < 0 && (d = 0);
   let m = a - h, p = o - d, b = s - u, y = n - c, v = b ** 2 + y ** 2 - p ** 2, w = 0.511;
   a >= 16 && (w = 0.040975 * a / (1 + 0.01765 * a));
   let A = 0.0638 * o / (1 + 0.0131 * o) + 0.638, x;
-  Number.isNaN(l) && (l = 0), l >= 164 && l <= 345 ? x = 0.56 + Math.abs(0.2 * Math.cos((l + 168) * de)) : x = 0.36 + Math.abs(0.4 * Math.cos((l + 35) * de));
-  let P = Math.pow(o, 4), q = Math.sqrt(P / (P + 1900)), F = A * (q * x + 1 - q), E = (m / (e * w)) ** 2;
-  return E += (p / (i * A)) ** 2, E += v / F ** 2, Math.sqrt(E);
+  Number.isNaN(l) && (l = 0), l >= 164 && l <= 345 ? x = 0.56 + Math.abs(0.2 * Math.cos((l + 168) * fe)) : x = 0.36 + Math.abs(0.4 * Math.cos((l + 35) * fe));
+  let P = Math.pow(o, 4), U = Math.sqrt(P / (P + 1900)), $ = A * (U * x + 1 - U), z = (m / (e * w)) ** 2;
+  return z += (p / (i * A)) ** 2, z += v / $ ** 2, Math.sqrt(z);
 }
-const fe = 203;
-var Zt = new f({
+const me = 203;
+var Ut = new f({
   // Absolute CIE XYZ, with a D65 whitepoint,
   // as used in most HDR colorspaces as a starting point.
   // SDR spaces are converted per BT.2048
@@ -1191,32 +1191,32 @@ var Zt = new f({
       name: "Za"
     }
   },
-  base: D,
+  base: L,
   fromBase(r) {
-    return r.map((t) => Math.max(t * fe, 0));
+    return r.map((t) => Math.max(t * me, 0));
   },
   toBase(r) {
-    return r.map((t) => Math.max(t / fe, 0));
+    return r.map((t) => Math.max(t / me, 0));
   }
 });
-const ut = 1.15, ct = 0.66, me = 2610 / 2 ** 14, ri = 2 ** 14 / 2610, ge = 3424 / 2 ** 12, pe = 2413 / 2 ** 7, _e = 2392 / 2 ** 7, ii = 1.7 * 2523 / 2 ** 5, be = 2 ** 5 / (1.7 * 2523), dt = -0.56, Rt = 16295499532821565e-27, ai = [
+const ut = 1.15, ct = 0.66, ge = 2610 / 2 ** 14, ai = 2 ** 14 / 2610, pe = 3424 / 2 ** 12, _e = 2413 / 2 ** 7, be = 2392 / 2 ** 7, si = 1.7 * 2523 / 2 ** 5, ye = 2 ** 5 / (1.7 * 2523), dt = -0.56, Et = 16295499532821565e-27, ni = [
   [0.41478972, 0.579999, 0.014648],
   [-0.20151, 1.120649, 0.0531008],
   [-0.0166008, 0.2648, 0.6684799]
-], si = [
+], oi = [
   [1.9242264357876067, -1.0047923125953657, 0.037651404030618],
   [0.35031676209499907, 0.7264811939316552, -0.06538442294808501],
   [-0.09098281098284752, -0.3127282905230739, 1.5227665613052603]
-], ni = [
+], li = [
   [0.5, 0.5, 0],
   [3.524, -4.066708, 0.542708],
   [0.199076, 1.096799, -1.295875]
-], oi = [
+], hi = [
   [1, 0.1386050432715393, 0.05804731615611886],
   [0.9999999999999999, -0.1386050432715393, -0.05804731615611886],
   [0.9999999999999998, -0.09601924202631895, -0.8118918960560388]
 ];
-var Ue = new f({
+var Ne = new f({
   id: "jzazbz",
   name: "Jzazbz",
   coords: {
@@ -1231,26 +1231,26 @@ var Ue = new f({
       refRange: [-0.5, 0.5]
     }
   },
-  base: Zt,
+  base: Ut,
   fromBase(r) {
-    let [t, e, i] = r, a = ut * t - (ut - 1) * i, s = ct * e - (ct - 1) * t, o = M(ai, [a, s, i]).map(function(d) {
-      let m = ge + pe * (d / 1e4) ** me, p = 1 + _e * (d / 1e4) ** me;
-      return (m / p) ** ii;
-    }), [l, h, u] = M(ni, o);
-    return [(1 + dt) * l / (1 + dt * l) - Rt, h, u];
+    let [t, e, i] = r, a = ut * t - (ut - 1) * i, s = ct * e - (ct - 1) * t, o = M(ni, [a, s, i]).map(function(d) {
+      let m = pe + _e * (d / 1e4) ** ge, p = 1 + be * (d / 1e4) ** ge;
+      return (m / p) ** si;
+    }), [l, h, u] = M(li, o);
+    return [(1 + dt) * l / (1 + dt * l) - Et, h, u];
   },
   toBase(r) {
-    let [t, e, i] = r, a = (t + Rt) / (1 + dt - dt * (t + Rt)), n = M(oi, [a, e, i]).map(function(d) {
-      let m = ge - d ** be, p = _e * d ** be - pe;
-      return 1e4 * (m / p) ** ri;
-    }), [o, l, h] = M(si, n), u = (o + (ut - 1) * h) / ut, c = (l + (ct - 1) * u) / ct;
+    let [t, e, i] = r, a = (t + Et) / (1 + dt - dt * (t + Et)), n = M(hi, [a, e, i]).map(function(d) {
+      let m = pe - d ** ye, p = be * d ** ye - _e;
+      return 1e4 * (m / p) ** ai;
+    }), [o, l, h] = M(oi, n), u = (o + (ut - 1) * h) / ut, c = (l + (ct - 1) * u) / ct;
     return [u, c, h];
   },
   formats: {
     // https://drafts.csswg.org/css-color-hdr/#Jzazbz
     color: {}
   }
-}), Ot = new f({
+}), Xt = new f({
   id: "jzczhz",
   name: "JzCzHz",
   coords: {
@@ -1268,7 +1268,7 @@ var Ue = new f({
       name: "Hue"
     }
   },
-  base: Ue,
+  base: Ne,
   fromBase(r) {
     let [t, e, i] = r, a;
     const s = 2e-4;
@@ -1277,7 +1277,7 @@ var Ue = new f({
       // Jz is still Jz
       Math.sqrt(e ** 2 + i ** 2),
       // Chroma
-      xt(a)
+      St(a)
       // Hue, in degrees [0 to 360)
     ];
   },
@@ -1295,30 +1295,30 @@ var Ue = new f({
     color: {}
   }
 });
-function li(r, t) {
-  let [e, i, a] = Ot.from(r), [s, n, o] = Ot.from(t), l = e - s, h = i - n;
+function ui(r, t) {
+  let [e, i, a] = Xt.from(r), [s, n, o] = Xt.from(t), l = e - s, h = i - n;
   Number.isNaN(a) && Number.isNaN(o) ? (a = 0, o = 0) : Number.isNaN(a) ? a = o : Number.isNaN(o) && (o = a);
   let u = a - o, c = 2 * Math.sqrt(i * n) * Math.sin(u / 2 * (Math.PI / 180));
   return Math.sqrt(l ** 2 + h ** 2 + c ** 2);
 }
-const Ne = 3424 / 4096, He = 2413 / 128, Ve = 2392 / 128, ye = 2610 / 16384, hi = 2523 / 32, ui = 16384 / 2610, Me = 32 / 2523, ci = [
+const He = 3424 / 4096, We = 2413 / 128, Ve = 2392 / 128, Me = 2610 / 16384, ci = 2523 / 32, di = 16384 / 2610, ve = 32 / 2523, fi = [
   [0.3592, 0.6976, -0.0358],
   [-0.1922, 1.1004, 0.0755],
   [7e-3, 0.0749, 0.8434]
-], di = [
+], mi = [
   [2048 / 4096, 2048 / 4096, 0],
   [6610 / 4096, -13613 / 4096, 7003 / 4096],
   [17933 / 4096, -17390 / 4096, -543 / 4096]
-], fi = [
+], gi = [
   [0.9999888965628402, 0.008605050147287059, 0.11103437159861648],
   [1.00001110343716, -0.008605050147287059, -0.11103437159861648],
   [1.0000320633910054, 0.56004913547279, -0.3206339100541203]
-], mi = [
+], pi = [
   [2.0701800566956137, -1.326456876103021, 0.20661600684785517],
   [0.3649882500326575, 0.6804673628522352, -0.04542175307585323],
   [-0.04959554223893211, -0.04942116118675749, 1.1879959417328034]
 ];
-var Xt = new f({
+var It = new f({
   id: "ictcp",
   name: "ICTCP",
   // From BT.2100-2 page 7:
@@ -1346,54 +1346,54 @@ var Xt = new f({
       name: "CP"
     }
   },
-  base: Zt,
+  base: Ut,
   fromBase(r) {
-    let t = M(ci, r);
-    return gi(t);
+    let t = M(fi, r);
+    return _i(t);
   },
   toBase(r) {
-    let t = pi(r);
-    return M(mi, t);
+    let t = bi(r);
+    return M(pi, t);
   },
   formats: {
     color: {}
   }
 });
-function gi(r) {
+function _i(r) {
   let t = r.map(function(e) {
-    let i = Ne + He * (e / 1e4) ** ye, a = 1 + Ve * (e / 1e4) ** ye;
-    return (i / a) ** hi;
+    let i = He + We * (e / 1e4) ** Me, a = 1 + Ve * (e / 1e4) ** Me;
+    return (i / a) ** ci;
   });
-  return M(di, t);
+  return M(mi, t);
 }
-function pi(r) {
-  return M(fi, r).map(function(i) {
-    let a = Math.max(i ** Me - Ne, 0), s = He - Ve * i ** Me;
-    return 1e4 * (a / s) ** ui;
+function bi(r) {
+  return M(gi, r).map(function(i) {
+    let a = Math.max(i ** ve - He, 0), s = We - Ve * i ** ve;
+    return 1e4 * (a / s) ** di;
   });
 }
-function _i(r, t) {
-  let [e, i, a] = Xt.from(r), [s, n, o] = Xt.from(t);
+function yi(r, t) {
+  let [e, i, a] = It.from(r), [s, n, o] = It.from(t);
   return 720 * Math.sqrt((e - s) ** 2 + 0.25 * (i - n) ** 2 + (a - o) ** 2);
 }
-const bi = [
+const Mi = [
   [0.8190224432164319, 0.3619062562801221, -0.12887378261216414],
   [0.0329836671980271, 0.9292868468965546, 0.03614466816999844],
   [0.048177199566046255, 0.26423952494422764, 0.6335478258136937]
-], yi = [
+], vi = [
   [1.2268798733741557, -0.5578149965554813, 0.28139105017721583],
   [-0.04057576262431372, 1.1122868293970594, -0.07171106666151701],
   [-0.07637294974672142, -0.4214933239627914, 1.5869240244272418]
-], Mi = [
+], wi = [
   [0.2104542553, 0.793617785, -0.0040720468],
   [1.9779984951, -2.428592205, 0.4505937099],
   [0.0259040371, 0.7827717662, -0.808675766]
-], vi = [
+], ki = [
   [0.9999999984505198, 0.39633779217376786, 0.2158037580607588],
   [1.0000000088817609, -0.10556134232365635, -0.06385417477170591],
   [1.0000000546724108, -0.08948418209496575, -1.2914855378640917]
 ];
-var wt = new f({
+var kt = new f({
   id: "oklab",
   name: "Oklab",
   coords: {
@@ -1410,14 +1410,14 @@ var wt = new f({
   },
   // Note that XYZ is relative to D65
   white: "D65",
-  base: D,
+  base: L,
   fromBase(r) {
-    let e = M(bi, r).map((i) => Math.cbrt(i));
-    return M(Mi, e);
+    let e = M(Mi, r).map((i) => Math.cbrt(i));
+    return M(wi, e);
   },
   toBase(r) {
-    let e = M(vi, r).map((i) => i ** 3);
-    return M(yi, e);
+    let e = M(ki, r).map((i) => i ** 3);
+    return M(vi, e);
   },
   formats: {
     oklab: {
@@ -1425,48 +1425,48 @@ var wt = new f({
     }
   }
 });
-function wi(r, t) {
-  let [e, i, a] = wt.from(r), [s, n, o] = wt.from(t), l = e - s, h = i - n, u = a - o;
+function xi(r, t) {
+  let [e, i, a] = kt.from(r), [s, n, o] = kt.from(t), l = e - s, h = i - n, u = a - o;
   return Math.sqrt(l ** 2 + h ** 2 + u ** 2);
 }
-var kt = {
-  deltaE76: Kr,
-  deltaECMC: ei,
-  deltaE2000: Ft,
-  deltaEJz: li,
-  deltaEITP: _i,
-  deltaEOK: wi
+var xt = {
+  deltaE76: ei,
+  deltaECMC: ii,
+  deltaE2000: $t,
+  deltaEJz: ui,
+  deltaEITP: yi,
+  deltaEOK: xi
 };
-function J(r, t, e = {}) {
+function Q(r, t, e = {}) {
   it(e) && (e = { method: e });
-  let { method: i = B.deltaE, ...a } = e;
+  let { method: i = F.deltaE, ...a } = e;
   r = g(r), t = g(t);
-  for (let s in kt)
+  for (let s in xt)
     if ("deltae" + i.toLowerCase() === s.toLowerCase())
-      return kt[s](r, t, a);
+      return xt[s](r, t, a);
   throw new TypeError(`Unknown deltaE method: ${i}`);
 }
-function ki(r, t = 0.25) {
+function Si(r, t = 0.25) {
   let i = [f.get("oklch", "lch"), "l"];
-  return X(r, i, (a) => a * (1 + t));
+  return I(r, i, (a) => a * (1 + t));
 }
-function xi(r, t = 0.25) {
+function Ci(r, t = 0.25) {
   let i = [f.get("oklch", "lch"), "l"];
-  return X(r, i, (a) => a * (1 - t));
+  return I(r, i, (a) => a * (1 - t));
 }
-var Si = /* @__PURE__ */ Object.freeze({
+var Di = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  darken: xi,
-  lighten: ki
+  darken: Ci,
+  lighten: Si
 });
-function We(r, t, e = 0.5, i = {}) {
-  [r, t] = [g(r), g(t)], $(e) === "object" && ([e, i] = [0.5, e]);
+function Je(r, t, e = 0.5, i = {}) {
+  [r, t] = [g(r), g(t)], O(e) === "object" && ([e, i] = [0.5, e]);
   let { space: a, outputSpace: s, premultiplied: n } = i;
   return st(r, t, { space: a, outputSpace: s, premultiplied: n })(e);
 }
-function Je(r, t, e = {}) {
+function Qe(r, t, e = {}) {
   let i;
-  Ut(r) && ([i, e] = [r, t], [r, t] = i.rangeArgs.colors);
+  Nt(r) && ([i, e] = [r, t], [r, t] = i.rangeArgs.colors);
   let {
     maxDeltaE: a,
     deltaEMethod: s,
@@ -1475,7 +1475,7 @@ function Je(r, t, e = {}) {
     ...l
   } = e;
   i || ([r, t] = [g(r), g(t)], i = st(r, t, l));
-  let h = J(r, t), u = a > 0 ? Math.max(n, Math.ceil(h / a) + 1) : n, c = [];
+  let h = Q(r, t), u = a > 0 ? Math.max(n, Math.ceil(h / a) + 1) : n, c = [];
   if (o !== void 0 && (u = Math.min(u, o)), u === 1)
     c = [{ p: 0.5, color: i(0.5) }];
   else {
@@ -1489,57 +1489,57 @@ function Je(r, t, e = {}) {
     let d = c.reduce((m, p, b) => {
       if (b === 0)
         return 0;
-      let y = J(p.color, c[b - 1].color, s);
+      let y = Q(p.color, c[b - 1].color, s);
       return Math.max(m, y);
     }, 0);
     for (; d > a; ) {
       d = 0;
       for (let m = 1; m < c.length && c.length < o; m++) {
         let p = c[m - 1], b = c[m], y = (b.p + p.p) / 2, v = i(y);
-        d = Math.max(d, J(v, p.color), J(v, b.color)), c.splice(m, 0, { p: y, color: i(y) }), m++;
+        d = Math.max(d, Q(v, p.color), Q(v, b.color)), c.splice(m, 0, { p: y, color: i(y) }), m++;
       }
     }
   }
   return c = c.map((d) => d.color), c;
 }
 function st(r, t, e = {}) {
-  if (Ut(r)) {
+  if (Nt(r)) {
     let [l, h] = [r, t];
     return st(...l.rangeArgs.colors, { ...l.rangeArgs.options, ...h });
   }
   let { space: i, outputSpace: a, progression: s, premultiplied: n } = e;
   r = g(r), t = g(t), r = et(r), t = et(t);
   let o = { colors: [r, t], options: e };
-  if (i ? i = f.get(i) : i = f.registry[B.interpolationSpace] || r.space, a = a ? f.get(a) : i, r = T(r, i), t = T(t, i), r = I(r), t = I(t), i.coords.h && i.coords.h.type === "angle") {
-    let l = e.hue = e.hue || "shorter", h = [i, "h"], [u, c] = [L(r, h), L(t, h)];
-    [u, c] = vr(l, [u, c]), X(r, h, u), X(t, h, c);
+  if (i ? i = f.get(i) : i = f.registry[F.interpolationSpace] || r.space, a = a ? f.get(a) : i, r = T(r, i), t = T(t, i), r = j(r), t = j(t), i.coords.h && i.coords.h.type === "angle") {
+    let l = e.hue = e.hue || "shorter", h = [i, "h"], [u, c] = [R(r, h), R(t, h)];
+    [u, c] = kr(l, [u, c]), I(r, h, u), I(t, h, c);
   }
   return n && (r.coords = r.coords.map((l) => l * r.alpha), t.coords = t.coords.map((l) => l * t.alpha)), Object.assign((l) => {
     l = s ? s(l) : l;
     let h = r.coords.map((d, m) => {
       let p = t.coords[m];
-      return bt(d, p, l);
-    }), u = bt(r.alpha, t.alpha, l), c = { space: i, coords: h, alpha: u };
+      return yt(d, p, l);
+    }), u = yt(r.alpha, t.alpha, l), c = { space: i, coords: h, alpha: u };
     return n && (c.coords = c.coords.map((d) => d / u)), a !== i && (c = T(c, a)), c;
   }, {
     rangeArgs: o
   });
 }
-function Ut(r) {
-  return $(r) === "function" && !!r.rangeArgs;
+function Nt(r) {
+  return O(r) === "function" && !!r.rangeArgs;
 }
-B.interpolationSpace = "lab";
-function Ci(r) {
-  r.defineFunction("mix", We, { returns: "color" }), r.defineFunction("range", st, { returns: "function<color>" }), r.defineFunction("steps", Je, { returns: "array<color>" });
+F.interpolationSpace = "lab";
+function Ai(r) {
+  r.defineFunction("mix", Je, { returns: "color" }), r.defineFunction("range", st, { returns: "function<color>" }), r.defineFunction("steps", Qe, { returns: "array<color>" });
 }
-var Ai = /* @__PURE__ */ Object.freeze({
+var Ti = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  isRange: Ut,
-  mix: We,
+  isRange: Nt,
+  mix: Je,
   range: st,
-  register: Ci,
-  steps: Je
-}), Qe = new f({
+  register: Ai,
+  steps: Qe
+}), Ke = new f({
   id: "hsl",
   name: "HSL",
   coords: {
@@ -1597,7 +1597,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       lastAlpha: !0
     }
   }
-}), Ke = new f({
+}), tr = new f({
   id: "hsv",
   name: "HSV",
   coords: {
@@ -1615,7 +1615,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       name: "Value"
     }
   },
-  base: Qe,
+  base: Ke,
   // https://en.wikipedia.org/wiki/HSL_and_HSV#Interconversion
   fromBase(r) {
     let [t, e, i] = r;
@@ -1646,7 +1646,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       toGamut: !0
     }
   }
-}), Ti = new f({
+}), Li = new f({
   id: "hwb",
   name: "HWB",
   coords: {
@@ -1664,7 +1664,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       name: "Blackness"
     }
   },
-  base: Ke,
+  base: tr,
   fromBase(r) {
     let [t, e, i] = r;
     return [t, i * (100 - e) / 100, 100 - i];
@@ -1687,25 +1687,25 @@ var Ai = /* @__PURE__ */ Object.freeze({
     }
   }
 });
-const Di = [
+const Ri = [
   [0.5766690429101305, 0.1855582379065463, 0.1882286462349947],
   [0.29734497525053605, 0.6273635662554661, 0.07529145849399788],
   [0.02703136138641234, 0.07068885253582723, 0.9913375368376388]
-], Li = [
+], Pi = [
   [2.0415879038107465, -0.5650069742788596, -0.34473135077832956],
   [-0.9692436362808795, 1.8759675015077202, 0.04155505740717557],
   [0.013444280632031142, -0.11836239223101838, 1.0151749943912054]
 ];
-var tr = new k({
+var er = new k({
   id: "a98rgb-linear",
   name: "Linear Adobe® 98 RGB compatible",
   white: "D65",
-  toXYZ_M: Di,
-  fromXYZ_M: Li
-}), Pi = new k({
+  toXYZ_M: Ri,
+  fromXYZ_M: Pi
+}), Ei = new k({
   id: "a98rgb",
   name: "Adobe® 98 RGB compatible",
-  base: tr,
+  base: er,
   toBase: (r) => r.map((t) => Math.pow(Math.abs(t), 563 / 256) * Math.sign(t)),
   fromBase: (r) => r.map((t) => Math.pow(Math.abs(t), 256 / 563) * Math.sign(t)),
   formats: {
@@ -1714,40 +1714,40 @@ var tr = new k({
     }
   }
 });
-const Ri = [
+const Bi = [
   [0.7977604896723027, 0.13518583717574031, 0.0313493495815248],
   [0.2880711282292934, 0.7118432178101014, 8565396060525902e-20],
   [0, 0, 0.8251046025104601]
-], Ei = [
+], zi = [
   [1.3457989731028281, -0.25558010007997534, -0.05110628506753401],
   [-0.5446224939028347, 1.5082327413132781, 0.02053603239147973],
   [0, 0, 1.2119675456389454]
 ];
-var er = new k({
+var rr = new k({
   id: "prophoto-linear",
   name: "Linear ProPhoto",
   white: "D50",
-  base: Gt,
-  toXYZ_M: Ri,
-  fromXYZ_M: Ei
+  base: Zt,
+  toXYZ_M: Bi,
+  fromXYZ_M: zi
 });
-const Bi = 1 / 512, zi = 16 / 512;
-var Yi = new k({
+const Fi = 1 / 512, Yi = 16 / 512;
+var $i = new k({
   id: "prophoto",
   name: "ProPhoto",
-  base: er,
+  base: rr,
   toBase(r) {
-    return r.map((t) => t < zi ? t / 16 : t ** 1.8);
+    return r.map((t) => t < Yi ? t / 16 : t ** 1.8);
   },
   fromBase(r) {
-    return r.map((t) => t >= Bi ? t ** (1 / 1.8) : 16 * t);
+    return r.map((t) => t >= Fi ? t ** (1 / 1.8) : 16 * t);
   },
   formats: {
     color: {
       id: "prophoto-rgb"
     }
   }
-}), Fi = new f({
+}), Oi = new f({
   id: "oklch",
   name: "Oklch",
   coords: {
@@ -1766,7 +1766,7 @@ var Yi = new k({
     }
   },
   white: "D65",
-  base: wt,
+  base: kt,
   fromBase(r) {
     let [t, e, i] = r, a;
     const s = 2e-4;
@@ -1775,7 +1775,7 @@ var Yi = new k({
       // OKLab L is still L
       Math.sqrt(e ** 2 + i ** 2),
       // Chroma
-      xt(a)
+      St(a)
       // Hue, in degrees [0 to 360)
     ];
   },
@@ -1790,20 +1790,20 @@ var Yi = new k({
     }
   }
 });
-const ve = 203, we = 2610 / 2 ** 14, $i = 2 ** 14 / 2610, Oi = 2523 / 2 ** 5, ke = 2 ** 5 / 2523, xe = 3424 / 2 ** 12, Se = 2413 / 2 ** 7, Ce = 2392 / 2 ** 7;
-var Xi = new k({
+const we = 203, ke = 2610 / 2 ** 14, Xi = 2 ** 14 / 2610, Ii = 2523 / 2 ** 5, xe = 2 ** 5 / 2523, Se = 3424 / 2 ** 12, Ce = 2413 / 2 ** 7, De = 2392 / 2 ** 7;
+var ji = new k({
   id: "rec2100pq",
   name: "REC.2100-PQ",
-  base: St,
+  base: Ct,
   toBase(r) {
     return r.map(function(t) {
-      return (Math.max(t ** ke - xe, 0) / (Se - Ce * t ** ke)) ** $i * 1e4 / ve;
+      return (Math.max(t ** xe - Se, 0) / (Ce - De * t ** xe)) ** Xi * 1e4 / we;
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      let e = Math.max(t * ve / 1e4, 0), i = xe + Se * e ** we, a = 1 + Ce * e ** we;
-      return (i / a) ** Oi;
+      let e = Math.max(t * we / 1e4, 0), i = Se + Ce * e ** ke, a = 1 + De * e ** ke;
+      return (i / a) ** Ii;
     });
   },
   formats: {
@@ -1812,21 +1812,21 @@ var Xi = new k({
     }
   }
 });
-const Ae = 0.17883277, Te = 0.28466892, De = 0.55991073, Et = 3.7743;
-var Ii = new k({
+const Ae = 0.17883277, Te = 0.28466892, Le = 0.55991073, Bt = 3.7743;
+var qi = new k({
   id: "rec2100hlg",
   cssid: "rec2100-hlg",
   name: "REC.2100-HLG",
   referred: "scene",
-  base: St,
+  base: Ct,
   toBase(r) {
     return r.map(function(t) {
-      return t <= 0.5 ? t ** 2 / 3 * Et : (Math.exp((t - De) / Ae) + Te) / 12 * Et;
+      return t <= 0.5 ? t ** 2 / 3 * Bt : (Math.exp((t - Le) / Ae) + Te) / 12 * Bt;
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      return t /= Et, t <= 1 / 12 ? Math.sqrt(3 * t) : Ae * Math.log(12 * t - Te) + De;
+      return t /= Bt, t <= 1 / 12 ? Math.sqrt(3 * t) : Ae * Math.log(12 * t - Te) + Le;
     });
   },
   formats: {
@@ -1835,25 +1835,25 @@ var Ii = new k({
     }
   }
 });
-const rr = {};
-O.add("chromatic-adaptation-start", (r) => {
-  r.options.method && (r.M = ir(r.W1, r.W2, r.options.method));
+const ir = {};
+X.add("chromatic-adaptation-start", (r) => {
+  r.options.method && (r.M = ar(r.W1, r.W2, r.options.method));
 });
-O.add("chromatic-adaptation-end", (r) => {
-  r.M || (r.M = ir(r.W1, r.W2, r.options.method));
+X.add("chromatic-adaptation-end", (r) => {
+  r.M || (r.M = ar(r.W1, r.W2, r.options.method));
 });
-function Ct({ id: r, toCone_M: t, fromCone_M: e }) {
-  rr[r] = arguments[0];
+function Dt({ id: r, toCone_M: t, fromCone_M: e }) {
+  ir[r] = arguments[0];
 }
-function ir(r, t, e = "Bradford") {
-  let i = rr[e], [a, s, n] = M(i.toCone_M, r), [o, l, h] = M(i.toCone_M, t), u = [
+function ar(r, t, e = "Bradford") {
+  let i = ir[e], [a, s, n] = M(i.toCone_M, r), [o, l, h] = M(i.toCone_M, t), u = [
     [o / a, 0, 0],
     [0, l / s, 0],
     [0, 0, h / n]
   ], c = M(u, i.toCone_M);
   return M(i.fromCone_M, c);
 }
-Ct({
+Dt({
   id: "von Kries",
   toCone_M: [
     [0.40024, 0.7076, -0.08081],
@@ -1866,7 +1866,7 @@ Ct({
     [0, 0, 1.0890636]
   ]
 });
-Ct({
+Dt({
   id: "Bradford",
   // Convert an array of XYZ values in the range 0.0 - 1.0
   // to cone fundamentals
@@ -1882,7 +1882,7 @@ Ct({
     [-85287e-7, 0.0400428, 0.9684867]
   ]
 });
-Ct({
+Dt({
   id: "CAT02",
   // with complete chromatic adaptation to W2, so D = 1.0
   toCone_M: [
@@ -1896,7 +1896,7 @@ Ct({
     [-96276e-7, -5698e-6, 1.0153256]
   ]
 });
-Ct({
+Dt({
   id: "CAT16",
   toCone_M: [
     [0.401288, 0.650173, -0.051461],
@@ -1910,7 +1910,7 @@ Ct({
     [-0.01584149884933386, -0.03412293802851557, 1.04996443687785]
   ]
 });
-Object.assign(R, {
+Object.assign(E, {
   // whitepoint values from ASTM E308-01 with 10nm spacing, 1931 2 degree observer
   // all normalized to Y (luminance) = 1.00000
   // Illuminant A is a tungsten electric light, giving a very warm, orange light.
@@ -1929,17 +1929,17 @@ Object.assign(R, {
   F7: [0.95041, 1, 1.08747],
   F11: [1.00962, 1, 0.6435]
 });
-R.ACES = [0.32168 / 0.33767, 1, (1 - 0.32168 - 0.33767) / 0.33767];
-const ji = [
+E.ACES = [0.32168 / 0.33767, 1, (1 - 0.32168 - 0.33767) / 0.33767];
+const Gi = [
   [0.6624541811085053, 0.13400420645643313, 0.1561876870049078],
   [0.27222871678091454, 0.6740817658111484, 0.05368951740793705],
   [-0.005574649490394108, 0.004060733528982826, 1.0103391003129971]
-], qi = [
+], Zi = [
   [1.6410233796943257, -0.32480329418479, -0.23642469523761225],
   [-0.6636628587229829, 1.6153315916573379, 0.016756347685530137],
   [0.011721894328375376, -0.008284441996237409, 0.9883948585390215]
 ];
-var ar = new k({
+var sr = new k({
   id: "acescg",
   name: "ACEScg",
   // ACEScg – A scene-referred, linear-light encoding of ACES Data
@@ -1960,15 +1960,15 @@ var ar = new k({
     }
   },
   referred: "scene",
-  white: R.ACES,
-  toXYZ_M: ji,
-  fromXYZ_M: qi,
+  white: E.ACES,
+  toXYZ_M: Gi,
+  fromXYZ_M: Zi,
   formats: {
     color: {}
   }
 });
-const ft = 2 ** -16, Bt = -0.35828683, mt = (Math.log2(65504) + 9.72) / 17.52;
-var Gi = new k({
+const ft = 2 ** -16, zt = -0.35828683, mt = (Math.log2(65504) + 9.72) / 17.52;
+var Ui = new k({
   id: "acescc",
   name: "ACEScc",
   // see S-2014-003 ACEScc – A Logarithmic Encoding of ACES Data
@@ -1980,20 +1980,20 @@ var Gi = new k({
   // so that all positive ACES values are maintained."
   coords: {
     r: {
-      range: [Bt, mt],
+      range: [zt, mt],
       name: "Red"
     },
     g: {
-      range: [Bt, mt],
+      range: [zt, mt],
       name: "Green"
     },
     b: {
-      range: [Bt, mt],
+      range: [zt, mt],
       name: "Blue"
     }
   },
   referred: "scene",
-  base: ar,
+  base: sr,
   // from section 4.4.2 Decoding Function
   toBase(r) {
     const t = -0.3013698630136986;
@@ -2012,36 +2012,36 @@ var Gi = new k({
   formats: {
     color: {}
   }
-}), Le = /* @__PURE__ */ Object.freeze({
+}), Re = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  A98RGB: Pi,
-  A98RGB_Linear: tr,
-  ACEScc: Gi,
-  ACEScg: ar,
-  HSL: Qe,
-  HSV: Ke,
-  HWB: Ti,
-  ICTCP: Xt,
-  JzCzHz: Ot,
-  Jzazbz: Ue,
+  A98RGB: Ei,
+  A98RGB_Linear: er,
+  ACEScc: Ui,
+  ACEScg: sr,
+  HSL: Ke,
+  HSV: tr,
+  HWB: Li,
+  ICTCP: It,
+  JzCzHz: Xt,
+  Jzazbz: Ne,
   LCH: tt,
-  Lab: C,
-  Lab_D65: $t,
-  OKLCH: Fi,
-  OKLab: wt,
-  P3: Ie,
-  P3_Linear: Oe,
-  ProPhoto: Yi,
-  ProPhoto_Linear: er,
-  REC_2020: $e,
-  REC_2020_Linear: St,
-  REC_2100_HLG: Ii,
-  REC_2100_PQ: Xi,
-  XYZ_ABS_D65: Zt,
-  XYZ_D50: Gt,
-  XYZ_D65: D,
+  Lab: D,
+  Lab_D65: Ot,
+  OKLCH: Oi,
+  OKLab: kt,
+  P3: je,
+  P3_Linear: Xe,
+  ProPhoto: $i,
+  ProPhoto_Linear: rr,
+  REC_2020: Oe,
+  REC_2020_Linear: Ct,
+  REC_2100_HLG: qi,
+  REC_2100_PQ: ji,
+  XYZ_ABS_D65: Ut,
+  XYZ_D50: Zt,
+  XYZ_D65: L,
   sRGB: rt,
-  sRGB_Linear: Xe
+  sRGB_Linear: Ie
 });
 class _ {
   /**
@@ -2086,7 +2086,7 @@ class _ {
     };
   }
   display(...t) {
-    let e = Dr(this, ...t);
+    let e = Rr(this, ...t);
     return e.color = new _(e.color), e;
   }
   /**
@@ -2128,38 +2128,38 @@ class _ {
   }
 }
 _.defineFunctions({
-  get: L,
+  get: R,
   getAll: at,
-  set: X,
-  setAll: Fe,
+  set: I,
+  setAll: $e,
   to: T,
-  equals: Lr,
+  equals: Pr,
   inGamut: K,
-  toGamut: I,
-  distance: je,
-  toString: vt
+  toGamut: j,
+  distance: qe,
+  toString: wt
 });
 Object.assign(_, {
-  util: pr,
-  hooks: O,
-  WHITES: R,
+  util: br,
+  hooks: X,
+  WHITES: E,
   Space: f,
   spaces: f.registry,
   parse: Ye,
   // Global defaults one may want to configure
-  defaults: B
+  defaults: F
 });
-for (let r of Object.keys(Le))
-  f.register(Le[r]);
+for (let r of Object.keys(Re))
+  f.register(Re[r]);
 for (let r in f.registry)
-  It(r, f.registry[r]);
-O.add("colorspace-init-end", (r) => {
+  jt(r, f.registry[r]);
+X.add("colorspace-init-end", (r) => {
   var t;
-  It(r.id, r), (t = r.aliases) == null || t.forEach((e) => {
-    It(e, r);
+  jt(r.id, r), (t = r.aliases) == null || t.forEach((e) => {
+    jt(e, r);
   });
 });
-function It(r, t) {
+function jt(r, t) {
   Object.keys(t.coords), Object.values(t.coords).map((i) => i.name);
   let e = r.replace(/-/g, "_");
   Object.defineProperty(_.prototype, e, {
@@ -2204,25 +2204,25 @@ function It(r, t) {
     enumerable: !0
   });
 }
-_.extend(kt);
-_.extend({ deltaE: J });
-Object.assign(_, { deltaEMethods: kt });
-_.extend(Si);
-_.extend({ contrast: Wr });
-_.extend(Qr);
-_.extend(Rr);
-_.extend(Ai);
-_.extend(gt);
-function sr(r) {
+_.extend(xt);
+_.extend({ deltaE: Q });
+Object.assign(_, { deltaEMethods: xt });
+_.extend(Di);
+_.extend({ contrast: Qr });
+_.extend(ti);
+_.extend(Br);
+_.extend(Ti);
+_.extend(pt);
+function nr(r) {
   return r;
 }
-function U(r) {
+function G(r) {
   return r * r * (3 - 2 * r);
 }
-function Zi(r, t, e, i) {
+function or(r, t, e, i) {
   return r * t + e * i;
 }
-function Ui(r, t, e, i) {
+function Ni(r, t, e, i) {
   let a = [
     Math.round((r.r * t + e.r * i) * 255),
     Math.round((r.g * t + e.g * i) * 255),
@@ -2230,22 +2230,28 @@ function Ui(r, t, e, i) {
   ];
   return `rgb(${a[0]}, ${a[1]}, ${a[2]})`;
 }
-function Nt(r) {
+function Hi(r, t, e, i) {
+  return r.map(
+    (a, s) => or(a, t, e[s], i)
+  );
+}
+function Ht(r) {
   if (typeof r == "number")
-    return Zi;
+    return or;
   if (typeof r == "string") {
     let t = {};
-    return (e, i, a, s) => (t[e] || (t[e] = new _(e).srgb), t[a] || (t[a] = new _(a).srgb), Ui(
+    return (e, i, a, s) => (t[e] || (t[e] = new _(e).srgb), t[a] || (t[a] = new _(a).srgb), Ni(
       t[e],
       i,
       t[a],
       s
     ));
-  }
+  } else if (Array.isArray(r))
+    return Hi;
   return (t, e, i, a) => e < 1 ? t : i;
 }
-function N(r, t = void 0) {
-  return t === void 0 && (t = Nt(r)), {
+function Z(r, t = void 0) {
+  return t === void 0 && (t = Ht(r)), {
     finalValue: r,
     interpolate: (e, i) => t(
       e,
@@ -2255,8 +2261,8 @@ function N(r, t = void 0) {
     )
   };
 }
-function ra(r, t = void 0) {
-  return t === void 0 && (t = Nt(r())), {
+function aa(r, t = void 0) {
+  return t === void 0 && (t = Ht(r())), {
     interpolate: (e, i) => t(
       e,
       1 - Math.min(i, 1),
@@ -2265,8 +2271,8 @@ function ra(r, t = void 0) {
     )
   };
 }
-function ia(r, t = void 0) {
-  return t === void 0 && (t = Nt(r[0])), {
+function sa(r, t = void 0) {
+  return t === void 0 && (t = Ht(r[0])), {
     interpolate: (e, i) => {
       let a = Math.min(i, 1) * (r.length - 1) - 1, s = Math.min(
         a - Math.floor(a),
@@ -2286,8 +2292,8 @@ function ia(r, t = void 0) {
     }
   };
 }
-class Y {
-  constructor(t, e = 1e3, i = sr) {
+class B {
+  constructor(t, e = 1e3, i = nr) {
     this.duration = 0, this.finalValue = void 0, this.interpolator = null, this.duration = e, t.hasOwnProperty("finalValue") ? this.finalValue = t.finalValue : this.finalValue = void 0, this.interpolator = t, this.curve = i;
   }
   evaluate(t, e) {
@@ -2295,15 +2301,15 @@ class Y {
     return this.interpolator.interpolate(t, i);
   }
   withDelay(t) {
-    return t ? new Ni(this, t) : this;
+    return t ? new Wi(this, t) : this;
   }
 }
-class jt extends Y {
+class qt extends B {
   constructor(t, e) {
-    super(N(t), e, U);
+    super(Z(t), e, G);
   }
 }
-class Ni extends Y {
+class Wi extends B {
   constructor(t, e) {
     super(t.interpolator, t.duration + e, t.curve), this.delay = e;
   }
@@ -2314,13 +2320,13 @@ class Ni extends Y {
     );
   }
 }
-function aa(r, t = 1e3, e = sr) {
-  return new Y(N(r), t, e);
+function na(r, t = 1e3, e = nr) {
+  return new B(Z(r), t, e);
 }
-function pt(r, t) {
+function _t(r, t) {
   return typeof r == "number" && typeof t == "number" ? Math.abs(r - t) <= 1e-3 : r == t;
 }
-function nr() {
+function lr() {
   var r = 0;
   return Object.assign(function() {
     return r;
@@ -2330,27 +2336,27 @@ function nr() {
     }
   });
 }
-function Hi(r) {
+function Vi(r) {
   let t = /* @__PURE__ */ new Set();
   for (; r = Reflect.getPrototypeOf(r); )
     Reflect.ownKeys(r).forEach((i) => t.add(i));
   return t;
 }
-class Vi {
+class Ji {
   constructor(t = void 0) {
     this.info = t, this.promise = new Promise((e, i) => {
       this.reject = i, this.resolve = e;
     });
   }
 }
-function Wi(r) {
+function Qi(r) {
   let t = 1e12, e = -1e12, i = 1e12, a = -1e12;
   return r.forEach((s) => {
     s.x < t && (t = s.x), s.x > e && (e = s.x), s.y < i && (i = s.y), s.y > a && (a = s.y);
   }), { x: [t, e], y: [i, a] };
 }
-var Ji = /* @__PURE__ */ ((r) => (r[r.DEFAULT = 0] = "DEFAULT", r[r.ALWAYS = 1] = "ALWAYS", r[r.WHEN_UPDATED = 2] = "WHEN_UPDATED", r))(Ji || {});
-class Q {
+var Ki = /* @__PURE__ */ ((r) => (r[r.DEFAULT = 0] = "DEFAULT", r[r.ALWAYS = 1] = "ALWAYS", r[r.WHEN_UPDATED = 2] = "WHEN_UPDATED", r))(Ki || {});
+class S {
   /**
    *
    * @param info Arguments describing how to populate the attribute, or a single
@@ -2404,13 +2410,13 @@ class Q {
     this._animationFinished() && t ? (this.valueFn ? this.compute() : this.value = a, this._cleanUpAnimation(!1), this._getterValue = null) : this._getterValue = a;
   }
   _animationFinished() {
-    return this.animation ? this.animation.animator.duration - 20 <= this.currentTime - this.animation.start : !0;
+    return this.animation ? this.animation.animator.duration + 20 <= this.currentTime - this.animation.start : !0;
   }
   _transform(t) {
     let e;
     if (this.transform) {
       let i = this._cachedValue;
-      if (i && pt(i.raw, t))
+      if (i && _t(i.raw, t))
         e = i.result;
       else {
         let a = t;
@@ -2496,7 +2502,7 @@ class Q {
         endTime: t || this.currentTime
       };
     }
-    if (!(this.animation.animator instanceof jt))
+    if (!(this.animation.animator instanceof qt))
       return console.error(
         "Calling getPreload for a non-preloadable animation is forbidden. If using MarkSet, make sure this attribute is registered as preloadable."
       ), null;
@@ -2577,7 +2583,7 @@ class Q {
   wait(t = !0) {
     if (!this.animation)
       return new Promise((i, a) => i(this));
-    let e = new Vi({ rejectOnCancel: t });
+    let e = new Ji({ rejectOnCancel: t });
     return this._animationCompleteCallbacks.push(e), e.promise;
   }
   /**
@@ -2588,7 +2594,7 @@ class Q {
     return this._changedLastTick;
   }
 }
-function zt(r, t, e) {
+function Ft(r, t, e) {
   return Object.fromEntries(
     Object.entries(r).map(([i, a]) => [
       i,
@@ -2596,7 +2602,7 @@ function zt(r, t, e) {
     ])
   );
 }
-class or {
+class hr {
   /**
    * @param marks The set of marks that this group should manage, all including
    *  the same set of attributes.
@@ -2604,9 +2610,9 @@ class or {
    */
   constructor(t = [], e = {
     animationDuration: 1e3,
-    animationCurve: U
+    animationCurve: G
   }) {
-    this.timeProvider = null, this.lazyUpdates = !0, this.animatingMarks = /* @__PURE__ */ new Set(), this.updatedMarks = /* @__PURE__ */ new Set(), this.preloadableProperties = /* @__PURE__ */ new Set(), this._forceUpdate = !1, this._markListChanged = !1, this._changedLastTick = !1, this.timeProvider = nr(), this.lazyUpdates = !0, this._defaultDuration = 1e3, this._defaultCurve = U, this.configure(e), this.marks = t, this.marksByID = /* @__PURE__ */ new Map(), this.marks.forEach((i) => {
+    this.timeProvider = null, this.lazyUpdates = !0, this.animatingMarks = /* @__PURE__ */ new Set(), this.updatedMarks = /* @__PURE__ */ new Set(), this.preloadableProperties = /* @__PURE__ */ new Set(), this._forceUpdate = !1, this._markListChanged = !1, this._changedLastTick = !1, this.timeProvider = lr(), this.lazyUpdates = !0, this._defaultDuration = 1e3, this._defaultCurve = G, this.configure(e), this.marks = t, this.marksByID = /* @__PURE__ */ new Map(), this.marks.forEach((i) => {
       if (this.marksByID.has(i.id)) {
         console.error(`ID '${i.id}' is duplicated in mark render group`);
         return;
@@ -2720,10 +2726,10 @@ class or {
    */
   animateTo(t, e, i = {}) {
     return this.preloadableProperties.has(t) ? this.forEach((s, n) => {
-      let o = zt(i, s, n), l = o.duration === void 0 ? this._defaultDuration : o.duration;
+      let o = Ft(i, s, n), l = o.duration === void 0 ? this._defaultDuration : o.duration;
       s.animate(
         t,
-        new jt(
+        new qt(
           typeof e == "function" ? e(s, n) : e,
           l
         ).withDelay(o.delay || 0)
@@ -2732,7 +2738,7 @@ class or {
       s.animateTo(
         t,
         typeof e == "function" ? e(s, n) : e,
-        zt(i, s, n)
+        Ft(i, s, n)
       );
     }), this;
   }
@@ -2751,12 +2757,12 @@ class or {
     return i && e.interpolator ? (console.error(
       "Cannot apply custom interpolator function on preloadable property."
     ), this) : (this.forEach((a, s) => {
-      let n = zt(e, a, s);
+      let n = Ft(e, a, s);
       if (i) {
         let o = n.duration === void 0 ? this._defaultDuration : n.duration, l = a.data(t);
         a.animate(
           t,
-          new jt(l, o).withDelay(
+          new qt(l, o).withDelay(
             n.delay || 0
           )
         );
@@ -2827,7 +2833,7 @@ class or {
       e[a] = this[a];
     }), e.marks = i, e.marksByID = /* @__PURE__ */ new Map(), i.forEach((a) => {
       e.marksByID.set(a.id, a);
-    }), Hi(this).forEach((a) => {
+    }), Vi(this).forEach((a) => {
       a == "getMarks" ? e[a] = () => i : e[a] = (...s) => {
         let n = this.getMarks();
         this.marks = i;
@@ -2887,19 +2893,19 @@ class or {
     return t === void 0 ? this._changedLastTick : this._changedLastTick && this.getMarks().some((e) => e.changed(t));
   }
 }
-function sa(r = []) {
-  return new or(r);
+function oa(r = []) {
+  return new hr(r);
 }
-const Qi = 5e3;
+const ta = 5e3;
 class Pe {
   constructor(t, e) {
-    this._timeProvider = null, this._listeners = [], this._defaultDuration = 1e3, this._defaultCurve = U, this._changedLastTick = !1, this.framesWithUpdate = 0, this.id = t, e === void 0 && console.error(
+    this._timeProvider = null, this._listeners = [], this._defaultDuration = 1e3, this._defaultCurve = G, this._changedLastTick = !1, this.framesWithUpdate = 0, this.id = t, e === void 0 && console.error(
       "Mark constructor requires an ID and an object defining attributes"
     );
     let i = {};
     Object.keys(e).forEach(
       (a) => {
-        let s = new Q(
+        let s = new S(
           Object.assign(Object.assign({}, e[a]), {
             computeArg: this
           })
@@ -2950,7 +2956,7 @@ class Pe {
     let e = !1;
     return Object.values(this.attributes).forEach((i) => {
       i.advance(t) && (e = !0);
-    }), e ? (this.framesWithUpdate += 1, this.framesWithUpdate > Qi && console.warn("Marks are being updated excessively!"), this._changedLastTick = !0, !0) : (this.framesWithUpdate = 0, this._changedLastTick = !1, !1);
+    }), e ? (this.framesWithUpdate += 1, this.framesWithUpdate > ta && console.warn("Marks are being updated excessively!"), this._changedLastTick = !0, !0) : (this.framesWithUpdate = 0, this._changedLastTick = !1, !1);
   }
   /**
    * Instantaneously sets the value of an attribute, either taking the new
@@ -2964,7 +2970,7 @@ class Pe {
     let i = this.attributes[t];
     i === void 0 && console.error(`No attribute named '${String(t)}'`);
     let a = i.last();
-    return e === void 0 ? i.compute() : i.set(e), pt(a, i.data()) || this._listeners.forEach((s) => s(this, t, !1)), this;
+    return e === void 0 ? i.compute() : i.set(e), _t(a, i.data()) || this._listeners.forEach((s) => s(this, t, !1)), this;
   }
   /**
    * Gets the (potentially transformed) value of an attribute.
@@ -3007,8 +3013,8 @@ class Pe {
         duration: i.duration,
         curve: i.curve
       }), this;
-    let a = i.duration === void 0 ? this._defaultDuration : i.duration, s = i.curve === void 0 ? this._defaultCurve : i.curve, n = new Y(
-      N(e),
+    let a = i.duration === void 0 ? this._defaultDuration : i.duration, s = i.curve === void 0 ? this._defaultCurve : i.curve, n = new B(
+      Z(e),
       a,
       s
     ).withDelay(i.delay || 0);
@@ -3020,20 +3026,20 @@ class Pe {
         `Attempting to animate undefined property ${String(t)}`
       ), this;
     let i;
-    if (e instanceof Y)
+    if (e instanceof B)
       i = e;
     else if (e.interpolator !== void 0) {
       let a = e.interpolator;
-      i = new Y(
+      i = new B(
         a,
         e.duration !== void 0 ? e.duration : this._defaultDuration,
         e.curve !== void 0 ? e.curve : this._defaultCurve
       ).withDelay(e.delay || 0);
     } else {
       let a = this.data(t);
-      if (!pt(a, this.attributes[t].last()) || !pt(a, this.attributes[t].future()))
-        i = new Y(
-          N(a),
+      if (!_t(a, this.attributes[t].last()) || !_t(a, this.attributes[t].future()))
+        i = new B(
+          Z(a),
           e.duration !== void 0 ? e.duration : this._defaultDuration,
           e.curve !== void 0 ? e.curve : this._defaultCurve
         ).withDelay(e.delay || 0);
@@ -3071,7 +3077,7 @@ class Pe {
     return t === void 0 ? this._changedLastTick : Array.isArray(t) ? this._changedLastTick && t.some((e) => this.attributes[e].changed()) : this._changedLastTick && this.attributes[t].changed();
   }
 }
-class na {
+class la {
   constructor(t) {
     this._callbacks = [], this._lastTick = void 0, this.stopped = !0, typeof t.advance == "function" ? this.toAdvance = [t] : this.toAdvance = t, this.start();
   }
@@ -3088,7 +3094,7 @@ class na {
     this._lastTick === void 0 && (this._lastTick = window.performance.now()), this.toAdvance.map((e) => e.advance(t - this._lastTick)).some((e) => e) && this._callbacks.forEach((e) => e()), this.stopped || requestAnimationFrame((e) => this.tick(e)), this._lastTick = t;
   }
 }
-class oa {
+class ha {
   constructor(t) {
     this._callbacks = [], this._lastTick = void 0, this.stopped = !0, typeof t.advance == "function" ? this.toAdvance = [t] : this.toAdvance = t, this.start();
   }
@@ -3106,8 +3112,8 @@ class oa {
     this._lastTick === void 0 && (this._lastTick = window.performance.now()), this.toAdvance.map((e) => e.advance(t - this._lastTick)).some((e) => e) ? (this._callbacks.forEach((e) => e()), this.stopped || requestAnimationFrame((e) => this.tick(e)), this._lastTick = t) : this.stop();
   }
 }
-var Ki = /* @__PURE__ */ ((r) => (r.Waiting = "waiting", r.Entering = "entering", r.Visible = "visible", r.Exiting = "exiting", r))(Ki || {}), ta = /* @__PURE__ */ ((r) => (r.Show = "show", r.Hide = "hide", r))(ta || {});
-class la {
+var ea = /* @__PURE__ */ ((r) => (r.Waiting = "waiting", r.Entering = "entering", r.Visible = "visible", r.Exiting = "exiting", r))(ea || {}), ra = /* @__PURE__ */ ((r) => (r.Show = "show", r.Hide = "hide", r))(ra || {});
+class ua {
   constructor(t) {
     this.pool = /* @__PURE__ */ new Map(), this.queuedAnimations = /* @__PURE__ */ new Map(), this._flushTimer = null, this._renderGroup = null, this.defer = !1, t.create || console.error("StageManager requires a create callback"), this._callbacks = {
       create: t.create,
@@ -3313,50 +3319,91 @@ class la {
     return this.pool.has(t) && (this.pool.get(t).state == "visible" || this.pool.get(t).state == "entering");
   }
 }
-class ha {
+function gt(r, t, e) {
+  e > 0 ? (r[0].animate(
+    new B(Z(t[0]), e, G)
+  ), r[1].animate(
+    new B(Z(t[1]), e, G)
+  )) : (r[0].set(t[0]), r[1].set(t[1]));
+}
+class ca {
   constructor(t = {}) {
-    this.animationDuration = 1e3, this.squareAspect = !0, this._xScaleFactor = new Q(1), this._yScaleFactor = new Q(1), this._translateX = new Q(0), this._translateY = new Q(0), this.timeProvider = nr(), this.controller = null, this._updatedNoAdvance = !1, this.listeners = [], this.xScale = Object.assign(
-      (e) => ((e - this._xDomain[0]) * this.xRSpan() / this.xDSpan() + this._xRange[0]) * this._xScaleFactor.get() + this._translateX.get(),
+    this.animationDuration = 1e3, this.squareAspect = !0, this._xDomain = [
+      new S(0),
+      new S(1)
+    ], this._yDomain = [
+      new S(0),
+      new S(1)
+    ], this._xRange = [
+      new S(0),
+      new S(1)
+    ], this._yRange = [
+      new S(0),
+      new S(1)
+    ], this._xScaleFactor = new S(1), this._yScaleFactor = new S(1), this._translateX = new S(0), this._translateY = new S(0), this.timeProvider = lr(), this.controller = null, this._updatedNoAdvance = !1, this.listeners = [], this.xScale = Object.assign(
+      (e) => ((e - this.xDomain()[0]) * this.xRSpan() / this.xDSpan() + this.xRange()[0]) * this._xScaleFactor.get() + this._translateX.get(),
       {
-        domain: (e = void 0) => e === void 0 ? this._xDomain : (this._xDomain = e, this.xScale),
-        range: (e = void 0) => e === void 0 ? this._xRange : (this._xRange = e, this.xScale),
-        invert: (e) => ((e - this._translateX.get()) / this._xScaleFactor.get() - this._xRange[0]) * this.xDSpan() / this.xRSpan() + this._xDomain[0]
+        domain: () => {
+          let e = this.xRange();
+          return [this.xScale.invert(e[0]), this.xScale.invert(e[1])];
+        },
+        range: () => [this._xRange[0].get(), this._xRange[1].get()],
+        invert: (e) => ((e - this._translateX.get()) / this._xScaleFactor.get() - this.xRange()[0]) * this.xDSpan() / this.xRSpan() + this.xDomain()[0]
       }
     ), this.yScale = Object.assign(
-      (e) => ((e - this._yDomain[0]) * this.yRSpan() / this.yDSpan() + this._yRange[0]) * this._yScaleFactor.get() + this._translateY.get(),
+      (e) => ((e - this.yDomain()[0]) * this.yRSpan() / this.yDSpan() + this.yRange()[0]) * this._yScaleFactor.get() + this._translateY.get(),
       {
-        domain: (e = void 0) => e === void 0 ? this._yDomain : (this._yDomain = e, this.yScale),
-        range: (e = void 0) => e === void 0 ? this._yRange : (this._yRange = e, this.yScale),
-        invert: (e) => ((e - this._translateY.get()) / this._yScaleFactor.get() - this._yRange[0]) * this.yDSpan() / this.yRSpan() + this._yDomain[0]
+        domain: () => {
+          let e = this.yRange();
+          return [this.yScale.invert(e[0]), this.yScale.invert(e[1])];
+        },
+        range: () => [this._yRange[0].get(), this._yRange[1].get()],
+        invert: (e) => ((e - this._translateY.get()) / this._yScaleFactor.get() - this.yRange()[0]) * this.yDSpan() / this.yRSpan() + this.yDomain()[0]
       }
     ), this.xDomain([0, 1]), this.yDomain([0, 1]), this.xRange([0, 1]), this.yRange([0, 1]), this.configure(t), this._xScaleFactor.setTimeProvider(this.timeProvider), this._yScaleFactor.setTimeProvider(this.timeProvider), this._translateX.setTimeProvider(this.timeProvider), this._translateY.setTimeProvider(this.timeProvider);
   }
   configure(t = {}) {
     return this.animationDuration = t.animationDuration !== void 0 ? t.animationDuration : 1e3, this.minScale = t.minScale !== void 0 ? t.minScale : 0.1, this.maxScale = t.maxScale !== void 0 ? t.maxScale : 14, this;
   }
-  xDomain(t = void 0) {
-    return t === void 0 ? this.xScale.domain() : (this.xScale.domain(t), this);
+  xDomain(t = void 0, e = !1) {
+    return t === void 0 ? [this._xDomain[0].get(), this._xDomain[1].get()] : (gt(
+      this._xDomain,
+      t,
+      e ? this.animationDuration : 0
+    ), this);
   }
-  yDomain(t = void 0) {
-    return t === void 0 ? this.yScale.domain() : (this.yScale.domain(t), this);
+  yDomain(t = void 0, e = !1) {
+    return t === void 0 ? [this._yDomain[0].get(), this._yDomain[1].get()] : (gt(
+      this._yDomain,
+      t,
+      e ? this.animationDuration : 0
+    ), this);
   }
-  xRange(t = void 0) {
-    return t === void 0 ? this.xScale.range() : (this.xScale.range(t), this);
+  xRange(t = void 0, e = !1) {
+    return t === void 0 ? [this._xRange[0].get(), this._xRange[1].get()] : (gt(
+      this._xRange,
+      t,
+      e ? this.animationDuration : 0
+    ), this);
   }
-  yRange(t = void 0) {
-    return t === void 0 ? this.yScale.range() : (this.yScale.range(t), this);
+  yRange(t = void 0, e = !1) {
+    return t === void 0 ? [this._yRange[0].get(), this._yRange[1].get()] : (gt(
+      this._yRange,
+      t,
+      e ? this.animationDuration : 0
+    ), this);
   }
   xDSpan() {
-    return this._xDomain[1] - this._xDomain[0];
+    return this._xDomain[1].get() - this._xDomain[0].get();
   }
   yDSpan() {
-    return this._yDomain[1] - this._yDomain[0];
+    return this._yDomain[1].get() - this._yDomain[0].get();
   }
   xRSpan() {
-    return this._xRange[1] - this._xRange[0];
+    return this._xRange[1].get() - this._xRange[0].get();
   }
   yRSpan() {
-    return this._yRange[1] - this._yRange[0];
+    return this._yRange[1].get() - this._yRange[0].get();
   }
   /**
    * Changes the domains of the scales so that the aspect ratio is square.
@@ -3364,13 +3411,13 @@ class ha {
    * @returns this Scales instance
    */
   makeSquareAspect() {
-    let t = this.xRSpan() / this.xDSpan(), e = this.yRSpan() / this.yDSpan();
+    let t = this.xRSpan() / this.xDSpan(), e = this.yRSpan() / this.yDSpan(), i = this.yDomain(), a = this.xDomain();
     if (t < e) {
-      let i = (this._yDomain[0] + this._yDomain[1]) * 0.5, a = this.yRSpan() / t;
-      this.yDomain([i - a * 0.5, i + a * 0.5]);
+      let s = (i[0] + i[1]) * 0.5, n = this.yRSpan() / t;
+      this.yDomain([s - n * 0.5, s + n * 0.5]);
     } else {
-      let i = (this._xDomain[0] + this._xDomain[1]) * 0.5, a = this.xRSpan() / e;
-      this.xDomain([i - a * 0.5, i + a * 0.5]);
+      let s = (a[0] + a[1]) * 0.5, n = this.xRSpan() / e;
+      this.xDomain([s - n * 0.5, s + n * 0.5]);
     }
     return this;
   }
@@ -3382,11 +3429,19 @@ class ha {
   }
   advance(t = void 0) {
     return this.timeProvider.advance(t), [
+      this._xDomain[0].advance(t),
+      this._xDomain[1].advance(t),
+      this._yDomain[0].advance(t),
+      this._yDomain[1].advance(t),
+      this._xRange[0].advance(t),
+      this._xRange[1].advance(t),
+      this._yRange[0].advance(t),
+      this._yRange[1].advance(t),
       this._xScaleFactor.advance(t),
       this._yScaleFactor.advance(t),
       this._translateX.advance(t),
       this._translateY.advance(t)
-    ].some((i) => i) ? (this._updatedNoAdvance = !1, this.listeners.forEach((i) => i(this)), !0) : (this._updatedNoAdvance || (this.listeners.forEach((i) => i(this)), this._updatedNoAdvance = !0), !1);
+    ].some((i) => i) || this.controller ? (console.log(this._xDomain[0].get(), this._xDomain[1].get()), this._updatedNoAdvance = !1, this.listeners.forEach((i) => i(this)), !0) : (this._updatedNoAdvance || (this.listeners.forEach((i) => i(this)), this._updatedNoAdvance = !0), !1);
   }
   // Increases the scale by the given amount, optionally centering by the given
   // point in transformed pixel space
@@ -3407,10 +3462,10 @@ class ha {
   transform(t = void 0, e = !1) {
     if (t !== void 0) {
       if (this.unfollow(), e) {
-        let i = (a) => new Y(
-          N(a),
+        let i = (a) => new B(
+          Z(a),
           this.animationDuration,
-          U
+          G
         );
         t.kx !== void 0 ? this._xScaleFactor.animate(i(t.kx)) : t.k !== void 0 && this._xScaleFactor.animate(i(t.k)), t.ky !== void 0 ? this._yScaleFactor.animate(i(t.ky)) : t.k !== void 0 && this._yScaleFactor.animate(i(t.k)), t.x !== void 0 && this._translateX.animate(i(t.x)), t.y !== void 0 && this._translateY.animate(i(t.y));
       } else
@@ -3466,10 +3521,10 @@ class ha {
       let i = this.controller.transform(this);
       return i.ky || i.k;
     }), this._translateX.set(() => this.controller.transform(this).x), this._translateY.set(() => this.controller.transform(this).y), e) {
-      let i = (a) => new Y(
-        N(a),
+      let i = (a) => new B(
+        Z(a),
         this.animationDuration,
-        U
+        G
       );
       this._xScaleFactor.animate(i(this._xScaleFactor.data())), this._yScaleFactor.animate(i(this._yScaleFactor.data())), this._translateX.animate(i(this._translateX.data())), this._translateY.animate(i(this._translateY.data()));
     }
@@ -3484,7 +3539,7 @@ class ha {
     return this.controller != null && (this._xScaleFactor.set(this._xScaleFactor.get()), this._yScaleFactor.set(this._yScaleFactor.get()), this._translateX.set(this._translateX.get()), this._translateY.set(this._translateY.get())), this.controller = null, this;
   }
 }
-class lr {
+class ur {
   /**
    * @param marks An array of marks to follow.
    * @param opts Options for the zoom calculation:
@@ -3511,7 +3566,7 @@ class lr {
   transform(t) {
     if (this.lastCompute && this.lastCompute.scales === t && this.lastCompute.time == t.timeProvider())
       return this.lastCompute.result;
-    let e = this.marks.map((v) => this._getMarkLocation(v)), i, a, s, n, o = this.centerMark !== void 0 ? this._getMarkLocation(this.centerMark) : null, l = t.transform(), { x: h, y: u } = Wi(e);
+    let e = this.marks.map((v) => this._getMarkLocation(v)), i, a, s, n, o = this.centerMark !== void 0 ? this._getMarkLocation(this.centerMark) : null, l = t.transform(), { x: h, y: u } = Qi(e);
     if (o) {
       let v = Math.max(
         h[1] - o.x,
@@ -3541,13 +3596,13 @@ class lr {
     };
   }
 }
-function ua(r, t = {}) {
-  return new lr([r], { centerMark: r, ...t });
+function da(r, t = {}) {
+  return new ur([r], { centerMark: r, ...t });
 }
-function ca(r, t = {}) {
-  return new lr(r, { ...t });
+function fa(r, t = {}) {
+  return new ur(r, { ...t });
 }
-class da {
+class ma {
   constructor(t = {}) {
     this.markCollections = [], this._positionMap = null, this._binSizes = null, this._extents = null, this._numBins = null, this._numMarks = null, this._avgMarksPerBin = null, this._coordinateAttributes = t.coordinateAttributes ?? ["x", "y"], this._transformCoordinates = t.transformCoordinates ?? !0, this._avgMarksPerBin = t.marksPerBin ?? null;
   }
@@ -3616,7 +3671,7 @@ class da {
   }
   _forEachMark(t) {
     this.markCollections.forEach((e) => {
-      if (e instanceof or)
+      if (e instanceof hr)
         e.forEach(t);
       else if (e instanceof Pe)
         t(e);
@@ -3672,7 +3727,7 @@ class da {
           )
         )
       ];
-    }).filter(([n, o]) => o <= e).map(([n, o]) => n) : a;
+    }).filter(([n, o]) => o <= e).sort((n, o) => n[1] - o[1]).map(([n, o]) => n) : a;
   }
   _recursiveBinWalk(t, e, i = []) {
     let a = i.length;
@@ -3684,7 +3739,7 @@ class da {
     return n.forEach((l) => {
       o = [
         ...o,
-        ...this._recursiveBinWalk(t, s, [
+        ...this._recursiveBinWalk(t, e, [
           ...i,
           l
         ])
@@ -3693,30 +3748,31 @@ class da {
   }
 }
 export {
-  Y as Animator,
-  Q as Attribute,
-  Ji as AttributeRecompute,
-  oa as LazyTicker,
+  B as Animator,
+  S as Attribute,
+  Ki as AttributeRecompute,
+  ha as LazyTicker,
   Pe as Mark,
-  lr as MarkFollower,
-  or as MarkRenderGroup,
-  da as PositionMap,
-  jt as PreloadableAnimator,
-  ha as Scales,
-  la as StageManager,
-  ta as StagingAction,
-  Ki as StagingState,
-  na as Ticker,
-  Nt as autoMixingFunction,
-  aa as basicAnimationTo,
-  ua as centerOn,
-  Ui as colorMixingFunction,
-  sa as createRenderGroup,
-  U as curveEaseInOut,
-  sr as curveLinear,
-  ia as interpolateAlongPath,
-  N as interpolateTo,
-  ra as interpolateToFunction,
-  ca as markBox,
-  Zi as numericalMixingFunction
+  ur as MarkFollower,
+  hr as MarkRenderGroup,
+  ma as PositionMap,
+  qt as PreloadableAnimator,
+  ca as Scales,
+  ua as StageManager,
+  ra as StagingAction,
+  ea as StagingState,
+  la as Ticker,
+  Ht as autoMixingFunction,
+  na as basicAnimationTo,
+  da as centerOn,
+  Ni as colorMixingFunction,
+  oa as createRenderGroup,
+  G as curveEaseInOut,
+  nr as curveLinear,
+  sa as interpolateAlongPath,
+  Z as interpolateTo,
+  aa as interpolateToFunction,
+  fa as markBox,
+  Hi as numericalArrayMixingFunction,
+  or as numericalMixingFunction
 };

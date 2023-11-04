@@ -12,11 +12,6 @@ export type ScalesOptions = {
   maxScale?: number;
 };
 
-type ReadWriteExtent = {
-  (extent: [number, number]): LinearScale;
-  (extent?: undefined): [number, number];
-};
-
 export type TransformInfo = {
   k?: number;
   kx?: number;
@@ -28,10 +23,28 @@ export type TransformInfo = {
 export type OutputTransformInfo = Required<TransformInfo>;
 
 export type LinearScale = ((domainVal: number) => number) & {
-  domain: ReadWriteExtent;
-  range: ReadWriteExtent;
+  domain: () => [number, number];
+  range: () => [number, number];
   invert(rangeVal: number): number;
 };
+
+function _updateAttributeExtent(
+  attributes: [Attribute<number>, Attribute<number>],
+  extent: [number, number],
+  duration: number
+) {
+  if (duration > 0) {
+    attributes[0].animate(
+      new Animator(interpolateTo(extent[0]), duration, curveEaseInOut)
+    );
+    attributes[1].animate(
+      new Animator(interpolateTo(extent[1]), duration, curveEaseInOut)
+    );
+  } else {
+    attributes[0].set(extent[0]);
+    attributes[1].set(extent[1]);
+  }
+}
 
 /**
  * A class that manages a linked x and y scale.
@@ -39,10 +52,22 @@ export type LinearScale = ((domainVal: number) => number) & {
 export class Scales {
   animationDuration: number = 1000;
   squareAspect: boolean = true;
-  _xDomain: [number, number];
-  _yDomain: [number, number];
-  _xRange: [number, number];
-  _yRange: [number, number];
+  _xDomain: [Attribute<number>, Attribute<number>] = [
+    new Attribute(0.0),
+    new Attribute(1.0),
+  ];
+  _yDomain: [Attribute<number>, Attribute<number>] = [
+    new Attribute(0.0),
+    new Attribute(1.0),
+  ];
+  _xRange: [Attribute<number>, Attribute<number>] = [
+    new Attribute(0.0),
+    new Attribute(1.0),
+  ];
+  _yRange: [Attribute<number>, Attribute<number>] = [
+    new Attribute(0.0),
+    new Attribute(1.0),
+  ];
   minScale: number;
   maxScale: number;
 
@@ -64,30 +89,25 @@ export class Scales {
     this.xScale = Object.assign(
       (val: number): number => {
         let base =
-          ((val - this._xDomain[0]) * this.xRSpan()) / this.xDSpan() +
-          this._xRange[0];
+          ((val - this.xDomain()[0]) * this.xRSpan()) / this.xDSpan() +
+          this.xRange()[0];
         return base * this._xScaleFactor.get() + this._translateX.get();
       },
       {
-        domain: ((
-          extent: [number, number] | undefined = undefined
-        ): LinearScale | [number, number] => {
-          if (extent === undefined) return this._xDomain;
-          this._xDomain = extent;
-          return this.xScale;
-        }) as ReadWriteExtent,
-        range: ((
-          extent: [number, number] | undefined = undefined
-        ): LinearScale | [number, number] => {
-          if (extent === undefined) return this._xRange;
-          this._xRange = extent;
-          return this.xScale;
-        }) as ReadWriteExtent,
+        domain: (): [number, number] => {
+          // The transformed domain of the scale is the inverse of the range,
+          // accounting for the zoom transform
+          let range = this.xRange();
+          return [this.xScale.invert(range[0]), this.xScale.invert(range[1])];
+        },
+        range: (): [number, number] => {
+          return [this._xRange[0].get(), this._xRange[1].get()];
+        },
         invert: (val: number): number => {
           let base = (val - this._translateX.get()) / this._xScaleFactor.get();
           return (
-            ((base - this._xRange[0]) * this.xDSpan()) / this.xRSpan() +
-            this._xDomain[0]
+            ((base - this.xRange()[0]) * this.xDSpan()) / this.xRSpan() +
+            this.xDomain()[0]
           );
         },
       }
@@ -95,30 +115,25 @@ export class Scales {
     this.yScale = Object.assign(
       (val: number): number => {
         let base =
-          ((val - this._yDomain[0]) * this.yRSpan()) / this.yDSpan() +
-          this._yRange[0];
+          ((val - this.yDomain()[0]) * this.yRSpan()) / this.yDSpan() +
+          this.yRange()[0];
         return base * this._yScaleFactor.get() + this._translateY.get();
       },
       {
-        domain: ((
-          extent: [number, number] | undefined = undefined
-        ): LinearScale | [number, number] => {
-          if (extent === undefined) return this._yDomain;
-          this._yDomain = extent;
-          return this.yScale;
-        }) as ReadWriteExtent,
-        range: ((
-          extent: [number, number] | undefined = undefined
-        ): LinearScale | [number, number] => {
-          if (extent === undefined) return this._yRange;
-          this._yRange = extent;
-          return this.yScale;
-        }) as ReadWriteExtent,
+        domain: (): [number, number] => {
+          // The transformed domain of the scale is the inverse of the range,
+          // accounting for the zoom transform
+          let range = this.yRange();
+          return [this.yScale.invert(range[0]), this.yScale.invert(range[1])];
+        },
+        range: (): [number, number] => {
+          return [this._yRange[0].get(), this._yRange[1].get()];
+        },
         invert: (val: number): number => {
           let base = (val - this._translateY.get()) / this._yScaleFactor.get();
           return (
-            ((base - this._yRange[0]) * this.yDSpan()) / this.yRSpan() +
-            this._yDomain[0]
+            ((base - this.yRange()[0]) * this.yDSpan()) / this.yRSpan() +
+            this.yDomain()[0]
           );
         },
       }
@@ -143,57 +158,89 @@ export class Scales {
     return this;
   }
 
+  // Returns the x domain at the data level (excluding zoom transforms)
   xDomain(extent: [number, number]): Scales;
+  xDomain(extent: [number, number], animated: boolean): Scales;
   xDomain(): [number, number];
   xDomain(
-    extent: [number, number] | undefined = undefined
+    extent: [number, number] | undefined = undefined,
+    animated: boolean = false
   ): Scales | [number, number] {
-    if (extent === undefined) return this.xScale.domain();
-    this.xScale.domain(extent);
+    if (extent === undefined)
+      return [this._xDomain[0].get(), this._xDomain[1].get()];
+    _updateAttributeExtent(
+      this._xDomain,
+      extent,
+      animated ? this.animationDuration : 0
+    );
     return this;
   }
 
+  // Returns the y domain at the data level (excluding zoom transforms)
   yDomain(extent: [number, number]): Scales;
+  yDomain(extent: [number, number], animated: boolean): Scales;
   yDomain(): [number, number];
   yDomain(
-    extent: [number, number] | undefined = undefined
+    extent: [number, number] | undefined = undefined,
+    animated: boolean = false
   ): Scales | [number, number] {
-    if (extent === undefined) return this.yScale.domain();
-    this.yScale.domain(extent);
+    if (extent === undefined)
+      return [this._yDomain[0].get(), this._yDomain[1].get()];
+    _updateAttributeExtent(
+      this._yDomain,
+      extent,
+      animated ? this.animationDuration : 0
+    );
     return this;
   }
 
+  // Returns the x range for screen coordinates
   xRange(extent: [number, number]): Scales;
+  xRange(extent: [number, number], animated: boolean): Scales;
   xRange(): [number, number];
   xRange(
-    extent: [number, number] | undefined = undefined
+    extent: [number, number] | undefined = undefined,
+    animated: boolean = false
   ): Scales | [number, number] {
-    if (extent === undefined) return this.xScale.range();
-    this.xScale.range(extent);
+    if (extent === undefined)
+      return [this._xRange[0].get(), this._xRange[1].get()];
+    _updateAttributeExtent(
+      this._xRange,
+      extent,
+      animated ? this.animationDuration : 0
+    );
     return this;
   }
 
+  // Returns the y range for screen coordinates
   yRange(extent: [number, number]): Scales;
+  yRange(extent: [number, number], animated: boolean): Scales;
   yRange(): [number, number];
   yRange(
-    extent: [number, number] | undefined = undefined
+    extent: [number, number] | undefined = undefined,
+    animated: boolean = false
   ): Scales | [number, number] {
-    if (extent === undefined) return this.yScale.range();
-    this.yScale.range(extent);
+    if (extent === undefined)
+      return [this._yRange[0].get(), this._yRange[1].get()];
+    _updateAttributeExtent(
+      this._yRange,
+      extent,
+      animated ? this.animationDuration : 0
+    );
     return this;
   }
 
   xDSpan(): number {
-    return this._xDomain[1] - this._xDomain[0];
+    return this._xDomain[1].get() - this._xDomain[0].get();
   }
   yDSpan(): number {
-    return this._yDomain[1] - this._yDomain[0];
+    return this._yDomain[1].get() - this._yDomain[0].get();
   }
   xRSpan(): number {
-    return this._xRange[1] - this._xRange[0];
+    return this._xRange[1].get() - this._xRange[0].get();
   }
   yRSpan(): number {
-    return this._yRange[1] - this._yRange[0];
+    return this._yRange[1].get() - this._yRange[0].get();
   }
 
   /**
@@ -205,12 +252,14 @@ export class Scales {
     // Rescale one to the other based on whichever has the smallest scale factor
     let xScale = this.xRSpan() / this.xDSpan();
     let yScale = this.yRSpan() / this.yDSpan();
+    let yDomain = this.yDomain();
+    let xDomain = this.xDomain();
     if (xScale < yScale) {
-      let yMid = (this._yDomain[0] + this._yDomain[1]) * 0.5;
+      let yMid = (yDomain[0] + yDomain[1]) * 0.5;
       let newWidth = this.yRSpan() / xScale;
       this.yDomain([yMid - newWidth * 0.5, yMid + newWidth * 0.5]);
     } else {
-      let xMid = (this._xDomain[0] + this._xDomain[1]) * 0.5;
+      let xMid = (xDomain[0] + xDomain[1]) * 0.5;
       let newWidth = this.xRSpan() / yScale;
       this.xDomain([xMid - newWidth * 0.5, xMid + newWidth * 0.5]);
     }
@@ -234,12 +283,21 @@ export class Scales {
   advance(dt: number | undefined = undefined): boolean {
     this.timeProvider.advance(dt);
     let updated: boolean[] = [
+      this._xDomain[0].advance(dt),
+      this._xDomain[1].advance(dt),
+      this._yDomain[0].advance(dt),
+      this._yDomain[1].advance(dt),
+      this._xRange[0].advance(dt),
+      this._xRange[1].advance(dt),
+      this._yRange[0].advance(dt),
+      this._yRange[1].advance(dt),
       this._xScaleFactor.advance(dt),
       this._yScaleFactor.advance(dt),
       this._translateX.advance(dt),
       this._translateY.advance(dt),
     ];
-    if (updated.some((v) => v)) {
+    if (updated.some((v) => v) || !!this.controller) {
+      console.log(this._xDomain[0].get(), this._xDomain[1].get());
       this._updatedNoAdvance = false;
       this.listeners.forEach((fn) => fn(this));
       return true;

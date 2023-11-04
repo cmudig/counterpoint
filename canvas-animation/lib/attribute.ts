@@ -268,7 +268,7 @@ export class Attribute<
   _animationFinished() {
     if (!this.animation) return true;
     return (
-      this.animation.animator.duration - 20 <=
+      this.animation.animator.duration + 20 <=
       this.currentTime - this.animation.start
     );
   }

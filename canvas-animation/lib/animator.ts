@@ -52,6 +52,17 @@ export function colorMixingFunction(
   return `rgb(${result[0]}, ${result[1]}, ${result[2]})`;
 }
 
+export function numericalArrayMixingFunction<T>(
+  v1: T,
+  p1: number,
+  v2: T,
+  p2: number
+): T {
+  return (v1 as any[]).map((subv1, i) =>
+    numericalMixingFunction(subv1, p1, (v2 as any[])[i], p2)
+  ) as T;
+}
+
 export function autoMixingFunction<T>(
   finalValue: T
 ): (v1: T, p1: number, v2: T, p2: number) => T {
@@ -73,6 +84,8 @@ export function autoMixingFunction<T>(
         p2
       ) as T;
     };
+  } else if (Array.isArray(finalValue)) {
+    return numericalArrayMixingFunction;
   }
   return (v1: T, p1: number, v2: T, p2: number): T => (p1 < 1 ? v1 : v2);
 }

@@ -149,6 +149,10 @@ of calls to potentially expensive functions:
 
 <h4 id="Attribute-constructor"><code>constructor(value | valueFn | options)</code></h4>
 
+Constructs an `Attribute` using either a single value, value function, or a 
+dictionary of options. If using an options dictionary, the available options are
+listed below: 
+
 | Option | Description |
 |:-------|:-----------:|
 | `value` | The value of the attribute, if it is not updated using a dynamic function. |
