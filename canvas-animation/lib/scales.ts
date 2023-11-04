@@ -487,6 +487,25 @@ export class Scales {
     this.controller = null;
     return this;
   }
+
+  /**
+   * Waits until all animations on the scales have finished, then resolves the
+   * promise.
+   */
+  wait(rejectOnCancel: boolean = true): Promise<any> {
+    return Promise.all(
+      [
+        ...this._xDomain,
+        ...this._yDomain,
+        ...this._xRange,
+        ...this._yRange,
+        this._xScaleFactor,
+        this._yScaleFactor,
+        this._translateX,
+        this._translateY,
+      ].map((attr) => attr.wait(rejectOnCancel))
+    );
+  }
 }
 
 export interface ScalesController {

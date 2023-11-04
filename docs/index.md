@@ -33,7 +33,7 @@ to install and learn the basics.
 
 Or, check out this demo chart showing worldwide GDP, life expectancy, and population
 trends from [Gapminder](https://gapminder.org). The code for this example is
-available here (TODO) and showcases Canapé being used in combination with D3.js.
+available here (TODO) and showcases Canvas Animation being used in combination with D3.js.
 
 <div style="display: flex;">
 <div id="gapminder-chart-container" style="width: 600px; height: 600px; position: relative; flex-shrink: 0;">

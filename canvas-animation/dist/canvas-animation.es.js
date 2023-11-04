@@ -3538,6 +3538,24 @@ class ca {
   unfollow() {
     return this.controller != null && (this._xScaleFactor.set(this._xScaleFactor.get()), this._yScaleFactor.set(this._yScaleFactor.get()), this._translateX.set(this._translateX.get()), this._translateY.set(this._translateY.get())), this.controller = null, this;
   }
+  /**
+   * Waits until all animations on the scales have finished, then resolves the
+   * promise.
+   */
+  wait(t = !0) {
+    return Promise.all(
+      [
+        ...this._xDomain,
+        ...this._yDomain,
+        ...this._xRange,
+        ...this._yRange,
+        this._xScaleFactor,
+        this._yScaleFactor,
+        this._translateX,
+        this._translateY
+      ].map((e) => e.wait(t))
+    );
+  }
 }
 class ur {
   /**
