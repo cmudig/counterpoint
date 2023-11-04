@@ -10,9 +10,15 @@ const marginBottom = 60;
 const marginLeft = 60;
 
 const AxisLabels = {
-  gdp_cap: 'GDP Per Capita (thousands)',
+  gdp_cap: 'GDP Per Capita',
   life_exp: 'Life Expectancy (yr)',
-  population: 'Population (millions)',
+  population: 'Population',
+};
+
+const ScaleTypes = {
+  gdp_cap: 'log',
+  life_exp: 'linear',
+  population: 'log',
 };
 
 function createAxes(scales, xEncoding, yEncoding) {
@@ -20,14 +26,27 @@ function createAxes(scales, xEncoding, yEncoding) {
   const svg = d3.select('#gapminder-axes');
   svg.selectAll('*').remove();
 
-  // Add the x-axis.
-  let xScale = d3.scaleLinear(scales.xScale.domain(), scales.xScale.range());
-  let yScale = d3.scaleLinear(scales.yScale.domain(), scales.yScale.range());
+  // We portray the axes as log scales when needed and convert the extents
+  let xScale, yScale;
+  if (ScaleTypes[xEncoding] == 'log')
+    xScale = d3.scaleLog(
+      scales.xScale.domain().map((x) => Math.pow(10, x)),
+      scales.xScale.range()
+    );
+  else xScale = d3.scaleLinear(scales.xScale.domain(), scales.xScale.range());
+
+  if (ScaleTypes[yEncoding] == 'log')
+    yScale = d3.scaleLog(
+      scales.yScale.domain().map((x) => Math.pow(10, x)),
+      scales.yScale.range()
+    );
+  else yScale = d3.scaleLinear(scales.yScale.domain(), scales.yScale.range());
+
   svg
     .append('g')
     .style('font-size', '10pt')
     .attr('transform', `translate(0,${height - marginBottom})`)
-    .call(d3.axisBottom(xScale).tickArguments([5, ',.6~']))
+    .call(d3.axisBottom(xScale).tickArguments([5, ',.6~s']))
     .call((g) =>
       g
         .append('text')
@@ -54,7 +73,7 @@ function createAxes(scales, xEncoding, yEncoding) {
     .append('g')
     .style('font-size', '10pt')
     .attr('transform', `translate(${marginLeft},0)`)
-    .call(d3.axisLeft(yScale).tickArguments([5, ',.6~']))
+    .call(d3.axisLeft(yScale).tickArguments([5, ',.6~s']))
     .call((g) =>
       g
         .append('text')
@@ -189,14 +208,15 @@ function nearestBubbleContainingPos(positionMap, mousePos, maxDistance) {
 }
 
 d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
-  // format dataset
+  // format dataset - apply log10 for logarithmic fields
   data.forEach((d) => {
     d.year = parseInt(d.year);
-    d.population = parseInt(d.population) / 1000000;
+    d.population = Math.log10(parseInt(d.population));
     d.life_exp = parseFloat(d.life_exp);
-    d.gdp_cap = parseFloat(d.gdp_cap) / 1000;
+    d.gdp_cap = Math.log10(parseFloat(d.gdp_cap));
   });
   let allCountries = Array.from(new Set(data.map((d) => d.country)));
+  allCountries.sort();
   let perCountryData = new Map(
     allCountries.map((country) => [
       country,
@@ -215,8 +235,6 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   // create scales, which handle transforming the coordinates and zooming to
   // particular marks when we select
   let scales = new CA.Scales()
-    .xDomain(d3.extent(data, (d) => d[xEncoding]))
-    .yDomain(d3.extent(data, (d) => d[yEncoding]))
     .xRange([marginLeft, width - marginRight])
     .yRange([height - marginBottom, marginTop])
     .onUpdate(() => {
@@ -234,44 +252,63 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
     });
 
   // for bubble size, use a simple d3 scale
-  let sizeScale = d3
-    .scaleSqrt()
-    .domain(d3.extent(data, (d) => d[sizeEncoding]))
-    .range([4, 100]);
+  let sizeScale = d3.scaleSqrt().range([4, 60]);
 
-  allCountries.sort();
+  function updateDomains(animated) {
+    scales.xDomain(
+      d3.extent(data, (d) => d[xEncoding]),
+      animated
+    );
+    scales.yDomain(
+      d3.extent(data, (d) => d[yEncoding]),
+      animated
+    );
+    sizeScale = sizeScale.domain(
+      d3.extent(data, (d) =>
+        ScaleTypes[sizeEncoding] == 'log'
+          ? Math.pow(10, d[sizeEncoding])
+          : d[sizeEncoding]
+      )
+    );
+    scales.reset(animated);
+  }
+  updateDomains(false);
+
   // create a render group with all bubbles
   let bubbleSet = new CA.MarkRenderGroup(
     allCountries.map(
       (country) =>
         new CA.Mark(country, {
           year: new CA.Attribute(currentYear),
-          x: new CA.Attribute({
-            valueFn: (mark) =>
-              interpolateClosestValue(
-                xEncoding,
-                perCountryData.get(country),
-                mark.attr('year')
-              ),
-            transform: scales.xScale,
+          x: new CA.Attribute((mark) => {
+            let v = interpolateClosestValue(
+              xEncoding,
+              perCountryData.get(country),
+              mark.attr('year')
+            );
+            // here we use the scale within the value fn, not as a transform,
+            // because we want the transform to animate as well even if it
+            // undergoes a discrete change (such as linear <> log)
+            return scales.xScale(v);
           }),
-          y: new CA.Attribute({
-            valueFn: (mark) =>
-              interpolateClosestValue(
-                yEncoding,
-                perCountryData.get(country),
-                mark.attr('year')
-              ),
-            transform: scales.yScale,
+          y: new CA.Attribute((mark) => {
+            let v = interpolateClosestValue(
+              yEncoding,
+              perCountryData.get(country),
+              mark.attr('year')
+            );
+            return scales.yScale(v);
           }),
           radius: new CA.Attribute({
-            valueFn: (mark) =>
-              interpolateClosestValue(
+            valueFn: (mark) => {
+              let v = interpolateClosestValue(
                 sizeEncoding,
                 perCountryData.get(country),
                 mark.attr('year')
-              ),
-            transform: (v) => (v > 0 ? sizeScale(v) : 0),
+              );
+              if (ScaleTypes[sizeEncoding] == 'log') v = Math.pow(10, v);
+              return v > 0 ? Math.max(sizeScale(v), 0) : 0;
+            },
           }),
           strokeWidth: new CA.Attribute(
             () =>
@@ -380,37 +417,12 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   canvas.height = canvas.offsetHeight * window.devicePixelRatio;
   d3.select(canvas).call(zoom);
 
-  scales.zoomTo(CA.markBox(bubbleSet.getMarks(), { padding: 60 }), false);
-
   // the ticker runs every frame and redraws only when needed
   let ticker = new CA.Ticker([bubbleSet, lineSet, scales]).onChange(() =>
     drawCanvas(canvas, bubbleSet, lineSet)
   );
   // the position map keeps track of mark locations so we can find them on hover
   let positionMap = new CA.PositionMap().add(bubbleSet);
-
-  createAxes(scales, xEncoding, yEncoding);
-
-  // respond to year slider selections
-  let slider = document.getElementById('year-slider');
-  slider.value = currentYear;
-  slider.addEventListener('input', (e) => {
-    let newValue = e.target.value;
-
-    if (newValue != currentYear) {
-      currentYear = parseInt(newValue);
-      bubbleSet.animateTo('year', currentYear);
-      document.getElementById('year-text').innerText = newValue;
-      positionMap.invalidate();
-    }
-  });
-
-  // reset viewport to show all marks
-  document
-    .getElementById('reset-zoom')
-    .addEventListener('click', () =>
-      scales.zoomTo(CA.markBox(bubbleSet.getMarks(), { padding: 60 }))
-    );
 
   // Function to zoom to a country, leaving room for that country's location in
   // all years
@@ -433,6 +445,33 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
         { padding: 60 }
       )
     );
+
+  let zoomToAll = (animated = true) =>
+    scales.zoomTo(
+      CA.markBox(bubbleSet.getMarks(), {
+        padding: 60,
+        inverseTransformCoordinates: true, // needed because we apply scale within the value fns
+      }),
+      animated
+    );
+  zoomToAll(false);
+
+  // respond to year slider selections
+  let slider = document.getElementById('year-slider');
+  slider.value = currentYear;
+  slider.addEventListener('input', (e) => {
+    let newValue = e.target.value;
+
+    if (newValue != currentYear) {
+      currentYear = parseInt(newValue);
+      bubbleSet.animateTo('year', currentYear);
+      document.getElementById('year-text').innerText = newValue;
+      positionMap.invalidate();
+    }
+  });
+
+  // reset viewport to show all marks
+  document.getElementById('reset-zoom').addEventListener('click', zoomToAll);
 
   // mouse event handlers for hovering and selecting
   let mouseDown = false;
@@ -488,25 +527,18 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
     xEncoding = e.target.value;
     bubbleSet.animate('x', { duration: 500 });
     lineSet.animate('x', { duration: 500 });
-    scales.xDomain(
-      d3.extent(data, (d) => d[xEncoding]),
-      true
-    );
-    scales.reset(true);
+    updateDomains(true);
   });
   document.getElementById('y-dropdown').addEventListener('change', (e) => {
     yEncoding = e.target.value;
     bubbleSet.animate('y', { duration: 500 });
     lineSet.animate('y', { duration: 500 });
-    scales.yDomain(
-      d3.extent(data, (d) => d[yEncoding]),
-      true
-    );
-    scales.reset(true);
+    updateDomains(true);
   });
 
   document.getElementById('size-dropdown').addEventListener('change', (e) => {
     sizeEncoding = e.target.value;
     bubbleSet.animate('radius', { duration: 500 });
+    updateDomains(true);
   });
 });

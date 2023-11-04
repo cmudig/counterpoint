@@ -78,6 +78,8 @@ export class Scales {
   xScale: LinearScale;
   yScale: LinearScale;
 
+  private _calculatingTransform: boolean = false;
+
   timeProvider: TimeProvider = makeTimeProvider();
 
   controller: ScalesController | null = null;
@@ -435,6 +437,13 @@ export class Scales {
     return this.transform(controller.transform(this), animated);
   }
 
+  _calculateControllerTransform(): TransformInfo {
+    this._calculatingTransform = true;
+    let t = this.controller.transform(this);
+    this._calculatingTransform = false;
+    return t;
+  }
+
   /**
    * Causes the scales to automatically update whenever the given scales
    * controller returns a different transform.
@@ -447,15 +456,23 @@ export class Scales {
   follow(controller: ScalesController, animated: boolean = true): Scales {
     this.controller = controller;
     this._xScaleFactor.set(() => {
-      let t = this.controller.transform(this);
+      if (this._calculatingTransform) return this._xScaleFactor.last();
+      let t = this._calculateControllerTransform();
       return t.kx || t.k;
     });
     this._yScaleFactor.set(() => {
-      let t = this.controller.transform(this);
+      if (this._calculatingTransform) return this._yScaleFactor.last();
+      let t = this._calculateControllerTransform();
       return t.ky || t.k;
     });
-    this._translateX.set(() => this.controller.transform(this).x);
-    this._translateY.set(() => this.controller.transform(this).y);
+    this._translateX.set(() => {
+      if (this._calculatingTransform) return this._translateX.last();
+      return this._calculateControllerTransform().x;
+    });
+    this._translateY.set(() => {
+      if (this._calculatingTransform) return this._translateY.last();
+      return this._calculateControllerTransform().y;
+    });
     if (animated) {
       let animator = (val: number) =>
         new Animator(
@@ -530,6 +547,7 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
   yAttr: keyof AttributeSet;
   padding: number; // padding around followed mark locations in pixels
   transformCoordinates: boolean;
+  inverseTransformCoordinates: boolean;
   lastCompute:
     | {
         time: number;
@@ -566,6 +584,7 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
       yAttr?: keyof AttributeSet;
       padding?: number;
       transformCoordinates?: boolean;
+      inverseTransformCoordinates?: boolean;
     } = {}
   ) {
     this.marks = marks;
@@ -576,10 +595,9 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
     this.xAttr = opts.xAttr !== undefined ? opts.xAttr : 'x';
     this.yAttr = opts.yAttr !== undefined ? opts.yAttr : 'y';
     this.padding = opts.padding !== undefined ? opts.padding : 20;
-    this.transformCoordinates =
-      opts.transformCoordinates !== undefined
-        ? opts.transformCoordinates
-        : false;
+    this.transformCoordinates = opts.transformCoordinates ?? false;
+    this.inverseTransformCoordinates =
+      opts.inverseTransformCoordinates ?? false;
   }
 
   transform(scales: Scales): TransformInfo {
@@ -591,14 +609,14 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
       return this.lastCompute.result;
     }
 
-    let points = this.marks.map((m) => this._getMarkLocation(m));
+    let points = this.marks.map((m) => this._getMarkLocation(scales, m));
     let newCenterX: number,
       newCenterY: number,
       newScaleX: number,
       newScaleY: number;
     let fixedCenter =
       this.centerMark !== undefined
-        ? this._getMarkLocation(this.centerMark)
+        ? this._getMarkLocation(scales, this.centerMark)
         : null;
     let currentTransform = scales.transform();
 
@@ -673,11 +691,19 @@ export class MarkFollower<AttributeSet extends MarkAttributes>
     return result;
   }
 
-  _getMarkLocation(mark: Mark<AttributeSet>): { x: number; y: number } {
+  _getMarkLocation(
+    scales: Scales,
+    mark: Mark<AttributeSet>
+  ): { x: number; y: number } {
     let loc = {
       x: mark.attr(this.xAttr, this.transformCoordinates) as number,
       y: mark.attr(this.yAttr, this.transformCoordinates) as number,
     };
+    if (this.inverseTransformCoordinates)
+      loc = {
+        x: scales.xScale.invert(loc.x),
+        y: scales.yScale.invert(loc.y),
+      };
     return loc;
   }
 }
@@ -695,6 +721,7 @@ export function centerOn<AttributeSet extends MarkAttributes>(
     yAttr?: keyof AttributeSet;
     padding?: number;
     transformCoordinates?: boolean;
+    inverseTransformCoordinates?: boolean;
   } = {}
 ): MarkFollower<AttributeSet> {
   return new MarkFollower([mark], { centerMark: mark, ...opts });
@@ -712,6 +739,7 @@ export function markBox<AttributeSet extends MarkAttributes>(
     yAttr?: keyof AttributeSet;
     padding?: number;
     transformCoordinates?: boolean;
+    inverseTransformCoordinates?: boolean;
   } = {}
 ): MarkFollower<AttributeSet> {
   return new MarkFollower(marks, { ...opts });
