@@ -3,15 +3,16 @@ layout: post
 title: 'Attributes, Marks and Render Groups'
 ---
 
-To start using Canvas Animation, you need to describe the data you plan to render
+To start using Counterpoint, you need to describe the data you plan to render
 in terms of **marks** and **attributes**. This page explains how to create marks
 and attributes, as well as to control how and when attribute values are calculated.
-Note that 
+Note that how you render these marks and attributes is entirely up to you - see
+the available examples to learn how to render marks using Canvas and WebGL APIs.
 
 > **TIP: Custom Attribute Collections**
 > 
 > A mark is essentially a convenient wrapper around a collection of attributes
-> that works well with other classes used in Canvas Animation, like `MarkRenderGroup`
+> that works well with other classes used in Counterpoint, like `MarkRenderGroup`
 > and `PositionMap`. But you can easily create other data structures to wrap
 > collections of attributes that you want to animate. The `Scales` class is one
 > example of this, using attributes to represent the scale and translate factors.
@@ -92,7 +93,7 @@ renderGroup
 ```
 
 We can animate an attribute using identical notation but replacing `update` with
-`animateTo`. Note that if the attribute has a value function that you want to
+`animateTo`. Note that if the attribute has a value *function* that you want to
 use as the new value or final animation value, you can simply call `update` 
 without a second argument or use the `animate` function, respectively:
 
@@ -118,7 +119,7 @@ lines between points when hovering), it's best to use a `StageManager` (see
 ## Controlling Attribute Computation
 
 If you're working with large sets of marks or would like to use a computationally
-expensive function to compute attribute values, Canvas Animation allows you the
+expensive function to compute attribute values, Counterpoint allows you the
 flexibility to decide how and when attribute computation should be performed. 
 Understanding when your value function will be run depends both on the options
 listed below and the behavior of the ticker instance you are using (see 
@@ -126,7 +127,7 @@ listed below and the behavior of the ticker instance you are using (see
 
 By default, all attributes with value functions are recomputed whenever their 
 `get()` method is called. This likely means that when your drawing function gets
-called, the value function will be called as well. *Note:* Canvas Animation's
+called, the value function will be called as well. *Note:* Counterpoint's
 tickers don't actually call your drawing function every frame! Ticker `onChange`
 callbacks are only run when the `advance()` method of the objects they manage
 (e.g. the render group) returns `true`. So if the render group has no active

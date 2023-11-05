@@ -3,7 +3,7 @@ layout: post
 title: 'Quickstart and Tutorial'
 ---
 
-Canvas Animation is an easy-to-use library for developing animated, interactive 
+Counterpoint is an easy-to-use library for developing animated, interactive 
 canvas-based web interfaces. It's best suited for people who are building data-
 driven interfaces with custom or non-standard rendering requirements, such as 
 D3.js users looking for additional flexibility and simpler canvas support.
@@ -12,13 +12,13 @@ D3.js users looking for additional flexibility and simpler canvas support.
 
 TBD update directions and urls
 
-Importing Canvas Animation in ES6 JavaScript is simple:
+Importing Counterpoint in ES6 JavaScript is simple:
 
 ```javascript
 import { Mark, Attribute, ... } from 'canvas-animation';
 ```
 
-To import Canvas Animation in vanilla JavaScript, you can use
+To import Counterpoint in vanilla JavaScript, you can use
 [dynamic import syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#)
 such as:
 
@@ -35,7 +35,7 @@ import(
 This example will walk you through creating a simple rendering of some circles that
 move across the screen when you click.
 
-The first step to use Canvas Animation is to set up an HTML5 Canvas element.
+The first step to use Counterpoint is to set up an HTML5 Canvas element.
 We'll place the canvas in our HTML and give it an id:
 
 ```html
@@ -112,7 +112,7 @@ This quickly becomes cumbersome when not all elements are animating at the same
 times, when adding or removing elements, or when you want to cancel one animation
 mid-flight and begin another one.
 
-**Canvas Animation can help you achieve great animations as easily as with SVG, while
+**Counterpoint can help you achieve great animations as easily as with SVG, while
 getting the great performance and scalability of Canvas.**
 
 It does this by letting you express the contents of the canvas in terms of
@@ -129,7 +129,22 @@ let marks = [
 ];
 ```
 
-Canvas Animation also provides a container called `MarkRenderGroup` which helps
+Attributes can also be initialized with functions that get called whenever the
+attribute is needed. For example, we could set up a `color` attribute that
+changes depending on the marks' x and y positions:
+
+```javascript
+function getColor(mark) {
+  return `hsl(${mark.attr('x') * 360 / 500}, ${mark.attr('y') * 100 / 500}%, 40%)`;
+}
+
+let marks = [
+  new Mark(0, { x: new Attribute(50), y: new Attribute(50), color: new Attribute(getColor) },
+  new Mark(1, { x: new Attribute(200), y: new Attribute(100), color: new Attribute(getColor) }),
+];
+```
+
+Counterpoint also provides a container called `MarkRenderGroup` which helps
 manage animations and updates over a potentially large set of marks. Let's use it
 to wrap our array of marks:
 
@@ -156,6 +171,7 @@ function draw() {
   // iterate over the marks in the render group and draw them
   renderGroup.forEach((mark) => {
     ctx.beginPath();
+    ctx.fillStyle = mark.attr('color');
     ctx.ellipse(mark.attr('x'), mark.attr('y'), 20, 20, 0, 0, 2 * Math.PI, false);
     ctx.fill();
   });
@@ -170,9 +186,13 @@ function draw() {
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
 
+            function getColor(mark) {
+              return `hsl(${mark.attr('x') * 360 / 500}, ${mark.attr('y') * 100 / 500}%, 40%)`;
+            }
+
             let marks = [
-                new Mark(0, { x: new Attribute(50), y: new Attribute(50) }),
-                new Mark(1, { x: new Attribute(200), y: new Attribute(100) }),
+                new Mark(0, { x: new Attribute(50), y: new Attribute(50), color: new Attribute(getColor) }),
+                new Mark(1, { x: new Attribute(200), y: new Attribute(100), color: new Attribute(getColor) }),
             ];
             let renderGroup = createRenderGroup(marks);
 
@@ -187,6 +207,7 @@ function draw() {
                 ctx.fillStyle = 'blue';
                 renderGroup.forEach((mark) => {
                     ctx.beginPath();
+                    ctx.fillStyle = mark.attr('color');
                     ctx.ellipse(mark.attr('x'), mark.attr('y'), 20, 20, 0, 0, 2 * Math.PI, false);
                     ctx.fill();
                 });
@@ -212,7 +233,7 @@ interpolate to the new values.
 > 
 > Since the `draw()` function will get called about 60 times per second during animations, it's 
 > important to make sure it runs fast and doesn't perform any unnecessary
-> calculations. Plus, you can configure Canvas Animation to redraw only when
+> calculations. Plus, you can configure Counterpoint to redraw only when
 > needed, improving performance and saving energy. See [Optimizing Performance]({% link _pages/07-optimizing-performance.md %}) 
 > to learn more.
 > 
@@ -246,7 +267,7 @@ And we'll add the click handler to a new button:
 <button onclick="animateCircles">Animate</button>
 ```
 
-The result should look like this:
+Once completed, you should have something that looks like the following:
 
 <div>
     <canvas id="example-canvas-3" style="width: 300px; height: 300px; border: 1px solid #999;"></canvas>
@@ -257,9 +278,13 @@ The result should look like this:
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
 
+            function getColor(mark) {
+              return `hsl(${mark.attr('x') * 360 / 500}, ${mark.attr('y') * 100 / 500}%, 40%)`;
+            }
+
             let marks = [
-                new Mark(0, { x: new Attribute(50), y: new Attribute(50) }),
-                new Mark(1, { x: new Attribute(200), y: new Attribute(100) }),
+                new Mark(0, { x: new Attribute(50), y: new Attribute(50), color: new Attribute(getColor) }),
+                new Mark(1, { x: new Attribute(200), y: new Attribute(100), color: new Attribute(getColor) }),
             ];
             let renderGroup = createRenderGroup(marks);
 
@@ -274,6 +299,7 @@ The result should look like this:
                 ctx.fillStyle = 'blue';
                 renderGroup.forEach((mark) => {
                     ctx.beginPath();
+                    ctx.fillStyle = mark.attr('color');
                     ctx.ellipse(mark.attr('x'), mark.attr('y'), 20, 20, 0, 0, 2 * Math.PI, false);
                     ctx.fill();
                 });
@@ -292,10 +318,11 @@ The result should look like this:
     </script>
 </div>
 
-Although these are simple animations so far, you can already see that Canvas Animation
+Although these are simple animations so far, you can already see that Counterpoint
 has helped make our animations easy to create yet smooth. For example, if you click
 the button multiple times quickly, you'll see that the animations smoothly switch
-from one to the next with no jitter.
+from one to the next with no jitter. And we didn't have to animate the `color`
+property, since that was automatically computed from our animations to `x` and `y`.
 
 ## Next Steps
 

@@ -2,29 +2,29 @@
 layout: home
 ---
 
-Canvas Animation makes it easy to create beautifully smooth data-driven 
+Counterpoint makes it easy to create beautifully smooth data-driven 
 animations and interactive graphics. It's ideal for developers who are used to 
 working with [D3.js](http://d3js.org/) or other customizable graphics libraries, but 
 need more control and design options for animations.
 
-Canvas Animation **is**:
+Counterpoint **is**:
 
 - **Lightweight and fast.** You can animate anywhere from hundreds to millions 
-  of points using Canvas Animation.
-- **Simple to use.** Canvas Animation's API is beautifully simple, fully typed,
+  of points using Counterpoint.
+- **Simple to use.** Counterpoint's API is beautifully simple, fully typed,
   and uses native JavaScript concepts such as Promises to help you write clean code.
-- **Compatible with popular libraries.** Use Canvas Animation in combination with
+- **Compatible with popular libraries.** Use Counterpoint in combination with
   [D3](http://d3js.org), [regl](http://regl.party), [Svelte + LayerCake](http://layercake.graphics),
   and more. Let those libraries handle the graphics or the chart logic, we'll
   handle the animations.
   
-Canvas Animation **is not**:
+Counterpoint **is not**:
 
 - **A replacement for D3 or Vega.** This library makes no assumptions or opinions
   about charts, and doesn't provide any functionality to render chart elements
   such as axes, grids, or legends. (It does, however, offer an animatable
   `Scales` class, which you can use in conjunction with tools like `d3-zoom`.)
-- **A graphics library.** Perhaps surprisingly, Canvas Animation doesn't contain any
+- **A graphics library.** Perhaps surprisingly, Counterpoint doesn't contain any
   rendering code. You bring all the rendering code yourself, which means you can
   make the outputs look exactly as you want!
 
@@ -33,7 +33,7 @@ to install and learn the basics.
 
 Or, check out this demo chart showing worldwide GDP, life expectancy, and population
 trends from [Gapminder](https://gapminder.org). The code for this example is
-available here (TODO) and showcases Canvas Animation being used in combination with D3.js.
+available here (TODO) and showcases Counterpoint being used in combination with D3.js.
 
 <div style="display: flex;">
 <div id="gapminder-chart-container" style="width: 600px; height: 600px; position: relative; flex-shrink: 0;">
