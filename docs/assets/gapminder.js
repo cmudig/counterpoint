@@ -398,36 +398,30 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
         country: new CA.Attribute(id),
         startYear: new CA.Attribute(currentYear.get()),
         endYear: new CA.Attribute(currentYear.get()),
-        x: new CA.Attribute({
-          valueFn: (mark) =>
-            lineCoordinates(
-              xGet,
-              perCountryData.get(id),
-              mark.attr('startYear'),
-              mark.attr('endYear')
-            ),
-          transform: (v) => v.map(scales.xScale),
-        }),
-        y: new CA.Attribute({
-          valueFn: (mark) =>
-            lineCoordinates(
-              yGet,
-              perCountryData.get(id),
-              mark.attr('startYear'),
-              mark.attr('endYear')
-            ),
-          transform: (v) => v.map(scales.yScale),
-        }),
-        size: new CA.Attribute({
-          valueFn: (mark) =>
-            lineCoordinates(
-              sizeGet,
-              perCountryData.get(id),
-              mark.attr('startYear'),
-              mark.attr('endYear')
-            ),
-          transform: (v) => v.map(sizeScale),
-        }),
+        x: new CA.Attribute((mark) =>
+          lineCoordinates(
+            xGet,
+            perCountryData.get(id),
+            mark.attr('startYear'),
+            mark.attr('endYear')
+          ).map(scales.xScale)
+        ),
+        y: new CA.Attribute((mark) =>
+          lineCoordinates(
+            yGet,
+            perCountryData.get(id),
+            mark.attr('startYear'),
+            mark.attr('endYear')
+          ).map(scales.yScale)
+        ),
+        size: new CA.Attribute((mark) =>
+          lineCoordinates(
+            sizeGet,
+            perCountryData.get(id),
+            mark.attr('startYear'),
+            mark.attr('endYear')
+          ).map(sizeScale)
+        ),
         alpha: new CA.Attribute(0),
       }),
     show: async (mark) => {
@@ -605,5 +599,6 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
     sizeEncoding = e.target.value;
     updateDomains(false, true);
     bubbleSet.animate('radius', { duration: 500 });
+    lineSet.animate('size', { duration: 500 });
   });
 });
