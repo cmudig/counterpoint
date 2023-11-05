@@ -259,7 +259,7 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   // for bubble size, use a simple d3 scale
   let sizeScale = d3.scaleSqrt().range([4, 60]);
 
-  function updateDomains(animated) {
+  function updateDomains(reset = false, animated = false) {
     scales.xDomain(
       d3.extent(data, (d) => d[xEncoding]),
       animated
@@ -275,9 +275,9 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
           : d[sizeEncoding]
       )
     );
-    scales.reset(animated);
+    if (reset) scales.reset(animated);
   }
-  updateDomains(false);
+  updateDomains();
 
   function updateRanges(animated) {
     width = canvas.offsetWidth;
@@ -315,16 +315,14 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
             );
             return scales.yScale(v);
           }),
-          radius: new CA.Attribute({
-            valueFn: (mark) => {
-              let v = interpolateClosestValue(
-                sizeEncoding,
-                perCountryData.get(country),
-                mark.attr('year')
-              );
-              if (ScaleTypes[sizeEncoding] == 'log') v = Math.pow(10, v);
-              return v > 0 ? Math.max(sizeScale(v), 0) : 0;
-            },
+          radius: new CA.Attribute((mark) => {
+            let v = interpolateClosestValue(
+              sizeEncoding,
+              perCountryData.get(country),
+              mark.attr('year')
+            );
+            if (ScaleTypes[sizeEncoding] == 'log') v = Math.pow(10, v);
+            return v > 0 ? Math.max(sizeScale(v), 0) : 0;
           }),
           strokeWidth: new CA.Attribute(
             () =>
@@ -564,20 +562,20 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
 
   document.getElementById('x-dropdown').addEventListener('change', (e) => {
     xEncoding = e.target.value;
+    updateDomains(true, true);
     bubbleSet.animate('x', { duration: 500 });
     lineSet.animate('x', { duration: 500 });
-    updateDomains(true);
   });
   document.getElementById('y-dropdown').addEventListener('change', (e) => {
     yEncoding = e.target.value;
+    updateDomains(true, true);
     bubbleSet.animate('y', { duration: 500 });
     lineSet.animate('y', { duration: 500 });
-    updateDomains(true);
   });
 
   document.getElementById('size-dropdown').addEventListener('change', (e) => {
     sizeEncoding = e.target.value;
+    updateDomains(false, true);
     bubbleSet.animate('radius', { duration: 500 });
-    updateDomains(true);
   });
 });
