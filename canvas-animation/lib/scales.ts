@@ -299,7 +299,6 @@ export class Scales {
       this._translateY.advance(dt),
     ];
     if (updated.some((v) => v) || !!this.controller) {
-      console.log(this._xDomain[0].get(), this._xDomain[1].get());
       this._updatedNoAdvance = false;
       this.listeners.forEach((fn) => fn(this));
       return true;

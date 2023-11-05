@@ -505,6 +505,13 @@ export class Attribute<
   }
 
   /**
+   * @returns Whether or not the attribute is currently being animated
+   */
+  animating(): boolean {
+    return this.animation != null;
+  }
+
+  /**
    * Applies an animation to this attribute. The attribute will call the
    * `evaluate` method on the animation every time the attribute's `advance()`
    * method runs, until the time delta since the start of the animation exceeds

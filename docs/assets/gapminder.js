@@ -2,10 +2,10 @@ import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 import * as CA from 'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/canvas-animation@main/canvas-animation/dist/canvas-animation.es.js';
 
 // Declare the chart dimensions and margins.
-const width = 600;
-const height = 600;
+let width = 600;
+let height = 600;
 const marginTop = 60;
-const marginRight = 60;
+const marginRight = 0;
 const marginBottom = 60;
 const marginLeft = 60;
 
@@ -24,6 +24,11 @@ const ScaleTypes = {
 function createAxes(scales, xEncoding, yEncoding) {
   // Create the SVG container.
   const svg = d3.select('#gapminder-axes');
+  let rect = d3
+    .select('#gapminder-chart-container')
+    .node()
+    .getBoundingClientRect();
+  svg.attr('width', rect.width).attr('height', rect.height);
   svg.selectAll('*').remove();
 
   // We portray the axes as log scales when needed and convert the extents
@@ -103,7 +108,7 @@ function drawCanvas(canvas, bubbleSet, lineSet) {
   // scaling for 2x devices
   ctx.resetTransform();
   ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+  ctx.clearRect(0, 0, width, height);
 
   // clip to chart bounds
   ctx.beginPath();
@@ -224,7 +229,10 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
     ])
   );
 
-  let currentYear = 1992;
+  let canvas = document.getElementById('gapminder-content');
+  let slider = document.getElementById('year-slider');
+
+  let currentYear = new CA.Attribute(1992);
   let xEncoding = 'life_exp';
   let yEncoding = 'gdp_cap';
   let sizeEncoding = 'population';
@@ -234,22 +242,19 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
 
   // create scales, which handle transforming the coordinates and zooming to
   // particular marks when we select
-  let scales = new CA.Scales()
-    .xRange([marginLeft, width - marginRight])
-    .yRange([height - marginBottom, marginTop])
-    .onUpdate(() => {
-      // When the scales update, we also need to let the d3 zoom object know that
-      // the zoom transform has changed. Otherwise performing a zoom gesture after
-      // a programmatic update will result in an abrupt transform change
-      let sel = d3.select(canvas);
-      let currentT = d3.zoomTransform(canvas);
-      let t = scales.transform();
-      if (t.k != currentT.k || t.x != currentT.x || t.y != currentT.y) {
-        sel.call(zoom.transform, new d3.ZoomTransform(t.k, t.x, t.y));
-      }
-      createAxes(scales, xEncoding, yEncoding);
-      positionMap.invalidate();
-    });
+  let scales = new CA.Scales().onUpdate(() => {
+    // When the scales update, we also need to let the d3 zoom object know that
+    // the zoom transform has changed. Otherwise performing a zoom gesture after
+    // a programmatic update will result in an abrupt transform change
+    let sel = d3.select(canvas);
+    let currentT = d3.zoomTransform(canvas);
+    let t = scales.transform();
+    if (t.k != currentT.k || t.x != currentT.x || t.y != currentT.y) {
+      sel.call(zoom.transform, new d3.ZoomTransform(t.k, t.x, t.y));
+    }
+    createAxes(scales, xEncoding, yEncoding);
+    positionMap.invalidate();
+  });
 
   // for bubble size, use a simple d3 scale
   let sizeScale = d3.scaleSqrt().range([4, 60]);
@@ -274,12 +279,23 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   }
   updateDomains(false);
 
+  function updateRanges(animated) {
+    width = canvas.offsetWidth;
+    height = canvas.offsetHeight;
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    scales
+      .xRange([marginLeft, width - marginRight], animated)
+      .yRange([height - marginBottom, marginTop], animated);
+  }
+  updateRanges(false);
+
   // create a render group with all bubbles
   let bubbleSet = new CA.MarkRenderGroup(
     allCountries.map(
       (country) =>
         new CA.Mark(country, {
-          year: new CA.Attribute(currentYear),
+          year: new CA.Attribute(() => currentYear.get()),
           x: new CA.Attribute((mark) => {
             let v = interpolateClosestValue(
               xEncoding,
@@ -340,8 +356,8 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
     create: (id) =>
       new CA.Mark(`line-${id}`, {
         country: new CA.Attribute(id),
-        startYear: new CA.Attribute(currentYear),
-        endYear: new CA.Attribute(currentYear),
+        startYear: new CA.Attribute(currentYear.get()),
+        endYear: new CA.Attribute(currentYear.get()),
         x: new CA.Attribute({
           valueFn: (mark) => {
             // define the list of x coordinates for this line
@@ -388,18 +404,18 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
       return await mark
         .animateTo(
           'startYear',
-          availableYears.reduce((a, b) => Math.min(a, b), currentYear)
+          availableYears.reduce((a, b) => Math.min(a, b), currentYear.get())
         )
         .animateTo(
           'endYear',
-          availableYears.reduce((a, b) => Math.max(a, b), currentYear)
+          availableYears.reduce((a, b) => Math.max(a, b), currentYear.get())
         )
         .wait(['startYear', 'endYear']);
     },
     hide: async (mark) =>
       await mark
-        .animateTo('startYear', currentYear)
-        .animateTo('endYear', currentYear)
+        .animateTo('startYear', currentYear.get())
+        .animateTo('endYear', currentYear.get())
         .wait(['startYear', 'endYear']),
   }).attach(lineSet);
 
@@ -411,16 +427,20 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
       // programmatic changes
       if (e.sourceEvent != null) scales.transform(e.transform);
     });
-
-  let canvas = document.getElementById('gapminder-content');
-  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
   d3.select(canvas).call(zoom);
 
   // the ticker runs every frame and redraws only when needed
-  let ticker = new CA.Ticker([bubbleSet, lineSet, scales]).onChange(() =>
-    drawCanvas(canvas, bubbleSet, lineSet)
-  );
+  let ticker = new CA.Ticker([
+    currentYear,
+    bubbleSet,
+    lineSet,
+    scales,
+  ]).onChange(() => {
+    drawCanvas(canvas, bubbleSet, lineSet);
+    slider.value = Math.round(currentYear.get());
+    document.getElementById('year-text').innerText = slider.value;
+    if (bubbleSet.changed(['x', 'y'])) positionMap.invalidate();
+  });
   // the position map keeps track of mark locations so we can find them on hover
   let positionMap = new CA.PositionMap().add(bubbleSet);
 
@@ -457,21 +477,35 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   zoomToAll(false);
 
   // respond to year slider selections
-  let slider = document.getElementById('year-slider');
-  slider.value = currentYear;
   slider.addEventListener('input', (e) => {
     let newValue = e.target.value;
 
     if (newValue != currentYear) {
-      currentYear = parseInt(newValue);
-      bubbleSet.animateTo('year', currentYear);
-      document.getElementById('year-text').innerText = newValue;
+      currentYear.set(parseInt(newValue));
+      bubbleSet.animate('year');
       positionMap.invalidate();
     }
   });
 
+  // play/pause
+  document.getElementById('play-pause').onclick = () => {
+    if (!!currentYear.animation) {
+      // todo change this to animating()
+      currentYear.set(currentYear.get());
+    } else {
+      if (currentYear.get() >= 2007) currentYear.set(1952);
+      currentYear.animate(
+        new CA.basicAnimationTo(
+          2007,
+          (2007 - currentYear.get()) * 500,
+          CA.curveLinear
+        )
+      );
+    }
+  };
+
   // reset viewport to show all marks
-  document.getElementById('reset-zoom').addEventListener('click', zoomToAll);
+  document.getElementById('reset-zoom').onclick = zoomToAll;
 
   // mouse event handlers for hovering and selecting
   let mouseDown = false;
@@ -522,6 +556,11 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
       }
     }
   });
+  // on resize, update the chart bounds and redraw the canvas immediately to prevent flicker
+  new ResizeObserver(() => {
+    updateRanges(true);
+    drawCanvas(canvas, bubbleSet, lineSet);
+  }).observe(canvas);
 
   document.getElementById('x-dropdown').addEventListener('change', (e) => {
     xEncoding = e.target.value;

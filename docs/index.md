@@ -35,33 +35,34 @@ Or, check out this demo chart showing worldwide GDP, life expectancy, and popula
 trends from [Gapminder](https://gapminder.org). The code for this example is
 available here (TODO) and showcases Counterpoint being used in combination with D3.js.
 
-<div style="display: flex;">
-<div id="gapminder-chart-container" style="width: 600px; height: 600px; position: relative; flex-shrink: 0;">
-  <svg width="600" height="600" id="gapminder-axes" style="position: absolute; top: 0; left: 0;" overflow="visible"></svg>
-  <canvas id="gapminder-content" style="position: absolute; top: 0; left: 0; width: 600px; height: 600px;"></canvas>
-</div>
-<div style="flex: 1 1 auto;">
-<p><label for="year-slider">Year: <span id="year-text">1992</span></label>
-<input type="range" min="1952" max="2007" id="year-slider"/></p>
-<p><label for="x-dropdown">X axis:</label>
-<select id="x-dropdown">
-  <option value="gdp_cap">GDP Per Capita</option>
-  <option value="life_exp" selected>Life Expectancy</option>
-  <option value="population">Population</option>
-</select></p>
-<p><label for="y-dropdown">Y axis:</label>
-<select id="y-dropdown">
-  <option value="gdp_cap" selected>GDP Per Capita</option>
-  <option value="life_exp">Life Expectancy</option>
-  <option value="population">Population</option>
-</select></p>
-<p><label for="size-dropdown">Radius:</label>
-<select id="size-dropdown">
-  <option value="gdp_cap">GDP Per Capita</option>
-  <option value="life_exp">Life Expectancy</option>
-  <option value="population" selected>Population</option>
-</select></p>
-<p><button id="reset-zoom">Reset Zoom</button></p>
-<p style="font-size: 0.8em;">Source: Free Data from World Bank via gapminder.org, CC-BY license</p>
+<div style="display: flex; max-width: 100%; flex-wrap: wrap;">
+  <div id="gapminder-chart-container" style="position: relative; flex-shrink: 0;">
+    <svg width="600" height="600" id="gapminder-axes" style="position: absolute; top: 0; left: 0;" overflow="visible"></svg>
+    <canvas id="gapminder-content" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+  </div>
+  <div id="gapminder-controls">
+  <p><label for="year-slider">Year: <span id="year-text">1992</span></label>
+  <input type="range" min="1952" max="2007" id="year-slider"/></p>
+  <p><button id="play-pause">Play/Pause</button></p>
+  <p><label for="x-dropdown">X axis:</label>
+  <select id="x-dropdown">
+    <option value="gdp_cap">GDP Per Capita</option>
+    <option value="life_exp" selected>Life Expectancy</option>
+    <option value="population">Population</option>
+  </select></p>
+  <p><label for="y-dropdown">Y axis:</label>
+  <select id="y-dropdown">
+    <option value="gdp_cap" selected>GDP Per Capita</option>
+    <option value="life_exp">Life Expectancy</option>
+    <option value="population">Population</option>
+  </select></p>
+  <p><label for="size-dropdown">Radius:</label>
+  <select id="size-dropdown">
+    <option value="gdp_cap">GDP Per Capita</option>
+    <option value="life_exp">Life Expectancy</option>
+    <option value="population" selected>Population</option>
+  </select></p>
+  <p><button id="reset-zoom">Reset Zoom</button></p>
+  <p style="font-size: 0.8em;">Source: Free Data from World Bank via gapminder.org, CC-BY license</p>
 </div>
 <script type="module" src="/canvas-animation/assets/gapminder.js"></script>

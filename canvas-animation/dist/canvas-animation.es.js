@@ -384,15 +384,15 @@ function Ye(r, { meta: t } = {}) {
           let f = e.parsed.args, m;
           return u.coordGrammar && (m = Object.entries(h.coords).map(([p, b], y) => {
             var U;
-            let v = u.coordGrammar[y], w = (U = f[y]) == null ? void 0 : U.type, T = v.find(($) => $ == w);
-            if (!T) {
+            let v = u.coordGrammar[y], w = (U = f[y]) == null ? void 0 : U.type, D = v.find(($) => $ == w);
+            if (!D) {
               let $ = b.name || p;
               throw new TypeError(`${w} not allowed for ${$} in ${l}()`);
             }
-            let k = T.range;
+            let k = D.range;
             w === "<percentage>" && (k || (k = [0, 1]));
             let P = b.range || b.refRange;
-            return k && P && (f[y] = Gt(k, P, f[y])), T;
+            return k && P && (f[y] = Gt(k, P, f[y])), D;
           })), t && Object.assign(t, { formatId: u.name, types: m }), {
             spaceId: h.id,
             coords: f,
@@ -454,7 +454,7 @@ var Zt = new d({
 });
 const wr = 216 / 24389, re = 24 / 116, ot = 24389 / 27;
 let Lt = E.D50;
-var D = new d({
+var T = new d({
   id: "lab",
   name: "Lab",
   coords: {
@@ -530,7 +530,7 @@ var tt = new d({
       name: "Hue"
     }
   },
-  base: D,
+  base: T,
   fromBase(r) {
     let [t, e, i] = r, a;
     const s = 0.02;
@@ -562,17 +562,17 @@ var tt = new d({
 });
 const ie = 25 ** 7, vt = Math.PI, ae = 180 / vt, N = vt / 180;
 function $t(r, t, { kL: e = 1, kC: i = 1, kH: a = 1 } = {}) {
-  let [s, n, o] = D.from(r), l = tt.from(D, [s, n, o])[1], [h, u, c] = D.from(t), f = tt.from(D, [h, u, c])[1];
+  let [s, n, o] = T.from(r), l = tt.from(T, [s, n, o])[1], [h, u, c] = T.from(t), f = tt.from(T, [h, u, c])[1];
   l < 0 && (l = 0), f < 0 && (f = 0);
-  let p = ((l + f) / 2) ** 7, b = 0.5 * (1 - Math.sqrt(p / (p + ie))), y = (1 + b) * n, v = (1 + b) * u, w = Math.sqrt(y ** 2 + o ** 2), T = Math.sqrt(v ** 2 + c ** 2), k = y === 0 && o === 0 ? 0 : Math.atan2(o, y), P = v === 0 && c === 0 ? 0 : Math.atan2(c, v);
+  let p = ((l + f) / 2) ** 7, b = 0.5 * (1 - Math.sqrt(p / (p + ie))), y = (1 + b) * n, v = (1 + b) * u, w = Math.sqrt(y ** 2 + o ** 2), D = Math.sqrt(v ** 2 + c ** 2), k = y === 0 && o === 0 ? 0 : Math.atan2(o, y), P = v === 0 && c === 0 ? 0 : Math.atan2(c, v);
   k < 0 && (k += 2 * vt), P < 0 && (P += 2 * vt), k *= ae, P *= ae;
-  let U = h - s, $ = T - w, z = P - k, W = k + P, Wt = Math.abs(z), V;
-  w * T === 0 ? V = 0 : Wt <= 180 ? V = z : z > 180 ? V = z - 360 : z < -180 ? V = z + 360 : console.log("the unthinkable has happened");
-  let Vt = 2 * Math.sqrt(T * w) * Math.sin(V * N / 2), cr = (s + h) / 2, Tt = (w + T) / 2, Jt = Math.pow(Tt, 7), Y;
-  w * T === 0 ? Y = W : Wt <= 180 ? Y = W / 2 : W < 360 ? Y = (W + 360) / 2 : Y = (W - 360) / 2;
-  let Qt = (cr - 50) ** 2, fr = 1 + 0.015 * Qt / Math.sqrt(20 + Qt), Kt = 1 + 0.045 * Tt, J = 1;
+  let U = h - s, $ = D - w, z = P - k, W = k + P, Wt = Math.abs(z), V;
+  w * D === 0 ? V = 0 : Wt <= 180 ? V = z : z > 180 ? V = z - 360 : z < -180 ? V = z + 360 : console.log("the unthinkable has happened");
+  let Vt = 2 * Math.sqrt(D * w) * Math.sin(V * N / 2), cr = (s + h) / 2, Dt = (w + D) / 2, Jt = Math.pow(Dt, 7), Y;
+  w * D === 0 ? Y = W : Wt <= 180 ? Y = W / 2 : W < 360 ? Y = (W + 360) / 2 : Y = (W - 360) / 2;
+  let Qt = (cr - 50) ** 2, fr = 1 + 0.015 * Qt / Math.sqrt(20 + Qt), Kt = 1 + 0.045 * Dt, J = 1;
   J -= 0.17 * Math.cos((Y - 30) * N), J += 0.24 * Math.cos(2 * Y * N), J += 0.32 * Math.cos((3 * Y + 6) * N), J -= 0.2 * Math.cos((4 * Y - 63) * N);
-  let te = 1 + 0.015 * Tt * J, dr = 30 * Math.exp(-1 * ((Y - 275) / 25) ** 2), mr = 2 * Math.sqrt(Jt / (Jt + ie)), gr = -1 * Math.sin(2 * dr * N) * mr, nt = (U / (e * fr)) ** 2;
+  let te = 1 + 0.015 * Dt * J, dr = 30 * Math.exp(-1 * ((Y - 275) / 25) ** 2), mr = 2 * Math.sqrt(Jt / (Jt + ie)), gr = -1 * Math.sin(2 * dr * N) * mr, nt = (U / (e * fr)) ** 2;
   return nt += ($ / (i * Kt)) ** 2, nt += (Vt / (a * te)) ** 2, nt += gr * ($ / (i * Kt)) * (Vt / (a * te)), Math.sqrt(nt);
 }
 const kr = 75e-6;
@@ -691,11 +691,11 @@ var Oe = new x({
     color: {}
   }
 });
-const Dr = [
+const Tr = [
   [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
   [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
   [0, 0.04511338185890264, 1.043944368900976]
-], Tr = [
+], Dr = [
   [2.493496911941425, -0.9313836179191239, -0.40271078445071684],
   [-0.8294889695615747, 1.7626640603183463, 0.023624685841943577],
   [0.03584583024378447, -0.07617238926804182, 0.9568845240076872]
@@ -704,8 +704,8 @@ var Xe = new x({
   id: "p3-linear",
   name: "Linear P3",
   white: "D65",
-  toXYZ_M: Dr,
-  fromXYZ_M: Tr
+  toXYZ_M: Tr,
+  fromXYZ_M: Dr
 });
 const Ar = [
   [0.41239079926595934, 0.357584339383878, 0.1804807884018343],
@@ -961,7 +961,7 @@ var rt = new x({
 });
 F.display_space = rt;
 if (typeof CSS < "u" && CSS.supports)
-  for (let r of [D, Oe, je]) {
+  for (let r of [T, Oe, je]) {
     let t = r.getMinCoords(), i = wt({ space: r, coords: t, alpha: 1 });
     if (CSS.supports("color", i)) {
       F.display_space = r;
@@ -1048,7 +1048,7 @@ function Hr(r, t) {
 }
 function Wr(r, t) {
   r = g(r), t = g(t);
-  let e = R(r, [D, "l"]), i = R(t, [D, "l"]);
+  let e = R(r, [T, "l"]), i = R(t, [T, "l"]);
   return Math.abs(e - i);
 }
 const Vr = 216 / 24389, fe = 24 / 116, ht = 24389 / 27;
@@ -1160,14 +1160,14 @@ function ei(r, t) {
 }
 const ri = Math.PI, de = ri / 180;
 function ii(r, t, { l: e = 2, c: i = 1 } = {}) {
-  let [a, s, n] = D.from(r), [, o, l] = tt.from(D, [a, s, n]), [h, u, c] = D.from(t), f = tt.from(D, [h, u, c])[1];
+  let [a, s, n] = T.from(r), [, o, l] = tt.from(T, [a, s, n]), [h, u, c] = T.from(t), f = tt.from(T, [h, u, c])[1];
   o < 0 && (o = 0), f < 0 && (f = 0);
   let m = a - h, p = o - f, b = s - u, y = n - c, v = b ** 2 + y ** 2 - p ** 2, w = 0.511;
   a >= 16 && (w = 0.040975 * a / (1 + 0.01765 * a));
-  let T = 0.0638 * o / (1 + 0.0131 * o) + 0.638, k;
+  let D = 0.0638 * o / (1 + 0.0131 * o) + 0.638, k;
   Number.isNaN(l) && (l = 0), l >= 164 && l <= 345 ? k = 0.56 + Math.abs(0.2 * Math.cos((l + 168) * de)) : k = 0.36 + Math.abs(0.4 * Math.cos((l + 35) * de));
-  let P = Math.pow(o, 4), U = Math.sqrt(P / (P + 1900)), $ = T * (U * k + 1 - U), z = (m / (e * w)) ** 2;
-  return z += (p / (i * T)) ** 2, z += v / $ ** 2, Math.sqrt(z);
+  let P = Math.pow(o, 4), U = Math.sqrt(P / (P + 1900)), $ = D * (U * k + 1 - U), z = (m / (e * w)) ** 2;
+  return z += (p / (i * D)) ** 2, z += v / $ ** 2, Math.sqrt(z);
 }
 const me = 203;
 var Ut = new d({
@@ -1454,7 +1454,7 @@ function Ci(r, t = 0.25) {
   let i = [d.get("oklch", "lch"), "l"];
   return I(r, i, (a) => a * (1 - t));
 }
-var Di = /* @__PURE__ */ Object.freeze({
+var Ti = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   darken: Ci,
   lighten: Si
@@ -1529,7 +1529,7 @@ function Nt(r) {
   return O(r) === "function" && !!r.rangeArgs;
 }
 F.interpolationSpace = "lab";
-function Ti(r) {
+function Di(r) {
   r.defineFunction("mix", Je, { returns: "color" }), r.defineFunction("range", st, { returns: "function<color>" }), r.defineFunction("steps", Qe, { returns: "array<color>" });
 }
 var Ai = /* @__PURE__ */ Object.freeze({
@@ -1537,7 +1537,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
   isRange: Nt,
   mix: Je,
   range: st,
-  register: Ti,
+  register: Di,
   steps: Qe
 }), Ke = new d({
   id: "hsl",
@@ -1790,19 +1790,19 @@ var $i = new x({
     }
   }
 });
-const we = 203, xe = 2610 / 2 ** 14, Xi = 2 ** 14 / 2610, Ii = 2523 / 2 ** 5, ke = 2 ** 5 / 2523, Se = 3424 / 2 ** 12, Ce = 2413 / 2 ** 7, De = 2392 / 2 ** 7;
+const we = 203, xe = 2610 / 2 ** 14, Xi = 2 ** 14 / 2610, Ii = 2523 / 2 ** 5, ke = 2 ** 5 / 2523, Se = 3424 / 2 ** 12, Ce = 2413 / 2 ** 7, Te = 2392 / 2 ** 7;
 var ji = new x({
   id: "rec2100pq",
   name: "REC.2100-PQ",
   base: Ct,
   toBase(r) {
     return r.map(function(t) {
-      return (Math.max(t ** ke - Se, 0) / (Ce - De * t ** ke)) ** Xi * 1e4 / we;
+      return (Math.max(t ** ke - Se, 0) / (Ce - Te * t ** ke)) ** Xi * 1e4 / we;
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      let e = Math.max(t * we / 1e4, 0), i = Se + Ce * e ** xe, a = 1 + De * e ** xe;
+      let e = Math.max(t * we / 1e4, 0), i = Se + Ce * e ** xe, a = 1 + Te * e ** xe;
       return (i / a) ** Ii;
     });
   },
@@ -1812,7 +1812,7 @@ var ji = new x({
     }
   }
 });
-const Te = 0.17883277, Ae = 0.28466892, Le = 0.55991073, Bt = 3.7743;
+const De = 0.17883277, Ae = 0.28466892, Le = 0.55991073, Bt = 3.7743;
 var qi = new x({
   id: "rec2100hlg",
   cssid: "rec2100-hlg",
@@ -1821,12 +1821,12 @@ var qi = new x({
   base: Ct,
   toBase(r) {
     return r.map(function(t) {
-      return t <= 0.5 ? t ** 2 / 3 * Bt : (Math.exp((t - Le) / Te) + Ae) / 12 * Bt;
+      return t <= 0.5 ? t ** 2 / 3 * Bt : (Math.exp((t - Le) / De) + Ae) / 12 * Bt;
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      return t /= Bt, t <= 1 / 12 ? Math.sqrt(3 * t) : Te * Math.log(12 * t - Ae) + Le;
+      return t /= Bt, t <= 1 / 12 ? Math.sqrt(3 * t) : De * Math.log(12 * t - Ae) + Le;
     });
   },
   formats: {
@@ -1842,7 +1842,7 @@ X.add("chromatic-adaptation-start", (r) => {
 X.add("chromatic-adaptation-end", (r) => {
   r.M || (r.M = ar(r.W1, r.W2, r.options.method));
 });
-function Dt({ id: r, toCone_M: t, fromCone_M: e }) {
+function Tt({ id: r, toCone_M: t, fromCone_M: e }) {
   ir[r] = arguments[0];
 }
 function ar(r, t, e = "Bradford") {
@@ -1853,7 +1853,7 @@ function ar(r, t, e = "Bradford") {
   ], c = M(u, i.toCone_M);
   return M(i.fromCone_M, c);
 }
-Dt({
+Tt({
   id: "von Kries",
   toCone_M: [
     [0.40024, 0.7076, -0.08081],
@@ -1866,7 +1866,7 @@ Dt({
     [0, 0, 1.0890636]
   ]
 });
-Dt({
+Tt({
   id: "Bradford",
   // Convert an array of XYZ values in the range 0.0 - 1.0
   // to cone fundamentals
@@ -1882,7 +1882,7 @@ Dt({
     [-85287e-7, 0.0400428, 0.9684867]
   ]
 });
-Dt({
+Tt({
   id: "CAT02",
   // with complete chromatic adaptation to W2, so D = 1.0
   toCone_M: [
@@ -1896,7 +1896,7 @@ Dt({
     [-96276e-7, -5698e-6, 1.0153256]
   ]
 });
-Dt({
+Tt({
   id: "CAT16",
   toCone_M: [
     [0.401288, 0.650173, -0.051461],
@@ -2025,7 +2025,7 @@ var Ui = new x({
   JzCzHz: Xt,
   Jzazbz: Ne,
   LCH: tt,
-  Lab: D,
+  Lab: T,
   Lab_D65: Ot,
   OKLCH: Oi,
   OKLab: xt,
@@ -2207,7 +2207,7 @@ function jt(r, t) {
 _.extend(kt);
 _.extend({ deltaE: Q });
 Object.assign(_, { deltaEMethods: kt });
-_.extend(Di);
+_.extend(Ti);
 _.extend({ contrast: Qr });
 _.extend(ti);
 _.extend(Br);
@@ -2556,6 +2556,12 @@ class S {
    */
   updateTransform() {
     this._cachedValue = null;
+  }
+  /**
+   * @returns Whether or not the attribute is currently being animated
+   */
+  animating() {
+    return this.animation != null;
   }
   /**
    * Applies an animation to this attribute. The attribute will call the
@@ -3441,7 +3447,7 @@ class ca {
       this._yScaleFactor.advance(t),
       this._translateX.advance(t),
       this._translateY.advance(t)
-    ].some((i) => i) || this.controller ? (console.log(this._xDomain[0].get(), this._xDomain[1].get()), this._updatedNoAdvance = !1, this.listeners.forEach((i) => i(this)), !0) : (this._updatedNoAdvance || (this.listeners.forEach((i) => i(this)), this._updatedNoAdvance = !0), !1);
+    ].some((i) => i) || this.controller ? (this._updatedNoAdvance = !1, this.listeners.forEach((i) => i(this)), !0) : (this._updatedNoAdvance || (this.listeners.forEach((i) => i(this)), this._updatedNoAdvance = !0), !1);
   }
   // Increases the scale by the given amount, optionally centering by the given
   // point in transformed pixel space
