@@ -9,6 +9,10 @@ const marginRight = 0;
 const marginBottom = 60;
 const marginLeft = 60;
 
+const MinYear = 1952;
+const MaxYear = 2007;
+const StartYear = 1992;
+
 const AxisLabels = {
   gdp_cap: 'GDP Per Capita',
   life_exp: 'Life Expectancy (yr)',
@@ -125,20 +129,51 @@ function drawCanvas(canvas, bubbleSet, lineSet) {
 
   if (lineSet.count() > 0) {
     ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = '#d0d0d0';
-    ctx.lineWidth = 6.0;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    // draw a shadow of the bubble's position and size using a series of
+    // rounded paths
+    ctx.fillStyle = '#e0e0e0';
     lineSet.forEach((mark) => {
+      ctx.globalAlpha = mark.attr('alpha');
       let xCoords = mark.attr('x');
       let yCoords = mark.attr('y');
-      ctx.moveTo(xCoords[0], yCoords[0]);
-      for (let i = 1; i < xCoords.length; i++) {
-        ctx.lineTo(xCoords[i], yCoords[i]);
+      let sizes = mark.attr('size');
+      for (let i = 0; i < xCoords.length - 1; i++) {
+        let x0 = xCoords[i],
+          x1 = xCoords[i + 1],
+          y0 = yCoords[i],
+          y1 = yCoords[i + 1],
+          s0 = sizes[i],
+          s1 = sizes[i + 1];
+        ctx.save();
+        ctx.translate(x0, y0);
+        ctx.rotate(Math.atan2(y1 - y0, x1 - x0));
+        ctx.beginPath();
+        let dist = Math.sqrt(Math.pow(y1 - y0, 2) + Math.pow(x1 - x0, 2));
+        ctx.ellipse(0, 0, s0, s0, 0, -Math.PI * 0.5, Math.PI * 0.5, true);
+        ctx.lineTo(dist, s1, dist);
+        ctx.ellipse(dist, 0, s1, s1, 0, Math.PI * 0.5, -Math.PI * 0.5, true);
+        ctx.lineTo(0, -s0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       }
+
+      // draw a constant-width line on top
+      ctx.beginPath();
+      ctx.strokeStyle = '#bbb';
+      ctx.lineWidth = 3.0;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      lineSet.forEach((mark) => {
+        let xCoords = mark.attr('x');
+        let yCoords = mark.attr('y');
+        ctx.moveTo(xCoords[0], yCoords[0]);
+        for (let i = 1; i < xCoords.length; i++) {
+          ctx.lineTo(xCoords[i], yCoords[i]);
+        }
+      });
+      ctx.stroke();
     });
-    ctx.stroke();
     ctx.restore();
   }
 
@@ -174,7 +209,8 @@ function drawCanvas(canvas, bubbleSet, lineSet) {
   });
 }
 
-function interpolateClosestValue(variable, countryData, year) {
+// interpolates between available year data
+function interpolateVariable(getter, countryData, year) {
   let lowerYear = Array.from(countryData.keys()).reduce(
     (a, b) => (b > year ? a : Math.max(a, b)),
     0
@@ -184,15 +220,27 @@ function interpolateClosestValue(variable, countryData, year) {
     1e9
   );
   if (!countryData.has(lowerYear) && !countryData.has(upperYear)) return 0;
-  if (!countryData.has(lowerYear)) return countryData.get(upperYear)[variable];
-  if (!countryData.has(upperYear)) return countryData.get(lowerYear)[variable];
-  if (lowerYear == upperYear) return countryData.get(lowerYear)[variable];
+  if (!countryData.has(lowerYear)) return getter(countryData.get(upperYear));
+  if (!countryData.has(upperYear)) return getter(countryData.get(lowerYear));
+  if (lowerYear == upperYear) return getter(countryData.get(lowerYear));
   return (
-    (countryData.get(lowerYear)[variable] * (upperYear - year)) /
+    (getter(countryData.get(lowerYear)) * (upperYear - year)) /
       (upperYear - lowerYear) +
-    (countryData.get(upperYear)[variable] * (year - lowerYear)) /
+    (getter(countryData.get(upperYear)) * (year - lowerYear)) /
       (upperYear - lowerYear)
   );
+}
+
+// returns a set of coordinates for points falling between the start and end years
+function lineCoordinates(getter, countryData, startYear, endYear) {
+  let years = [
+    startYear,
+    ...Array.from(countryData.keys()).filter(
+      (y) => y >= startYear && y <= endYear
+    ),
+    endYear,
+  ];
+  return years.map((y) => interpolateVariable(getter, countryData, y));
 }
 
 function nearestBubbleContainingPos(positionMap, mousePos, maxDistance) {
@@ -232,10 +280,17 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   let canvas = document.getElementById('gapminder-content');
   let slider = document.getElementById('year-slider');
 
-  let currentYear = new CA.Attribute(1992);
+  let currentYear = new CA.Attribute(StartYear);
   let xEncoding = 'life_exp';
   let yEncoding = 'gdp_cap';
   let sizeEncoding = 'population';
+  let xGet = (datum) => datum[xEncoding];
+  let yGet = (datum) => datum[yEncoding];
+  // cancel out the log transform for size
+  let sizeGet = (datum) =>
+    ScaleTypes[sizeEncoding] == 'log'
+      ? Math.pow(10, datum[sizeEncoding])
+      : datum[sizeEncoding];
 
   let hoveredCountry = null;
   let selectedCountry = null;
@@ -260,21 +315,9 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   let sizeScale = d3.scaleSqrt().range([4, 60]);
 
   function updateDomains(reset = false, animated = false) {
-    scales.xDomain(
-      d3.extent(data, (d) => d[xEncoding]),
-      animated
-    );
-    scales.yDomain(
-      d3.extent(data, (d) => d[yEncoding]),
-      animated
-    );
-    sizeScale = sizeScale.domain(
-      d3.extent(data, (d) =>
-        ScaleTypes[sizeEncoding] == 'log'
-          ? Math.pow(10, d[sizeEncoding])
-          : d[sizeEncoding]
-      )
-    );
+    scales.xDomain(d3.extent(data, xGet), animated);
+    scales.yDomain(d3.extent(data, yGet), animated);
+    sizeScale = sizeScale.domain(d3.extent(data, sizeGet));
     if (reset) scales.reset(animated);
   }
   updateDomains();
@@ -297,8 +340,8 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
         new CA.Mark(country, {
           year: new CA.Attribute(() => currentYear.get()),
           x: new CA.Attribute((mark) => {
-            let v = interpolateClosestValue(
-              xEncoding,
+            let v = interpolateVariable(
+              xGet,
               perCountryData.get(country),
               mark.attr('year')
             );
@@ -308,20 +351,19 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
             return scales.xScale(v);
           }),
           y: new CA.Attribute((mark) => {
-            let v = interpolateClosestValue(
-              yEncoding,
+            let v = interpolateVariable(
+              yGet,
               perCountryData.get(country),
               mark.attr('year')
             );
             return scales.yScale(v);
           }),
           radius: new CA.Attribute((mark) => {
-            let v = interpolateClosestValue(
-              sizeEncoding,
+            let v = interpolateVariable(
+              sizeGet,
               perCountryData.get(country),
               mark.attr('year')
             );
-            if (ScaleTypes[sizeEncoding] == 'log') v = Math.pow(10, v);
             return v > 0 ? Math.max(sizeScale(v), 0) : 0;
           }),
           strokeWidth: new CA.Attribute(
@@ -357,63 +399,49 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
         startYear: new CA.Attribute(currentYear.get()),
         endYear: new CA.Attribute(currentYear.get()),
         x: new CA.Attribute({
-          valueFn: (mark) => {
-            // define the list of x coordinates for this line
-            let countryData = perCountryData.get(id);
-            let startYear = mark.attr('startYear'),
-              endYear = mark.attr('endYear');
-            let years = [
-              startYear,
-              ...Array.from(countryData.keys()).filter(
-                (y) => y >= startYear && y <= endYear
-              ),
-              mark.attr('endYear'),
-            ];
-            return years.map((y) =>
-              interpolateClosestValue(xEncoding, perCountryData.get(id), y)
-            );
-          },
+          valueFn: (mark) =>
+            lineCoordinates(
+              xGet,
+              perCountryData.get(id),
+              mark.attr('startYear'),
+              mark.attr('endYear')
+            ),
           transform: (v) => v.map(scales.xScale),
         }),
         y: new CA.Attribute({
-          valueFn: (mark) => {
-            // define the list of y coordinates for this line
-            let countryData = perCountryData.get(id);
-            let startYear = mark.attr('startYear'),
-              endYear = mark.attr('endYear');
-            let years = [
-              startYear,
-              ...Array.from(countryData.keys()).filter(
-                (y) => y >= startYear && y <= endYear
-              ),
-              mark.attr('endYear'),
-            ];
-            return years.map((y) =>
-              interpolateClosestValue(yEncoding, perCountryData.get(id), y)
-            );
-          },
+          valueFn: (mark) =>
+            lineCoordinates(
+              yGet,
+              perCountryData.get(id),
+              mark.attr('startYear'),
+              mark.attr('endYear')
+            ),
           transform: (v) => v.map(scales.yScale),
         }),
+        size: new CA.Attribute({
+          valueFn: (mark) =>
+            lineCoordinates(
+              sizeGet,
+              perCountryData.get(id),
+              mark.attr('startYear'),
+              mark.attr('endYear')
+            ),
+          transform: (v) => v.map(sizeScale),
+        }),
+        alpha: new CA.Attribute(0),
       }),
     show: async (mark) => {
-      let availableYears = Array.from(
-        perCountryData.get(mark.attr('country')).keys()
-      );
       return await mark
-        .animateTo(
-          'startYear',
-          availableYears.reduce((a, b) => Math.min(a, b), currentYear.get())
-        )
-        .animateTo(
-          'endYear',
-          availableYears.reduce((a, b) => Math.max(a, b), currentYear.get())
-        )
+        .animateTo('startYear', MinYear)
+        .animateTo('endYear', MaxYear)
+        .animateTo('alpha', 1.0, { duration: 200 })
         .wait(['startYear', 'endYear']);
     },
     hide: async (mark) =>
       await mark
         .animateTo('startYear', currentYear.get())
         .animateTo('endYear', currentYear.get())
+        .animateTo('alpha', 0.0, { duration: 200, delay: 300 })
         .wait(['startYear', 'endYear']),
   }).attach(lineSet);
 
@@ -451,11 +479,11 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
           ([year, d]) =>
             new CA.Mark(`${country}-${year}`, {
               x: new CA.Attribute({
-                value: d[xEncoding],
+                value: xGet(d),
                 transform: scales.xScale,
               }),
               y: new CA.Attribute({
-                value: d[yEncoding],
+                value: yGet(d),
                 transform: scales.yScale,
               }),
             })
@@ -491,11 +519,11 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
       // todo change this to animating()
       currentYear.set(currentYear.get());
     } else {
-      if (currentYear.get() >= 2007) currentYear.set(1952);
+      if (currentYear.get() >= MaxYear) currentYear.set(MinYear);
       currentYear.animate(
         new CA.basicAnimationTo(
-          2007,
-          (2007 - currentYear.get()) * 500,
+          MaxYear,
+          (MaxYear - currentYear.get()) * 500,
           CA.curveLinear
         )
       );
