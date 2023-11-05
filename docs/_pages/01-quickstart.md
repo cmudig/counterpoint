@@ -18,15 +18,20 @@ Importing Counterpoint in ES6 JavaScript is simple:
 import { Mark, Attribute, ... } from 'canvas-animation';
 ```
 
-To import Counterpoint in vanilla JavaScript, you can use
-[dynamic import syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#)
-such as:
+To import Counterpoint in vanilla JavaScript, you can use similar syntax but
+refer to the full library URL:
+
+```javascript
+import { Mark, Attribute } from 'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/canvas-animation@main/canvas-animation/dist/canvas-animation.es.js';
+```
+
+or use [dynamic import syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#):
 
 ```javascript
 import(
   'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/canvas-animation@main/canvas-animation/dist/canvas-animation.es.js'
-).then((canvasAnimation) => {
-  // use canvasAnimation as a module
+).then((Counterpoint) => {
+  // use Counterpoint as a module
 });
 ```
 
