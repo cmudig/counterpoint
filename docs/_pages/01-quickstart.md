@@ -3,7 +3,7 @@ layout: post
 title: 'Quickstart and Tutorial'
 ---
 
-Counterpoint is an easy-to-use library for developing animated, interactive 
+Counterpoint is a library of data structures for developing animated, interactive 
 canvas-based web interfaces. It's best suited for people who are building data-
 driven interfaces with custom or non-standard rendering requirements, such as 
 D3.js users looking for additional flexibility and simpler canvas support.
@@ -245,7 +245,7 @@ interpolate to the new values.
 >
 {: .block-tip }
 
-To enable animations, we first have to create a **ticker** to keep track of our
+To enable animations, we first have to create a **<a href="{{ site.baseurl }}/pages/03-animation-timing#triggering-render-updates-with-a-ticker">ticker</a>** to keep track of our
 animations' timing. This `Ticker` instance will keep track of the render group(s)
 we give it, and we pass it a function to call when the state of the render group
 changes:

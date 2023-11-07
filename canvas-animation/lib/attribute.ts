@@ -110,8 +110,9 @@ export class Attribute<
   private needsUpdate = false;
   private animation = null;
   public label = null; // for debugging
-  private _getterValue: ValueType = null; // This is precomputed in advance() and returned by get()
-  private _computedLastValue: ValueType = null; // Value to use as initial interpolant if this is a computed value and animated
+  private _computedValue: ValueType = null; // this is always a stable value, i.e. non-animated
+  private _lastTickValue: ValueType = undefined;
+  private _animatedValue: ValueType = null; // value if an animation is ongoing
   private _hasComputed = false;
   private _timeProvider: TimeProvider = null; // REQUIRED for animation
   private currentTime = 0;
@@ -209,7 +210,7 @@ export class Attribute<
    */
   compute() {
     if (!!this.valueFn) {
-      this._computedLastValue = this.valueFn(this._getComputeArg());
+      this._computedValue = this.valueFn(this._getComputeArg());
     }
   }
 
@@ -232,12 +233,11 @@ export class Attribute<
     if (this._animationFinished()) {
       this._computeAnimation();
     }
+    this._lastTickValue = this.getUntransformed();
     if (this.animation != null || this.needsUpdate) {
       this.needsUpdate = false;
       this._changedLastTick = true;
       return true;
-    } else if (this.recompute === AttributeRecompute.ALWAYS) {
-      this.compute();
     }
     this._changedLastTick = false;
     return false;
@@ -248,9 +248,9 @@ export class Attribute<
     if (!!this._timeProvider) this.currentTime = this._timeProvider();
 
     // Evaluate the animation
-    let { animator, start } = this.animation;
+    let { animator, start, initial } = this.animation;
     let value = animator.evaluate(
-      !!this.valueFn ? this._computedLastValue : this.value,
+      initial,
       Math.min(this.currentTime - start, animator.duration)
       // can add a debug flag here
     );
@@ -259,9 +259,9 @@ export class Attribute<
       if (!!this.valueFn) this.compute();
       else this.value = value;
       this._cleanUpAnimation(false);
-      this._getterValue = null;
+      this._animatedValue = null;
     } else {
-      this._getterValue = value;
+      this._animatedValue = value;
     }
   }
 
@@ -317,7 +317,7 @@ export class Attribute<
     this._computeAnimation();
 
     let value: ValueType;
-    if (this._getterValue != null) value = this._getterValue;
+    if (this._animatedValue != null) value = this._animatedValue;
     else if (!!this.valueFn) {
       if (
         this.recompute !== AttributeRecompute.WHEN_UPDATED ||
@@ -326,8 +326,9 @@ export class Attribute<
         this.compute();
         this._hasComputed = true;
       }
-      value = this._computedLastValue;
+      value = this._computedValue;
     } else value = this.value;
+    if (this._lastTickValue === undefined) this._lastTickValue = value;
     return value;
   }
 
@@ -415,7 +416,7 @@ export class Attribute<
         this.compute();
         this._hasComputed = true;
       }
-      rawValue = this._computedLastValue;
+      rawValue = this._computedValue;
     } else rawValue = this.value;
 
     let finalValue = this.animation.animator.finalValue;
@@ -438,14 +439,16 @@ export class Attribute<
    */
   set(newValue: ValueType | ((computeArg: ComputeArgumentType) => ValueType)) {
     if (typeof newValue == 'function') {
-      if (this.value != null) this._computedLastValue = this.value;
+      if (this.value != null) this._computedValue = this.value;
       this.valueFn = newValue as (computeArg: ComputeArgumentType) => ValueType;
       this.value = undefined;
-      this._getterValue = null;
+      this._animatedValue = null;
+      this._lastTickValue = undefined;
     } else {
       this.value = newValue;
       this.valueFn = null;
-      this._getterValue = null;
+      this._animatedValue = null;
+      this._lastTickValue = newValue;
     }
     this.needsUpdate = true;
     if (this.animation) this._cleanUpAnimation(true);
@@ -479,9 +482,10 @@ export class Attribute<
       this._computeAnimation(false);
     }
 
-    if (this._getterValue != null) return this._getterValue;
+    if (this._lastTickValue !== undefined) return this._lastTickValue;
+    if (this._animatedValue != null) return this._animatedValue;
     if (this.value !== undefined) return this.value;
-    return this._computedLastValue;
+    return this._computedValue;
   }
 
   /**
@@ -493,7 +497,9 @@ export class Attribute<
     if (!!this.animation) {
       return this.animation.animator.finalValue;
     }
-    return this.last();
+    if (this._animatedValue != null) return this._animatedValue;
+    if (this.value !== undefined) return this.value;
+    return this._computedValue;
   }
 
   /**
@@ -524,15 +530,16 @@ export class Attribute<
     if (!!this.animation) {
       // Set the current value of the property to wherever it is now
       if (!this.valueFn) {
-        this.value = this.last();
+        this.value = this._animatedValue;
       } else {
-        this._computedLastValue = this.last();
+        this._computedValue = this._animatedValue;
       }
       this._cleanUpAnimation(true);
     }
 
     this.animation = {
       animator: animation,
+      initial: this.last(),
       start: this.currentTime,
     };
     this._computeAnimation();

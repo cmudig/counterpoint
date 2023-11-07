@@ -314,11 +314,10 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
   // for bubble size, use a simple d3 scale
   let sizeScale = d3.scaleSqrt().range([4, 60]);
 
-  function updateDomains(reset = false, animated = false) {
-    scales.xDomain(d3.extent(data, xGet), animated);
-    scales.yDomain(d3.extent(data, yGet), animated);
+  function updateDomains() {
+    scales.xDomain(d3.extent(data, xGet), false);
+    scales.yDomain(d3.extent(data, yGet), false);
     sizeScale = sizeScale.domain(d3.extent(data, sizeGet));
-    if (reset) scales.reset(animated);
   }
   updateDomains();
 
@@ -509,8 +508,7 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
 
   // play/pause
   document.getElementById('play-pause').onclick = () => {
-    if (!!currentYear.animation) {
-      // todo change this to animating()
+    if (currentYear.animating()) {
       currentYear.set(currentYear.get());
     } else {
       if (currentYear.get() >= MaxYear) currentYear.set(MinYear);
@@ -584,21 +582,24 @@ d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
 
   document.getElementById('x-dropdown').addEventListener('change', (e) => {
     xEncoding = e.target.value;
-    updateDomains(true, true);
+    updateDomains();
     bubbleSet.animate('x', { duration: 500 });
     lineSet.animate('x', { duration: 500 });
+    bubbleSet.wait('x').then(() => zoomToAll(true));
   });
   document.getElementById('y-dropdown').addEventListener('change', (e) => {
     yEncoding = e.target.value;
-    updateDomains(true, true);
+    updateDomains();
     bubbleSet.animate('y', { duration: 500 });
     lineSet.animate('y', { duration: 500 });
+    bubbleSet.wait('y').then(() => zoomToAll(true));
   });
 
   document.getElementById('size-dropdown').addEventListener('change', (e) => {
     sizeEncoding = e.target.value;
-    updateDomains(false, true);
+    updateDomains();
     bubbleSet.animate('radius', { duration: 500 });
     lineSet.animate('size', { duration: 500 });
+    bubbleSet.wait('radius').then(() => zoomToAll(true));
   });
 });

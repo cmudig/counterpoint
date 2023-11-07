@@ -298,7 +298,7 @@ export class Scales {
       this._translateX.advance(dt),
       this._translateY.advance(dt),
     ];
-    if (updated.some((v) => v) || !!this.controller) {
+    if (updated.some((v) => v)) {
       this._updatedNoAdvance = false;
       this.listeners.forEach((fn) => fn(this));
       return true;

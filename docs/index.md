@@ -2,8 +2,8 @@
 layout: home
 ---
 
-Counterpoint is a **library of data structures** designed to help create beautifully smooth data-driven 
-animations and interactive graphics. It's ideal for developers who are used to 
+Counterpoint is a **library of animation data structures** designed to help
+create beautifully smooth data-driven interactive graphics. It's ideal for developers who are used to 
 working with [D3.js](http://d3js.org/) or other customizable graphics libraries, but 
 need more control and design options for animations.
 
