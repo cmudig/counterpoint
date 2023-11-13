@@ -2396,7 +2396,7 @@ class S {
   advance(t = void 0) {
     return (this.animation != null || this.needsUpdate || this.valueFn) && (this._timeProvider === null ? this.currentTime += t : this.currentTime = this._timeProvider()), this.animation == null && this._animationCompleteCallbacks.length > 0 && (console.warn(
       "Found animation-complete callbacks for a non-existent animation"
-    ), this._cleanUpAnimation(!0)), this._animationFinished() && this._computeAnimation(), this._lastTickValue = this.getUntransformed(), this.animation != null || this.needsUpdate ? (this.needsUpdate = !1, this._changedLastTick = !0, !0) : (this._changedLastTick = !1, !1);
+    ), this._cleanUpAnimation(!0)), this._lastTickValue = this.getUntransformed(), this.animation != null || this.needsUpdate ? (this.needsUpdate = !1, this._changedLastTick = !0, !0) : (this._changedLastTick = !1, !1);
   }
   _computeAnimation(t = !0) {
     if (!this.animation)

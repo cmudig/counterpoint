@@ -126,12 +126,17 @@ listed below and the behavior of the ticker instance you are using (see
 [Configuring Ticker Behavior]({{ site.baseurl }}/pages/07-optimizing-performance#configuring-ticker-behavior)).
 
 By default, all attributes with value functions are recomputed whenever their 
-`get()` method is called. This likely means that when your drawing function gets
-called, the value function will be called as well. *Note:* Counterpoint's
-tickers don't actually call your drawing function every frame! Ticker `onChange`
-callbacks are only run when the `advance()` method of the objects they manage
-(e.g. the render group) returns `true`. So if the render group has no active
-animations or queued updates, the canvas won't need to be redrawn.
+`get()` or `advance()` methods are called. This likely means that when the canvas
+needs to be drawn every frame, the value function will be called *twice* per frame.
+
+> **TIP: Ticker Behavior**
+> Counterpoint's tickers don't actually call your drawing function every frame!
+> Ticker `onChange` callbacks are only run when the `advance()` method of the 
+> objects they manage (e.g. the render group) returns `true`. So if the render 
+> group has no active animations or queued updates, the canvas won't need to be
+> redrawn.
+> 
+{: .block-tip }
 
 Nevertheless, it can be helpful to set the following options to reduce the number
 of calls to potentially expensive functions:

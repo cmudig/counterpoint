@@ -71,4 +71,17 @@ them with functionality from D3.
   <p><button id="reset-zoom">Reset Zoom</button></p>
   <p style="font-size: 0.8em;">Source: Free Data from World Bank via gapminder.org, CC-BY license</p>
 </div>
-<script type="module" src="/canvas-animation/assets/gapminder.js"></script>
+<script type="module"> 
+  import { loadGapminderPlot } from "/canvas-animation/assets/gapminder.js";
+  // load gapminder when the page changes if not already loaded
+  let hasGapminder = false;
+  new MutationObserver(() => {
+    if (!!document.getElementById('gapminder-chart-container')) {
+      loadGapminderPlot();
+      hasGapminder = true;
+    } else {
+      hasGapminder = false;
+    }
+  })
+  .observe(document.body, { childList: true })
+</script>

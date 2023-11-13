@@ -28,6 +28,7 @@ const ScaleTypes = {
 function createAxes(scales, xEncoding, yEncoding) {
   // Create the SVG container.
   const svg = d3.select('#gapminder-axes');
+  if (svg.empty()) return;
   let rect = d3
     .select('#gapminder-chart-container')
     .node()
@@ -260,346 +261,354 @@ function nearestBubbleContainingPos(positionMap, mousePos, maxDistance) {
   }
 }
 
-d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
-  // format dataset - apply log10 for logarithmic fields
-  data.forEach((d) => {
-    d.year = parseInt(d.year);
-    d.population = Math.log10(parseInt(d.population));
-    d.life_exp = parseFloat(d.life_exp);
-    d.gdp_cap = Math.log10(parseFloat(d.gdp_cap));
-  });
-  let allCountries = Array.from(new Set(data.map((d) => d.country)));
-  allCountries.sort();
-  let perCountryData = new Map(
-    allCountries.map((country) => [
-      country,
-      new Map(data.filter((d) => d.country == country).map((d) => [d.year, d])),
-    ])
-  );
+export function loadGapminderPlot() {
+  d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
+    let canvas = document.getElementById('gapminder-content');
+    let slider = document.getElementById('year-slider');
+    if (!canvas) return;
 
-  let canvas = document.getElementById('gapminder-content');
-  let slider = document.getElementById('year-slider');
-
-  let currentYear = new CA.Attribute(StartYear);
-  let xEncoding = 'life_exp';
-  let yEncoding = 'gdp_cap';
-  let sizeEncoding = 'population';
-  let xGet = (datum) => datum[xEncoding];
-  let yGet = (datum) => datum[yEncoding];
-  // cancel out the log transform for size
-  let sizeGet = (datum) =>
-    ScaleTypes[sizeEncoding] == 'log'
-      ? Math.pow(10, datum[sizeEncoding])
-      : datum[sizeEncoding];
-
-  let hoveredCountry = null;
-  let selectedCountry = null;
-
-  // create scales, which handle transforming the coordinates and zooming to
-  // particular marks when we select
-  let scales = new CA.Scales().onUpdate(() => {
-    // When the scales update, we also need to let the d3 zoom object know that
-    // the zoom transform has changed. Otherwise performing a zoom gesture after
-    // a programmatic update will result in an abrupt transform change
-    let sel = d3.select(canvas);
-    let currentT = d3.zoomTransform(canvas);
-    let t = scales.transform();
-    if (t.k != currentT.k || t.x != currentT.x || t.y != currentT.y) {
-      sel.call(zoom.transform, new d3.ZoomTransform(t.k, t.x, t.y));
-    }
-    createAxes(scales, xEncoding, yEncoding);
-    positionMap.invalidate();
-  });
-
-  // for bubble size, use a simple d3 scale
-  let sizeScale = d3.scaleSqrt().range([4, 60]);
-
-  function updateDomains() {
-    scales.xDomain(d3.extent(data, xGet), false);
-    scales.yDomain(d3.extent(data, yGet), false);
-    sizeScale = sizeScale.domain(d3.extent(data, sizeGet));
-  }
-  updateDomains();
-
-  function updateRanges(animated) {
-    width = canvas.offsetWidth;
-    height = canvas.offsetHeight;
-    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    scales
-      .xRange([marginLeft, width - marginRight], animated)
-      .yRange([height - marginBottom, marginTop], animated);
-  }
-  updateRanges(false);
-
-  // create a render group with all bubbles
-  let bubbleSet = new CA.MarkRenderGroup(
-    allCountries.map(
-      (country) =>
-        new CA.Mark(country, {
-          year: new CA.Attribute(() => currentYear.get()),
-          x: new CA.Attribute((mark) => {
-            let v = interpolateVariable(
-              xGet,
-              perCountryData.get(country),
-              mark.attr('year')
-            );
-            // here we use the scale within the value fn, not as a transform,
-            // because we want the transform to animate as well even if it
-            // undergoes a discrete change (such as linear <> log)
-            return scales.xScale(v);
-          }),
-          y: new CA.Attribute((mark) => {
-            let v = interpolateVariable(
-              yGet,
-              perCountryData.get(country),
-              mark.attr('year')
-            );
-            return scales.yScale(v);
-          }),
-          radius: new CA.Attribute((mark) => {
-            let v = interpolateVariable(
-              sizeGet,
-              perCountryData.get(country),
-              mark.attr('year')
-            );
-            return v > 0 ? Math.max(sizeScale(v), 0) : 0;
-          }),
-          strokeWidth: new CA.Attribute(
-            () =>
-              (selectedCountry == country ? 2.0 : 0) +
-              (hoveredCountry == country ? 3.0 : 1.0)
-          ),
-          alpha: new CA.Attribute(() =>
-            selectedCountry == country ||
-            (selectedCountry === null &&
-              (hoveredCountry == country || hoveredCountry == null))
-              ? 1.0
-              : 0.3
-          ),
-          labelSize: new CA.Attribute(() =>
-            selectedCountry == country || hoveredCountry == country ? 12.0 : 0.0
-          ),
-        })
-    )
-  );
-
-  // create another render group for the line showing each country's trajectory
-  // (these marks will only be added when the user hovers or selects, using the
-  // stage manager)
-  let lineSet = new CA.MarkRenderGroup([]).configure({
-    animationDuration: 500,
-    animationCurve: CA.curveEaseInOut,
-  });
-  let lineStaging = new CA.StageManager({
-    create: (id) =>
-      new CA.Mark(`line-${id}`, {
-        country: new CA.Attribute(id),
-        startYear: new CA.Attribute(currentYear.get()),
-        endYear: new CA.Attribute(currentYear.get()),
-        x: new CA.Attribute((mark) =>
-          lineCoordinates(
-            xGet,
-            perCountryData.get(id),
-            mark.attr('startYear'),
-            mark.attr('endYear')
-          ).map(scales.xScale)
-        ),
-        y: new CA.Attribute((mark) =>
-          lineCoordinates(
-            yGet,
-            perCountryData.get(id),
-            mark.attr('startYear'),
-            mark.attr('endYear')
-          ).map(scales.yScale)
-        ),
-        size: new CA.Attribute((mark) =>
-          lineCoordinates(
-            sizeGet,
-            perCountryData.get(id),
-            mark.attr('startYear'),
-            mark.attr('endYear')
-          ).map(sizeScale)
-        ),
-        alpha: new CA.Attribute(0),
-      }),
-    show: async (mark) => {
-      return await mark
-        .animateTo('startYear', MinYear)
-        .animateTo('endYear', MaxYear)
-        .animateTo('alpha', 1.0, { duration: 200 })
-        .wait(['startYear', 'endYear']);
-    },
-    hide: async (mark) =>
-      await mark
-        .animateTo('startYear', currentYear.get())
-        .animateTo('endYear', currentYear.get())
-        .animateTo('alpha', 0.0, { duration: 200, delay: 300 })
-        .wait(['startYear', 'endYear']),
-  }).attach(lineSet);
-
-  let zoom = d3
-    .zoom()
-    .scaleExtent([0.1, 10])
-    .on('zoom', (e) => {
-      // important to make sure the source event exists, filtering out our
-      // programmatic changes
-      if (e.sourceEvent != null) scales.transform(e.transform);
+    // format dataset - apply log10 for logarithmic fields
+    data.forEach((d) => {
+      d.year = parseInt(d.year);
+      d.population = Math.log10(parseInt(d.population));
+      d.life_exp = parseFloat(d.life_exp);
+      d.gdp_cap = Math.log10(parseFloat(d.gdp_cap));
     });
-  d3.select(canvas).call(zoom);
-
-  // the ticker runs every frame and redraws only when needed
-  let ticker = new CA.Ticker([
-    currentYear,
-    bubbleSet,
-    lineSet,
-    scales,
-  ]).onChange(() => {
-    drawCanvas(canvas, bubbleSet, lineSet);
-    slider.value = Math.round(currentYear.get());
-    document.getElementById('year-text').innerText = slider.value;
-    if (bubbleSet.changed(['x', 'y'])) positionMap.invalidate();
-  });
-  // the position map keeps track of mark locations so we can find them on hover
-  let positionMap = new CA.PositionMap().add(bubbleSet);
-
-  // Function to zoom to a country, leaving room for that country's location in
-  // all years
-  let zoomToCountry = (country) =>
-    scales.zoomTo(
-      CA.markBox(
-        Array.from(perCountryData.get(country).entries()).map(
-          ([year, d]) =>
-            new CA.Mark(`${country}-${year}`, {
-              x: new CA.Attribute({
-                value: xGet(d),
-                transform: scales.xScale,
-              }),
-              y: new CA.Attribute({
-                value: yGet(d),
-                transform: scales.yScale,
-              }),
-            })
+    let allCountries = Array.from(new Set(data.map((d) => d.country)));
+    allCountries.sort();
+    let perCountryData = new Map(
+      allCountries.map((country) => [
+        country,
+        new Map(
+          data.filter((d) => d.country == country).map((d) => [d.year, d])
         ),
-        { padding: 60 }
+      ])
+    );
+
+    let currentYear = new CA.Attribute(StartYear);
+    let xEncoding = 'life_exp';
+    let yEncoding = 'gdp_cap';
+    let sizeEncoding = 'population';
+    let xGet = (datum) => datum[xEncoding];
+    let yGet = (datum) => datum[yEncoding];
+    // cancel out the log transform for size
+    let sizeGet = (datum) =>
+      ScaleTypes[sizeEncoding] == 'log'
+        ? Math.pow(10, datum[sizeEncoding])
+        : datum[sizeEncoding];
+
+    let hoveredCountry = null;
+    let selectedCountry = null;
+
+    // create scales, which handle transforming the coordinates and zooming to
+    // particular marks when we select
+    let scales = new CA.Scales().onUpdate(() => {
+      // When the scales update, we also need to let the d3 zoom object know that
+      // the zoom transform has changed. Otherwise performing a zoom gesture after
+      // a programmatic update will result in an abrupt transform change
+      let sel = d3.select(canvas);
+      let currentT = d3.zoomTransform(canvas);
+      let t = scales.transform();
+      if (t.k != currentT.k || t.x != currentT.x || t.y != currentT.y) {
+        sel.call(zoom.transform, new d3.ZoomTransform(t.k, t.x, t.y));
+      }
+      createAxes(scales, xEncoding, yEncoding);
+      positionMap.invalidate();
+    });
+
+    // for bubble size, use a simple d3 scale
+    let sizeScale = d3.scaleSqrt().range([4, 60]);
+
+    function updateDomains() {
+      scales.xDomain(d3.extent(data, xGet), false);
+      scales.yDomain(d3.extent(data, yGet), false);
+      sizeScale = sizeScale.domain(d3.extent(data, sizeGet));
+    }
+    updateDomains();
+
+    function updateRanges(animated) {
+      width = canvas.offsetWidth;
+      height = canvas.offsetHeight;
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      scales
+        .xRange([marginLeft, width - marginRight], animated)
+        .yRange([height - marginBottom, marginTop], animated);
+    }
+    updateRanges(false);
+
+    // create a render group with all bubbles
+    let bubbleSet = new CA.MarkRenderGroup(
+      allCountries.map(
+        (country) =>
+          new CA.Mark(country, {
+            year: new CA.Attribute(() => currentYear.get()),
+            x: new CA.Attribute((mark) => {
+              let v = interpolateVariable(
+                xGet,
+                perCountryData.get(country),
+                mark.attr('year')
+              );
+              // here we use the scale within the value fn, not as a transform,
+              // because we want the transform to animate as well even if it
+              // undergoes a discrete change (such as linear <> log)
+              return scales.xScale(v);
+            }),
+            y: new CA.Attribute((mark) => {
+              let v = interpolateVariable(
+                yGet,
+                perCountryData.get(country),
+                mark.attr('year')
+              );
+              return scales.yScale(v);
+            }),
+            radius: new CA.Attribute((mark) => {
+              let v = interpolateVariable(
+                sizeGet,
+                perCountryData.get(country),
+                mark.attr('year')
+              );
+              return v > 0 ? Math.max(sizeScale(v), 0) : 0;
+            }),
+            strokeWidth: new CA.Attribute(
+              () =>
+                (selectedCountry == country ? 2.0 : 0) +
+                (hoveredCountry == country ? 3.0 : 1.0)
+            ),
+            alpha: new CA.Attribute(() =>
+              selectedCountry == country ||
+              (selectedCountry === null &&
+                (hoveredCountry == country || hoveredCountry == null))
+                ? 1.0
+                : 0.3
+            ),
+            labelSize: new CA.Attribute(() =>
+              selectedCountry == country || hoveredCountry == country
+                ? 12.0
+                : 0.0
+            ),
+          })
       )
     );
 
-  let zoomToAll = (animated = true) =>
-    scales.zoomTo(
-      CA.markBox(bubbleSet.getMarks(), {
-        padding: 60,
-        inverseTransformCoordinates: true, // needed because we apply scale within the value fns
-      }),
-      animated
-    );
-  zoomToAll(false);
+    // create another render group for the line showing each country's trajectory
+    // (these marks will only be added when the user hovers or selects, using the
+    // stage manager)
+    let lineSet = new CA.MarkRenderGroup([]).configure({
+      animationDuration: 500,
+      animationCurve: CA.curveEaseInOut,
+    });
+    let lineStaging = new CA.StageManager({
+      create: (id) =>
+        new CA.Mark(`line-${id}`, {
+          country: new CA.Attribute(id),
+          startYear: new CA.Attribute(currentYear.get()),
+          endYear: new CA.Attribute(currentYear.get()),
+          x: new CA.Attribute((mark) =>
+            lineCoordinates(
+              xGet,
+              perCountryData.get(id),
+              mark.attr('startYear'),
+              mark.attr('endYear')
+            ).map(scales.xScale)
+          ),
+          y: new CA.Attribute((mark) =>
+            lineCoordinates(
+              yGet,
+              perCountryData.get(id),
+              mark.attr('startYear'),
+              mark.attr('endYear')
+            ).map(scales.yScale)
+          ),
+          size: new CA.Attribute((mark) =>
+            lineCoordinates(
+              sizeGet,
+              perCountryData.get(id),
+              mark.attr('startYear'),
+              mark.attr('endYear')
+            ).map(sizeScale)
+          ),
+          alpha: new CA.Attribute(0),
+        }),
+      show: async (mark) => {
+        return await mark
+          .animateTo('startYear', MinYear)
+          .animateTo('endYear', MaxYear)
+          .animateTo('alpha', 1.0, { duration: 200 })
+          .wait(['startYear', 'endYear']);
+      },
+      hide: async (mark) =>
+        await mark
+          .animateTo('startYear', currentYear.get())
+          .animateTo('endYear', currentYear.get())
+          .animateTo('alpha', 0.0, { duration: 200, delay: 300 })
+          .wait(['startYear', 'endYear']),
+    }).attach(lineSet);
 
-  // respond to year slider selections
-  slider.addEventListener('input', (e) => {
-    let newValue = e.target.value;
+    let zoom = d3
+      .zoom()
+      .scaleExtent([0.1, 10])
+      .on('zoom', (e) => {
+        // important to make sure the source event exists, filtering out our
+        // programmatic changes
+        if (e.sourceEvent != null) scales.transform(e.transform);
+      });
+    d3.select(canvas).call(zoom);
 
-    if (newValue != currentYear) {
-      currentYear.set(parseInt(newValue));
-      bubbleSet.animate('year');
-      positionMap.invalidate();
-    }
-  });
+    // the ticker runs every frame and redraws only when needed
+    let ticker = new CA.Ticker([
+      currentYear,
+      bubbleSet,
+      lineSet,
+      scales,
+    ]).onChange(() => {
+      drawCanvas(canvas, bubbleSet, lineSet);
+      slider.value = Math.round(currentYear.get());
+      let yearLabel = document.getElementById('year-text');
+      if (!!yearLabel) yearLabel.innerText = slider.value;
+      if (bubbleSet.changed(['x', 'y'])) positionMap.invalidate();
+    });
+    // the position map keeps track of mark locations so we can find them on hover
+    let positionMap = new CA.PositionMap().add(bubbleSet);
 
-  // play/pause
-  document.getElementById('play-pause').onclick = () => {
-    if (currentYear.animating()) {
-      currentYear.set(currentYear.get());
-    } else {
-      if (currentYear.get() >= MaxYear) currentYear.set(MinYear);
-      currentYear.animate(
-        new CA.basicAnimationTo(
-          MaxYear,
-          (MaxYear - currentYear.get()) * 500,
-          CA.curveLinear
+    // Function to zoom to a country, leaving room for that country's location in
+    // all years
+    let zoomToCountry = (country) =>
+      scales.zoomTo(
+        CA.markBox(
+          Array.from(perCountryData.get(country).entries()).map(
+            ([year, d]) =>
+              new CA.Mark(`${country}-${year}`, {
+                x: new CA.Attribute({
+                  value: xGet(d),
+                  transform: scales.xScale,
+                }),
+                y: new CA.Attribute({
+                  value: yGet(d),
+                  transform: scales.yScale,
+                }),
+              })
+          ),
+          { padding: 60 }
         )
       );
-    }
-  };
 
-  // reset viewport to show all marks
-  document.getElementById('reset-zoom').onclick = zoomToAll;
+    let zoomToAll = (animated = true) =>
+      scales.zoomTo(
+        CA.markBox(bubbleSet.getMarks(), {
+          padding: 60,
+          inverseTransformCoordinates: true, // needed because we apply scale within the value fns
+        }),
+        animated
+      );
+    zoomToAll(false);
 
-  // mouse event handlers for hovering and selecting
-  let mouseDown = false;
-  canvas.addEventListener('mousedown', () => (mouseDown = true));
-  canvas.addEventListener('mousemove', (e) => {
-    let mousePos = [
-      e.clientX - canvas.getBoundingClientRect().left,
-      e.clientY - canvas.getBoundingClientRect().top,
-    ];
-    if (!mouseDown) {
-      let oldHover = hoveredCountry;
-      hoveredCountry = nearestBubbleContainingPos(
+    // respond to year slider selections
+    slider.addEventListener('input', (e) => {
+      let newValue = e.target.value;
+
+      if (newValue != currentYear) {
+        currentYear.set(parseInt(newValue));
+        bubbleSet.animate('year');
+        positionMap.invalidate();
+      }
+    });
+
+    // play/pause
+    document.getElementById('play-pause').onclick = () => {
+      if (currentYear.animating()) {
+        currentYear.set(currentYear.get());
+      } else {
+        if (currentYear.get() >= MaxYear) currentYear.set(MinYear);
+        currentYear.animate(
+          new CA.basicAnimationTo(
+            MaxYear,
+            (MaxYear - currentYear.get()) * 500,
+            CA.curveLinear
+          )
+        );
+      }
+    };
+
+    // reset viewport to show all marks
+    document.getElementById('reset-zoom').onclick = zoomToAll;
+
+    // mouse event handlers for hovering and selecting
+    let mouseDown = false;
+    canvas.addEventListener('mousedown', () => (mouseDown = true));
+    canvas.addEventListener('mousemove', (e) => {
+      let mousePos = [
+        e.clientX - canvas.getBoundingClientRect().left,
+        e.clientY - canvas.getBoundingClientRect().top,
+      ];
+      if (!mouseDown) {
+        let oldHover = hoveredCountry;
+        hoveredCountry = nearestBubbleContainingPos(
+          positionMap,
+          mousePos,
+          sizeScale.range()[1]
+        );
+        if (oldHover !== hoveredCountry) {
+          bubbleSet.animate('strokeWidth', { duration: 200 });
+          bubbleSet.animate('alpha', { duration: 200 });
+          bubbleSet.animate('labelSize', { duration: 200 });
+          if (oldHover != null && oldHover !== selectedCountry)
+            lineStaging.hide(oldHover);
+          if (hoveredCountry != null) lineStaging.show(hoveredCountry);
+        }
+      }
+    });
+    canvas.addEventListener('mouseup', () => (mouseDown = false));
+    canvas.addEventListener('click', (e) => {
+      let mousePos = [
+        e.clientX - canvas.getBoundingClientRect().left,
+        e.clientY - canvas.getBoundingClientRect().top,
+      ];
+
+      let oldSelection = selectedCountry;
+      selectedCountry = nearestBubbleContainingPos(
         positionMap,
         mousePos,
         sizeScale.range()[1]
       );
-      if (oldHover !== hoveredCountry) {
-        bubbleSet.animate('strokeWidth', { duration: 200 });
+      if (oldSelection !== selectedCountry) {
         bubbleSet.animate('alpha', { duration: 200 });
+        bubbleSet.animate('strokeWidth', { duration: 200 });
         bubbleSet.animate('labelSize', { duration: 200 });
-        if (oldHover != null && oldHover !== selectedCountry)
-          lineStaging.hide(oldHover);
-        if (hoveredCountry != null) lineStaging.show(hoveredCountry);
+        if (oldSelection != null) lineStaging.hide(oldSelection);
+        if (selectedCountry != null) {
+          lineStaging.show(selectedCountry);
+          zoomToCountry(selectedCountry);
+        }
       }
-    }
-  });
-  canvas.addEventListener('mouseup', () => (mouseDown = false));
-  canvas.addEventListener('click', (e) => {
-    let mousePos = [
-      e.clientX - canvas.getBoundingClientRect().left,
-      e.clientY - canvas.getBoundingClientRect().top,
-    ];
+    });
+    // on resize, update the chart bounds and redraw the canvas immediately to prevent flicker
+    new ResizeObserver(() => {
+      updateRanges(true);
+      drawCanvas(canvas, bubbleSet, lineSet);
+    }).observe(canvas);
 
-    let oldSelection = selectedCountry;
-    selectedCountry = nearestBubbleContainingPos(
-      positionMap,
-      mousePos,
-      sizeScale.range()[1]
-    );
-    if (oldSelection !== selectedCountry) {
-      bubbleSet.animate('alpha', { duration: 200 });
-      bubbleSet.animate('strokeWidth', { duration: 200 });
-      bubbleSet.animate('labelSize', { duration: 200 });
-      if (oldSelection != null) lineStaging.hide(oldSelection);
-      if (selectedCountry != null) {
-        lineStaging.show(selectedCountry);
-        zoomToCountry(selectedCountry);
-      }
-    }
-  });
-  // on resize, update the chart bounds and redraw the canvas immediately to prevent flicker
-  new ResizeObserver(() => {
-    updateRanges(true);
-    drawCanvas(canvas, bubbleSet, lineSet);
-  }).observe(canvas);
+    document.getElementById('x-dropdown').addEventListener('change', (e) => {
+      xEncoding = e.target.value;
+      updateDomains();
+      bubbleSet.animate('x', { duration: 500 });
+      lineSet.animate('x', { duration: 500 });
+      bubbleSet.wait('x').then(() => zoomToAll(true));
+    });
+    document.getElementById('y-dropdown').addEventListener('change', (e) => {
+      yEncoding = e.target.value;
+      updateDomains();
+      bubbleSet.animate('y', { duration: 500 });
+      lineSet.animate('y', { duration: 500 });
+      bubbleSet.wait('y').then(() => zoomToAll(true));
+    });
 
-  document.getElementById('x-dropdown').addEventListener('change', (e) => {
-    xEncoding = e.target.value;
-    updateDomains();
-    bubbleSet.animate('x', { duration: 500 });
-    lineSet.animate('x', { duration: 500 });
-    bubbleSet.wait('x').then(() => zoomToAll(true));
+    document.getElementById('size-dropdown').addEventListener('change', (e) => {
+      sizeEncoding = e.target.value;
+      updateDomains();
+      bubbleSet.animate('radius', { duration: 500 });
+      lineSet.animate('size', { duration: 500 });
+      bubbleSet.wait('radius').then(() => zoomToAll(true));
+    });
   });
-  document.getElementById('y-dropdown').addEventListener('change', (e) => {
-    yEncoding = e.target.value;
-    updateDomains();
-    bubbleSet.animate('y', { duration: 500 });
-    lineSet.animate('y', { duration: 500 });
-    bubbleSet.wait('y').then(() => zoomToAll(true));
-  });
-
-  document.getElementById('size-dropdown').addEventListener('change', (e) => {
-    sizeEncoding = e.target.value;
-    updateDomains();
-    bubbleSet.animate('radius', { duration: 500 });
-    lineSet.animate('size', { duration: 500 });
-    bubbleSet.wait('radius').then(() => zoomToAll(true));
-  });
-});
+}

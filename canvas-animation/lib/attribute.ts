@@ -230,9 +230,6 @@ export class Attribute<
       this._cleanUpAnimation(true);
     }
 
-    if (this._animationFinished()) {
-      this._computeAnimation();
-    }
     this._lastTickValue = this.getUntransformed();
     if (this.animation != null || this.needsUpdate) {
       this.needsUpdate = false;
