@@ -1,10 +1,12 @@
 <script lang="ts">
   import {
     Attribute,
-    LazyTicker,
+    ColorSchemePreference,
+    Ticker,
     Mark,
     createRenderGroup,
     curveEaseInOut,
+    getRenderContext,
   } from 'canvas-animation';
   import { onDestroy } from 'svelte';
 
@@ -32,7 +34,7 @@
           .wait('x');
       }
     });
-  let ticker = new LazyTicker(markSet).onChange(draw);
+  let ticker = new Ticker([markSet, getRenderContext()]).onChange(draw);
 
   function draw() {
     if (!!canvas) {
@@ -42,6 +44,12 @@
         ctx.resetTransform();
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        if (
+          getRenderContext().colorSchemePreference == ColorSchemePreference.dark
+        ) {
+          ctx.fillStyle = '#225';
+          ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        }
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 1.0;
         markSet.forEach((mark) => {
