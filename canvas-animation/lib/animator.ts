@@ -226,17 +226,6 @@ export class Animator<T> {
 }
 
 /**
- * Implements a basic ease-in-out animation with a final value. This is required
- * for preloadable animations, which cannot be used with indeterminate
- * interpolations.
- */
-export class PreloadableAnimator<T> extends Animator<T> {
-  constructor(finalValue: T, duration: number) {
-    super(interpolateTo(finalValue), duration, curveEaseInOut);
-  }
-}
-
-/**
  * Defines an animator that begins after a specified delay.
  */
 class DelayedAnimator<T> extends Animator<T> {

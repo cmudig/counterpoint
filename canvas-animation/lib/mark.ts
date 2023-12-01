@@ -39,6 +39,21 @@ export interface MarkAttributes extends AttributeSetBase {
   alpha?: Attribute<number, number, any>;
 }
 
+export type MarkUpdateListener<
+  AttributeSet extends AttributeSetBase,
+  K extends keyof AttributeSet,
+  AttributeType extends AttributeSet[K]
+> = (
+  mark: Mark<AttributeSet>,
+  finalValue: AttributeType['value']
+) => Promise<void> | undefined;
+
+export type MarkEventListener<AttributeSet extends AttributeSetBase> = (
+  mark: Mark<AttributeSet>,
+  details: any,
+  eventName: string
+) => Promise<void> | undefined;
+
 /**
  * An object representing something visually depicted, that is described by
  * one or more `Attribute`s.
@@ -53,6 +68,17 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   private _defaultDuration: number = 1000;
   private _defaultCurve: AnimationCurve = curveEaseInOut;
   private _changedLastTick: boolean = false;
+
+  private _updateListeners: {
+    [key in keyof AttributeSet]?: MarkUpdateListener<
+      AttributeSet,
+      key,
+      AttributeSet[key]
+    >;
+  } = {};
+  private _eventListeners: {
+    [key: string]: MarkEventListener<AttributeSet>;
+  } = {};
 
   constructor(id: any, attributes: AttributeSet) {
     this.id = id;
@@ -97,6 +123,39 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     return this;
   }
 
+  onUpdate<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
+    attrName: K,
+    action: MarkUpdateListener<AttributeSet, K, AttributeType>
+  ): Mark<AttributeSet> {
+    this._updateListeners[attrName] = action;
+    return this;
+  }
+
+  onEvent(
+    eventName: string,
+    action: MarkEventListener<AttributeSet>
+  ): Mark<AttributeSet> {
+    this._eventListeners[eventName] = action;
+    return this;
+  }
+
+  /**
+   * Sends an event to the mark and runs its event listener if it has one.
+   *
+   * @param eventName The name of the event
+   * @param details A details object to pass to the event listener
+   * @returns a Promise if the event listener for this event name returns a Promise,
+   *  otherwise nothing
+   */
+  dispatch(
+    eventName: string,
+    details: any = undefined
+  ): Promise<void> | undefined {
+    if (!!this._eventListeners[eventName]) {
+      return this._eventListeners[eventName](this, details, eventName);
+    }
+  }
+
   addListener(listener: MarkListener<AttributeSet>): Mark<AttributeSet> {
     this._listeners.push(listener);
     return this;
@@ -111,6 +170,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   private _attributesChanged(attrName: keyof AttributeSet, animated: boolean) {
     this._changedLastTick = true;
     this._listeners.forEach((l) => l(this, attrName, animated));
+    if (!!this._updateListeners[attrName])
+      this._updateListeners[attrName](this, this.attributes[attrName].future());
   }
 
   setTimeProvider(timeProvider: TimeProvider): Mark<AttributeSet> {
@@ -248,6 +309,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       console.error(`No attribute named '${String(attrName)}'`);
       return this;
     }
+
     if (typeof finalValue === 'function') {
       // set all the value functions and animate computed
       (this.attributes[attrName] as AttributeType).set(finalValue);
@@ -287,9 +349,10 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     }
 
     let animation: Animator<AttributeType['value']>;
+
     if (options instanceof Animator) {
       animation = options as Animator<AttributeType['value']>;
-    } else if (options.interpolator !== undefined) {
+    } else if (options.interpolator !== undefined && !preloadable) {
       let interpolator = options.interpolator;
       animation = new Animator(
         interpolator,
@@ -304,12 +367,16 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
         !approxEquals(newValue, this.attributes[attrName].last()) ||
         !approxEquals(newValue, this.attributes[attrName].future())
       ) {
-        animation = new Animator(
-          interpolateTo(newValue),
+        let duration =
           options.duration !== undefined
             ? options.duration
-            : this._defaultDuration,
-          options.curve !== undefined ? options.curve : this._defaultCurve
+            : this._defaultDuration;
+        let curve =
+          options.curve !== undefined ? options.curve : this._defaultCurve;
+        animation = new Animator(
+          interpolateTo(newValue),
+          duration,
+          curve
         ).withDelay(options.delay || 0);
       } else return this;
     }

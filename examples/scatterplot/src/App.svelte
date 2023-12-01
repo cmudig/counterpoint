@@ -18,10 +18,20 @@
           color: new Attribute<string>(getColor),
         })
     )
-  ).configure({
-    animationDuration: 500,
-    animationCurve: curveEaseInOut,
-  });
+  )
+    .configure({
+      animationDuration: 500,
+      animationCurve: curveEaseInOut,
+    })
+    .onEvent('click', (m) => {
+      if (m.id % 2 == 0) {
+        return m
+          .animateTo('x', (m.attr('x') + 100) % 500, {
+            delay: m.id * 10,
+          })
+          .wait('x');
+      }
+    });
   let ticker = new LazyTicker(markSet).onChange(draw);
 
   function draw() {
@@ -65,11 +75,7 @@
 
   function animatePoints() {
     markSet
-      .filter((mark, i) => i % 2 == 0)
-      .animateTo('x', (mark) => (mark.attr('x') + 100) % 500, {
-        delay: (_, i) => i * 10,
-      })
-      .wait('x')
+      .dispatch('click')!
       .then(() => {
         colorIdx++;
         markSet.animate('color');
