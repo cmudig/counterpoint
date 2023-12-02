@@ -39,6 +39,13 @@ export interface MarkAttributes extends AttributeSetBase {
   alpha?: Attribute<number, number, any>;
 }
 
+type MarkAttributeCopySpec<AttributeSet extends AttributeSetBase> = {
+  [K in keyof AttributeSet]?:
+    | AttributeSet[K]['value']
+    | AttributeSet[K]['valueFn']
+    | AttributeSet[K];
+};
+
 export type MarkUpdateListener<
   AttributeSet extends AttributeSetBase,
   K extends keyof AttributeSet,
@@ -352,7 +359,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
 
     if (options instanceof Animator) {
       animation = options as Animator<AttributeType['value']>;
-    } else if (options.interpolator !== undefined && !preloadable) {
+    } else if (options.interpolator !== undefined) {
       let interpolator = options.interpolator;
       animation = new Animator(
         interpolator,
@@ -425,5 +432,25 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       );
 
     return this._changedLastTick && this.attributes[attrNames as K].changed();
+  }
+
+  copy(
+    id: any,
+    newValues: MarkAttributeCopySpec<AttributeSet> = {}
+  ): Mark<AttributeSet> {
+    return new Mark(id, {
+      ...this.attributes,
+      ...Object.fromEntries(
+        Object.entries(newValues).map(([attrName, newVal]) => {
+          if (newVal instanceof Attribute) return [attrName, newVal];
+          else if (typeof newVal === 'function')
+            return [
+              attrName,
+              this.attributes[attrName].copy({ valueFn: newVal }),
+            ];
+          return [attrName, this.attributes[attrName].copy({ value: newVal })];
+        })
+      ),
+    });
   }
 }

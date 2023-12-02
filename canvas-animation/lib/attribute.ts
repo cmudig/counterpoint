@@ -84,6 +84,22 @@ type AttributeAnimation<T> = {
   start: number;
 };
 
+type AttributeCopySpec<
+  TransformedValueType extends Exclude<any, Function>,
+  ValueType,
+  ComputeArgumentType
+> = {
+  [K in keyof AttributeDefinition<
+    TransformedValueType,
+    ValueType,
+    ComputeArgumentType
+  >]?: AttributeDefinition<
+    TransformedValueType,
+    ValueType,
+    ComputeArgumentType
+  >[K];
+};
+
 /**
  * An `Attribute` contains a value representing some aspect of state in a data
  * mark.
@@ -99,7 +115,7 @@ export class Attribute<
   public value: ValueType;
   public valueFn: ((computeArg: ComputeArgumentType) => ValueType) | undefined =
     undefined;
-  public _transform:
+  public transform:
     | ((
         raw: ValueType,
         computeArg: ComputeArgumentType
@@ -171,12 +187,33 @@ export class Attribute<
           'One of `value` or `valueFn` must be defined to create an Attribute'
         );
       }
-      this._transform = args.transform ?? null;
+      this.transform = args.transform ?? null;
       this.cacheTransform = args.cacheTransform ?? false;
       this._cachedValue = null;
       this.computeArg = args.computeArg ?? null;
       this.recompute = args.recompute ?? AttributeRecompute.DEFAULT;
     }
+  }
+
+  /**
+   * Creates a new Attribute with identical options and values except for the
+   * parameters specified in the given options object.
+   *
+   * @param newOptions An object containing options to apply to the new attribute
+   * @returns the new copied attribute
+   */
+  copy(
+    newOptions: AttributeCopySpec<
+      TransformedValueType,
+      ValueType,
+      ComputeArgumentType
+    > = {}
+  ): Attribute<TransformedValueType, ValueType, ComputeArgumentType> {
+    let newDefinition = { ...this, ...newOptions };
+    // Make sure the new options control which of value/valueFn is populated
+    if (newOptions.value !== undefined) newDefinition.valueFn = undefined;
+    if (newOptions.valueFn !== undefined) newDefinition.value = undefined;
+    return new Attribute(newDefinition);
   }
 
   addListener(
@@ -277,13 +314,13 @@ export class Attribute<
 
   _performTransform(value: ValueType): TransformedValueType {
     let transformedValue: TransformedValueType;
-    if (!!this._transform) {
+    if (!!this.transform) {
       let cached = this._cachedValue;
       if (!!cached && approxEquals(cached.raw, value)) {
         transformedValue = cached.result;
       } else {
         let raw = value;
-        transformedValue = this._transform(value, this._getComputeArg());
+        transformedValue = this.transform(value, this._getComputeArg());
 
         if (this.cacheTransform) {
           this._cachedValue = {
