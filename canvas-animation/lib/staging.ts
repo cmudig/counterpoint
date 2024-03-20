@@ -1,57 +1,35 @@
 import { AttributeSetBase, Mark } from './mark';
-import { MarkRenderGroup } from './rendergroup';
 
 export type StageManagerCallback<MarkType> = {
   /**
-   * Create an element based on the given ID and info. The returned element
-   * will be added to the stage manager's render group.
+   * Initialize an element for an entry animation. This method should not be
+   * asynchronous.
    *
-   * @param id The ID of the element to create.
-   * @param info An object representing information about the element that was
-   *  provided to the stage manager when the {@link StageManager.show} method
-   *  was called.
-   *
-   * @returns the element to render
+   * @param element The element to initialize.
    */
-  create(id: any, info: any): MarkType;
+  initialize?(element: MarkType): void;
   /**
    * Modify an element after it has been added to the render group so that it
    * is visible (e.g. by animating the alpha).
    *
    * @param element The element to show
-   * @param info An object representing information about the element that was
-   *  provided to the stage manager when the {@link StageManager.show} method
-   *  was called.
    *
    * @returns a Promise that resolves when the animation would be completed.
    *  If no animation is performed, the method can simply be declared `async`
    *  and return as normal.
    */
-  show?(element: MarkType, info: any): Promise<void>;
+  enter?(element: MarkType): Promise<void> | void;
   /**
    * Modify an element after it has been added to the render group so that it
    * is invisible (e.g. by animating the alpha).
    *
    * @param element The element to show
-   * @param info An object representing information about the element that was
-   *  provided to the stage manager when the {@link StageManager.show} method
-   *  was called.
    *
    * @returns a Promise that resolves when the animation would be completed.
    *  If no animation is performed, the method can simply be declared `async`
    *  and return as normal.
    */
-  hide?(element: MarkType, info: any): Promise<void>;
-  /**
-   * Perform any necessary logic after an element has been destroyed and
-   * removed from the render group.
-   *
-   * @param id The ID of the element that was destroyed
-   * @param info An object representing information about the element that was
-   *  provided to the stage manager when the {@link StageManager.show} method
-   *  was called.
-   */
-  destroy?(id: any, info: any): void;
+  exit?(element: MarkType): Promise<void> | void;
 };
 
 /**
@@ -63,6 +41,7 @@ export enum StagingState {
   Entering = 'entering',
   Visible = 'visible',
   Exiting = 'exiting',
+  Completed = 'completed',
 }
 
 /**
@@ -74,16 +53,6 @@ export enum StagingAction {
 }
 
 /**
- * Stores a mark and its associated state.
- */
-export type StagedMark<MarkType> = {
-  element: MarkType;
-  info: any;
-  state: StagingState;
-  lastState: StagingState;
-};
-
-/**
  * A class that coordinates the entry and exit of marks. The stage manager handles
  * the complexity of adding marks to the canvas and removing them at the right
  * time, allowing you to simply call the `{@link show}` or `{@link hide}` method
@@ -93,10 +62,15 @@ export type StagedMark<MarkType> = {
  */
 export class StageManager<AttributeSet extends AttributeSetBase> {
   private _callbacks: Required<StageManagerCallback<Mark<AttributeSet>>>;
-  private pool: Map<any, StagedMark<Mark<AttributeSet>>> = new Map();
-  private queuedAnimations: Map<any, StagingAction> = new Map();
+  // States are keyed by the mark objects themselves, meaning that if the user
+  // chooses, they can have multiple marks with the same ID (i.e. exiting one
+  // version and entering another version).
+  private markStates: Map<Mark<AttributeSet>, StagingState> = new Map();
+  // Marks by ID allows the user to retrieve existing marks and reuse them if
+  // desired.
+  private marksByID: Map<any, Mark<AttributeSet>> = new Map();
+  private queuedAnimations: Map<Mark<AttributeSet>, StagingAction> = new Map();
   private _flushTimer: number | null = null;
-  private _renderGroup: MarkRenderGroup<AttributeSet> | null = null;
 
   /**
    * Whether or not to defer changes in presence/absence of marks to the
@@ -104,15 +78,33 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
    */
   public defer: boolean = false;
 
-  constructor(callbacks: StageManagerCallback<Mark<AttributeSet>>) {
-    if (!callbacks.create)
-      console.error('StageManager requires a create callback');
+  /**
+   * Whether or not to save marks that have been removed. This may cause high
+   * memory usage if marks are frequently added and removed.
+   */
+  public saveExitedMarks: boolean = false;
+
+  constructor(callbacks: StageManagerCallback<Mark<AttributeSet>> = {}) {
     this._callbacks = {
-      create: callbacks.create,
-      show: callbacks.show || (async () => {}),
-      hide: callbacks.hide || (async () => {}),
-      destroy: callbacks.destroy || (() => {}),
+      initialize: callbacks.initialize || (() => {}),
+      enter: callbacks.enter || (() => {}),
+      exit: callbacks.exit || (() => {}),
     };
+  }
+
+  /**
+   * Tells the stage manager that the given set of marks is already visible.
+   *
+   * @param marks The marks that are already visible
+   *
+   * @returns This stage manager object
+   */
+  setVisibleMarks(marks: Mark<AttributeSet>[]): StageManager<AttributeSet> {
+    marks.forEach((m) => {
+      this.markStates.set(m, StagingState.Visible);
+      this.marksByID.set(m.id, m);
+    });
+    return this;
   }
 
   /**
@@ -122,64 +114,90 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
    *  `{@link defer}`.
    * @returns This stage manager object with the options updated
    */
-  configure(opts: { defer?: boolean } = {}): StageManager<AttributeSet> {
-    if (opts.defer !== undefined) this.defer = opts.defer;
+  configure(
+    opts: { defer?: boolean; saveExitedMarks?: boolean } = {}
+  ): StageManager<AttributeSet> {
+    this.defer = opts.defer ?? this.defer;
+    this.saveExitedMarks = opts.saveExitedMarks ?? this.saveExitedMarks;
     return this;
   }
 
-  /**
-   * Attaches this stage manager to a render group so that it can add and remove
-   * marks before showing and after hiding them.
-   *
-   * @param renderGroup the render group to add and remove marks from
-   * @returns this stage manager
-   */
-  attach(
-    renderGroup: MarkRenderGroup<AttributeSet> | null
-  ): StageManager<AttributeSet> {
-    this._renderGroup = renderGroup;
-    return this;
+  onInitialize(cb: StageManagerCallback<Mark<AttributeSet>>['initialize']) {
+    this._callbacks.initialize = cb || (() => {});
+  }
+
+  onEnter(cb: StageManagerCallback<Mark<AttributeSet>>['enter']) {
+    this._callbacks.enter = cb || (() => {});
+  }
+
+  onExit(cb: StageManagerCallback<Mark<AttributeSet>>['exit']) {
+    this._callbacks.exit = cb || (() => {});
   }
 
   /**
    * Performs the action for the mark with the given ID, and calls the
    * appropriate callbacks.
    */
-  _perform(id: any, action: StagingAction) {
-    let item = this.pool.get(id);
-    if (!item || !item.element) return;
+  _perform(element: Mark<AttributeSet>, action: StagingAction) {
+    if (!element) return;
 
     if (action == StagingAction.Show) {
-      if (item.lastState == StagingState.Visible) return;
-      item.lastState = StagingState.Entering;
-      this._callbacks.show(item.element, item.info).then(
-        () => {
-          if (item.state == StagingState.Entering) {
-            item.state = StagingState.Visible;
-            item.lastState = StagingState.Visible;
-          }
-        },
-        () => {}
-      );
+      if (this.markStates.get(element) === StagingState.Visible) return;
+      this.markStates.set(element, StagingState.Entering);
+      this.marksByID.set(element.id, element);
+      let result = this._callbacks.enter(element);
+      if (!!result && result instanceof Promise) {
+        result.then(
+          () => {
+            if (
+              this.markStates.has(element) &&
+              this.markStates.get(element) == StagingState.Entering
+            ) {
+              this.markStates.set(element, StagingState.Visible);
+            }
+          },
+          () => {}
+        );
+      } else {
+        this.markStates.set(element, StagingState.Visible);
+      }
     } else if (action == StagingAction.Hide) {
+      let existingState = this.markStates.get(element) ?? null;
+
       if (
-        item.lastState == StagingState.Exiting ||
-        item.lastState == StagingState.Waiting
+        existingState === StagingState.Waiting ||
+        existingState === StagingState.Completed
       )
         return;
-      item.lastState = StagingState.Exiting;
-      this._callbacks.hide(item.element, item.info).then(
-        () => {
-          // Resolve if it's still gone, otherwise reject
-          let item = this.pool.get(id);
-          if (!!item && item.lastState == StagingState.Exiting) {
-            if (!!this._renderGroup) this._renderGroup.removeMark(item.element);
-            this._callbacks.destroy(id, item.info);
-            this.pool.delete(id);
-          }
-        },
-        () => {}
-      );
+      this.markStates.set(element, StagingState.Exiting);
+      this.marksByID.set(element.id, element);
+      let result = this._callbacks.exit(element);
+      if (!!result && result instanceof Promise) {
+        result.then(
+          () => {
+            // Resolve if it's still gone, otherwise reject
+            if (
+              this.markStates.has(element) &&
+              this.markStates.get(element) == StagingState.Exiting
+            ) {
+              if (this.saveExitedMarks) {
+                this.markStates.set(element, StagingState.Completed);
+              } else {
+                this.marksByID.delete(element.id);
+                this.markStates.delete(element);
+              }
+            }
+          },
+          () => {}
+        );
+      } else {
+        if (this.saveExitedMarks) {
+          this.markStates.set(element, StagingState.Completed);
+        } else {
+          this.marksByID.delete(element.id);
+          this.markStates.delete(element);
+        }
+      }
     }
   }
 
@@ -191,30 +209,29 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
    *  `false` if the current state of the mark indicated that a similar action
    *  has already been queued.
    */
-  _enqueue(id: any, action: StagingAction): boolean {
-    let item = this.pool.get(id);
-    if (!item.element) return false;
+  _enqueue(element: Mark<AttributeSet>, action: StagingAction): boolean {
+    let state = this.markStates.get(element);
+    if (state === undefined) return false;
+
     if (action == StagingAction.Show) {
-      if (
-        item.state == StagingState.Entering ||
-        item.state == StagingState.Visible
-      )
+      if (state == StagingState.Entering || state == StagingState.Visible)
         return false;
-      item.state = StagingState.Entering;
+      this.markStates.set(element, StagingState.Entering);
     } else if (action == StagingAction.Hide) {
-      if (item.state == StagingState.Exiting) return false;
-      item.state = StagingState.Exiting;
+      if (state == StagingState.Exiting || state == StagingState.Completed)
+        return false;
+      this.markStates.set(element, StagingState.Exiting);
     } else {
       console.error('Unknown action enqueued:', action);
     }
 
     if (this.defer) {
-      this.queuedAnimations.set(id, action);
+      this.queuedAnimations.set(element, action);
       if (!this._flushTimer) {
         this._flushTimer = window.setTimeout(() => this._flush(), 0);
       }
     } else {
-      this._perform(id, action);
+      this._perform(element, action);
     }
     return true;
   }
@@ -224,45 +241,28 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
    */
   _flush() {
     this._flushTimer = null;
-    this.queuedAnimations.forEach((action, id) => {
-      this._perform(id, action);
+    this.queuedAnimations.forEach((action, mark) => {
+      this._perform(mark, action);
     });
     this.queuedAnimations.clear();
   }
 
   /**
-   * Attempts to show a mark with the given ID.
+   * Attempts to show a given mark.
    *
    * @param id The ID of the mark to show, which should contain sufficient
    *    information to uniquely describe the mark.
-   * @param infoCB Additional info about the mark to create. This info will be
-   *    stored along with the mark and passed in subsequent callbacks involving
-   *    this ID. If this value is a function, the function will be called with
-   *    the ID as a parameter (only if the mark does not already exist). This
-   *    can allow for saving computation when repeatedly showing a mark for the
-   *    same ID.
    * @returns `true` if the mark was not visible and will be made visible, or
    *    `false` otherwise.
    */
-  show(id: any, infoCB: any | ((id: any) => any) = undefined) {
-    if (!this.pool.has(id)) {
-      let info =
-        infoCB != undefined
-          ? typeof infoCB === 'function'
-            ? infoCB(id)
-            : infoCB
-          : null;
-      let element = this._callbacks.create(id, info);
-      if (!!this._renderGroup) this._renderGroup.addMark(element);
-      this.pool.set(id, {
-        element: element,
-        info,
-        state: StagingState.Waiting,
-        lastState: StagingState.Waiting,
-      });
+  show(element: Mark<AttributeSet>): boolean {
+    if (!this.markStates.has(element)) {
+      this._callbacks.initialize(element);
+      this.markStates.set(element, StagingState.Waiting);
+      this.marksByID.set(element.id, element);
     }
 
-    return this._enqueue(id, StagingAction.Show);
+    return this._enqueue(element, StagingAction.Show);
   }
 
   /**
@@ -272,97 +272,68 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
    * @returns `true` if the mark was visible and will be made invisible and
    *    subsequently destroyed, or `false` otherwise.
    */
-  hide(id: any): boolean {
-    if (!this.pool.has(id)) {
+  hide(element: Mark<AttributeSet>): boolean {
+    if (!this.markStates.has(element)) {
       return false;
     }
-    return this._enqueue(id, StagingAction.Hide);
+    return this._enqueue(element, StagingAction.Hide);
   }
 
   /**
-   * Retrieves the stored information for the mark with the given ID
-   * @param id the ID of the mark to look up
-   * @returns the stored information for this mark, or `null` if the mark is not
-   *  currently visible, entering, or exiting.
-   */
-  getInfo(id: any): any {
-    if (!this.pool.has(id)) return null;
-    return this.pool.get(id).info;
-  }
-
-  /**
-   * Retrieves the mark element with the given ID
-   * @param id the ID of the mark to look up
-   * @returns the mark element if it is visible or being staged, or `null`
-   *    otherwise
-   */
-  getElement(id: any): Mark<AttributeSet> | null {
-    if (!this.pool.has(id)) return null;
-    return this.pool.get(id).element;
-  }
-
-  /**
-   * @returns a `Map` where the keys are mark IDs, and the values are instances
-   *   of `{@link StagedMark}` representing the mark elements and their current
-   *   and previous states
+   * Returns the Mark with the given ID if it exists (in any state, including
+   * exiting), or undefined if none exists.
    *
-   * @see getAllVisible
+   * @param id The ID to lookup
+   * @param visibleOnly If true, only return marks that are visible or scheduled
+   *  to be visible. Otherwise, return any mark in the pool (including exiting).
+   * @returns the mark with the given ID or undefined
    */
-  getAll(): Map<any, StagedMark<Mark<AttributeSet>>> {
-    return new Map(this.pool);
-  }
-
-  /**
-   * @returns an array of the mark IDs that are currently visible or being
-   *    staged (including those that are exiting)
-   * @see getAllVisibleIDs
-   */
-  getAllIDs(): any[] {
-    return Array.from(this.pool.keys());
-  }
-
-  /**
-   * @returns a `Map` where the keys are mark IDs for marks that are either
-   *   visible or currently entering, and the values are instances of
-   *   `{@link StagedMark}` representing the mark elements and their current
-   *   and previous states
-   *
-   * @see getAll
-   */
-  getAllVisible(): Map<any, StagedMark<Mark<AttributeSet>>> {
-    let result = new Map();
-    for (let [key, value] of this.pool) {
-      if (
-        (value.state == StagingState.Visible ||
-          value.state == StagingState.Entering) &&
-        !!value.element
-      )
-        result.set(key, value);
+  getMarkByID(
+    id: any,
+    visibleOnly: boolean = false
+  ): Mark<AttributeSet> | undefined {
+    let mark = this.marksByID.get(id);
+    if (!!mark && visibleOnly) {
+      let state = this.markStates.get(mark);
+      if (state === StagingState.Exiting || state === StagingState.Completed)
+        return undefined;
     }
-    return result;
+    return mark;
+  }
+
+  forEach(
+    callbackfn: (value: Mark<AttributeSet>, index: number) => void | any
+  ) {
+    let index = 0;
+    this.markStates.forEach((state, mark) => {
+      if (
+        state === StagingState.Entering ||
+        state === StagingState.Visible ||
+        state === StagingState.Exiting
+      ) {
+        callbackfn(mark, index);
+        index++;
+      }
+    });
   }
 
   /**
-   * @returns an array of the mark IDs that are currently visible or entering
-   * @see getAllIDs
+   * Returns all marks that this stage manager knows about.
    */
-  getAllVisibleIDs(): any[] {
-    return Array.from(this.pool.keys()).filter(
-      (key) =>
-        (this.pool.get(key).state == StagingState.Visible ||
-          this.pool.get(key).state == StagingState.Entering) &&
-        !!this.pool.get(key).element
-    );
+  getMarks(): Mark<AttributeSet>[] {
+    return Array.from(this.markStates.keys());
   }
 
   /**
-   * @returns whether the mark with the given ID is visible or entering
+   * Returns all marks that are either waiting, entering, or visible.
    */
-  isVisible(id: any): boolean {
-    return (
-      this.pool.has(id) &&
-      (this.pool.get(id).state == StagingState.Visible ||
-        this.pool.get(id).state == StagingState.Entering)
+  getVisibleMarks(): Mark<AttributeSet>[] {
+    return Array.from(this.markStates.keys()).filter((m) =>
+      [
+        StagingState.Waiting,
+        StagingState.Entering,
+        StagingState.Visible,
+      ].includes(this.markStates.get(m)!)
     );
   }
 }

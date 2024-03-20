@@ -10,10 +10,12 @@ import {
 import { TimeProvider, getAllMethodNames, makeTimeProvider } from './utils';
 import { AnimationCurve, curveEaseInOut } from './animator';
 import { Advanceable } from './ticker';
+import { StageManager, StageManagerCallback } from './staging';
 
 type RenderGroupOptions = {
   timeProvider?: TimeProvider;
   lazyUpdates?: boolean;
+  useStaging?: boolean;
   animationDuration?: number;
   animationCurve?: AnimationCurve;
 };
@@ -83,6 +85,14 @@ export class MarkRenderGroup<
    */
   public lazyUpdates: boolean = true;
 
+  /**
+   * If `true`, use a stage manager to coordinate the entrance and exit of
+   * marks.
+   */
+  public useStaging: boolean = true;
+
+  public stage: StageManager<AttributeSet> | null = null;
+
   private marksByID: Map<any, Mark<AttributeSet>>;
 
   // Marks that have an active animation
@@ -138,8 +148,9 @@ export class MarkRenderGroup<
         return;
       }
       this.marksByID.set(m.id, m);
-      this._configureMark(m);
+      this._setupMark(m);
     });
+    if (!!this.stage) this.stage.setVisibleMarks(this.marks);
   }
 
   /**
@@ -164,11 +175,60 @@ export class MarkRenderGroup<
     if (opts.animationCurve !== undefined)
       this._defaultCurve = opts.animationCurve;
     if (!!this.marks) this.getMarks().forEach((m) => this._configureMark(m));
+
+    this.useStaging = opts.useStaging ?? this.useStaging;
+    if (this.useStaging) {
+      this.stage = new StageManager<AttributeSet>();
+      if (!!this.marks) this.stage.setVisibleMarks(this.marks);
+    } else {
+      this.stage = null;
+    }
+
+    return this;
+  }
+
+  configureStaging(
+    callbacks: StageManagerCallback<Mark<AttributeSet>>,
+    opts: { defer?: boolean; saveExitedMarks?: boolean } = undefined
+  ): MarkRenderGroup<AttributeSet> {
+    if (!this.useStaging)
+      console.error(
+        "Can't configure staging without setting useStaging to true"
+      );
+    this.stage.onInitialize(callbacks.initialize);
+    this.stage.onEnter(callbacks.enter);
+    this.stage.onExit(callbacks.exit);
+    if (!!opts) this.stage.configure(opts);
     return this;
   }
 
   /**
-   * Configures a mark's callbacks and default properties.
+   * Sets up a mark for the first time.
+   */
+  _setupMark(m: Mark<AttributeSet>) {
+    this._configureMark(m);
+    m.addListener((mark, attrName, animated) => {
+      this.updatedMarks.add(mark);
+      if (!this.preloadableProperties.has(attrName) && animated)
+        this.animatingMarks.add(mark);
+      this._changedLastTick = true;
+    });
+    m.addGraphListener((mark, edge, oldNeighbors, newNeighbors) => {
+      oldNeighbors.forEach((neighbor) => {
+        if (
+          !newNeighbors.includes(neighbor) &&
+          neighbor.sourceMarks().length == 1
+        )
+          this.removeMark(neighbor);
+      });
+      newNeighbors.forEach((neighbor) => {
+        if (!oldNeighbors.includes(neighbor)) this.addMark(neighbor);
+      });
+    });
+  }
+
+  /**
+   * Configures a mark's default properties.
    * @param m the mark to configure
    */
   _configureMark(m: Mark<AttributeSet>) {
@@ -176,12 +236,6 @@ export class MarkRenderGroup<
     m.configure({
       animationDuration: this._defaultDuration,
       animationCurve: this._defaultCurve,
-    });
-    m.addListener((mark, attrName, animated) => {
-      this.updatedMarks.add(mark);
-      if (!this.preloadableProperties.has(attrName) && animated)
-        this.animatingMarks.add(mark);
-      this._changedLastTick = true;
     });
     Object.entries(this._updateListeners).forEach(([attrName, l]) =>
       m.onUpdate(attrName, l)
@@ -520,9 +574,12 @@ export class MarkRenderGroup<
       } else {
         proxy[methodName] = (...args) => {
           let oldMarks = this.getMarks();
+          let oldMarksByID = this.marksByID;
           this.marks = newMarkSet;
+          this.marksByID = proxy.marksByID;
           let ret = this[methodName](...args);
           this.marks = oldMarks;
+          this.marksByID = oldMarksByID;
           if (ret === this) return proxy;
           return ret;
         };
@@ -557,8 +614,9 @@ export class MarkRenderGroup<
     }
     this.marks.push(mark);
     this.marksByID.set(mark.id, mark);
-    this._configureMark(mark);
+    this._setupMark(mark);
     this._markListChanged = true;
+    if (!!this.stage) this.stage.show(mark);
   }
 
   /**
@@ -576,6 +634,7 @@ export class MarkRenderGroup<
     this.marks.splice(idx, 1);
     this.marksByID.delete(mark.id);
     this._markListChanged = true;
+    if (!!this.stage) this.stage.hide(mark);
   }
 
   /**

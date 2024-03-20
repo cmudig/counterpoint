@@ -18,12 +18,18 @@
           x: new Attribute(Math.random() * 500),
           y: new Attribute(Math.random() * 500),
           color: new Attribute<string>(getColor),
+          alpha: new Attribute(1),
         })
     )
   )
     .configure({
       animationDuration: 500,
       animationCurve: curveEaseInOut,
+    })
+    .configureStaging({
+      initialize: (element) => element.setAttr('alpha', 0.0),
+      enter: async (element) => element.animateTo('alpha', 1.0).wait('alpha'),
+      exit: async (element) => element.animateTo('alpha', 0.0).wait('alpha'),
     })
     .onEvent('click', (m) => {
       if (m.id % 2 == 0) {
@@ -52,16 +58,19 @@
         }
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 1.0;
-        markSet.forEach((mark) => {
+        markSet.stage!.forEach((mark) => {
+          ctx?.save();
           let x = mark.attr('x');
           let y = mark.attr('y');
           let color = mark.attr('color');
+          ctx!.globalAlpha = mark.attr('alpha');
           ctx!.fillStyle = color;
           ctx?.beginPath();
           ctx?.ellipse(x, y, 5, 5, 0, 0, 2 * Math.PI, false);
           ctx?.fill();
           ctx?.stroke();
           ctx?.closePath();
+          ctx?.restore();
         });
       }
     }
@@ -82,6 +91,18 @@
   }
 
   function animatePoints() {
+    if (!!markSet.getMarkByID('temp_animation'))
+      markSet.removeMark(markSet.getMarkByID('temp_animation')!);
+    let testMark = markSet.getMarkByID(
+      Math.floor(Math.random() * markSet.count())
+    )!;
+    testMark.adj('temp', [
+      testMark.copy(`temp_animation`, {
+        color: 'cyan',
+        x: Math.random() * 500,
+      }),
+    ]);
+
     markSet
       .dispatch('click')!
       .then(() => {

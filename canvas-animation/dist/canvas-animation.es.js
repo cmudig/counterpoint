@@ -1,21 +1,313 @@
 var pr = Object.defineProperty;
 var _r = (r, t, e) => t in r ? pr(r, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[t] = e;
-var At = (r, t, e) => (_r(r, typeof t != "symbol" ? t + "" : t, e), e);
-function M(r, t) {
-  let e = r.length;
-  Array.isArray(r[0]) || (r = [r]), Array.isArray(t[0]) || (t = t.map((s) => [s]));
-  let i = t[0].length, a = t[0].map((s, o) => t.map((l) => l[o])), n = r.map((s) => a.map((o) => {
-    let l = 0;
-    if (!Array.isArray(s)) {
-      for (let h of o)
-        l += s * h;
-      return l;
+var Et = (r, t, e) => (_r(r, typeof t != "symbol" ? t + "" : t, e), e);
+function pt(r, t) {
+  return typeof r == "number" && typeof t == "number" ? Math.abs(r - t) <= 1e-3 : r == t;
+}
+function Re() {
+  var r = 0;
+  return Object.assign(function() {
+    return r;
+  }, {
+    advance: (e) => {
+      r += e;
     }
-    for (let h = 0; h < s.length; h++)
-      l += s[h] * (o[h] || 0);
-    return l;
+  });
+}
+function yr(r) {
+  let t = /* @__PURE__ */ new Set();
+  for (; r = Reflect.getPrototypeOf(r); )
+    Reflect.ownKeys(r).forEach((i) => t.add(i));
+  return t;
+}
+class Mr {
+  constructor(t = void 0) {
+    this.info = t, this.promise = new Promise((e, i) => {
+      this.reject = i, this.resolve = e;
+    });
+  }
+}
+function br(r) {
+  let t = 1e12, e = -1e12, i = 1e12, a = -1e12;
+  return r.forEach((s) => {
+    s.x < t && (t = s.x), s.x > e && (e = s.x), s.y < i && (i = s.y), s.y > a && (a = s.y);
+  }), { x: [t, e], y: [i, a] };
+}
+var vr = /* @__PURE__ */ ((r) => (r[r.DEFAULT = 0] = "DEFAULT", r[r.ALWAYS = 1] = "ALWAYS", r[r.WHEN_UPDATED = 2] = "WHEN_UPDATED", r))(vr || {});
+class v {
+  /**
+   *
+   * @param info Arguments describing how to populate the attribute, or a single
+   *    value that should be stored as the `value` or `valueFn` of the attribute.
+   */
+  constructor(t) {
+    if (this.valueFn = void 0, this.transform = void 0, this.cacheTransform = !1, this._cachedValue = null, this.computeArg = void 0, this.recompute = 0, this.needsUpdate = !1, this.animation = null, this.label = null, this._computedValue = null, this._lastTickValue = void 0, this._animatedValue = null, this._hasComputed = !1, this._timeProvider = null, this.currentTime = 0, this._changedLastTick = !1, this._listeners = [], this._animationCompleteCallbacks = [], t == null || t == null || !(t.hasOwnProperty("value") || t.hasOwnProperty("valueFn")))
+      typeof t == "function" ? this.valueFn = t : this.value = t;
+    else {
+      let e = t;
+      e.valueFn !== void 0 ? this.valueFn = e.valueFn : e.value !== void 0 ? this.value = e.value : console.error(
+        "One of `value` or `valueFn` must be defined to create an Attribute"
+      ), this.transform = e.transform ?? null, this.cacheTransform = e.cacheTransform ?? !1, this._cachedValue = null, this.computeArg = e.computeArg ?? null, this.recompute = e.recompute ?? 0;
+    }
+  }
+  /**
+   * Creates a new Attribute with identical options and values except for the
+   * parameters specified in the given options object.
+   *
+   * @param newOptions An object containing options to apply to the new attribute
+   * @returns the new copied attribute
+   */
+  copy(t = {}) {
+    let e = { ...this, ...t };
+    return t.value !== void 0 && (e.valueFn = void 0), t.valueFn !== void 0 && (e.value = void 0), new v(e);
+  }
+  addListener(t) {
+    this._listeners.push(t);
+  }
+  removeListener(t) {
+    let e = this._listeners.indexOf(t);
+    e >= 0 && (this._listeners = this._listeners.splice(e, 1));
+  }
+  setTimeProvider(t) {
+    this._timeProvider = t;
+  }
+  _getComputeArg() {
+    return this.computeArg !== void 0 ? this.computeArg : this;
+  }
+  /**
+   * Synchronously computes the value of the attribute.
+   */
+  compute() {
+    this.valueFn && (this._computedValue = this.valueFn(this._getComputeArg()));
+  }
+  // Advances the time of the animation by the given number of msec,
+  // and returns whether or not a redraw is needed
+  advance(t = void 0) {
+    return (this.animation != null || this.needsUpdate || this.valueFn) && (this._timeProvider === null ? this.currentTime += t : this.currentTime = this._timeProvider()), this.animation == null && this._animationCompleteCallbacks.length > 0 && (console.warn(
+      "Found animation-complete callbacks for a non-existent animation"
+    ), this._cleanUpAnimation(!0)), this._lastTickValue = this.getUntransformed(), this.animation != null || this.needsUpdate ? (this.needsUpdate = !1, this._changedLastTick = !0, !0) : (this._changedLastTick = !1, !1);
+  }
+  _computeAnimation(t = !0) {
+    if (!this.animation)
+      return;
+    this._timeProvider && (this.currentTime = this._timeProvider());
+    let { animator: e, start: i, initial: a } = this.animation, s = e.evaluate(
+      a,
+      Math.min(this.currentTime - i, e.duration)
+      // can add a debug flag here
+    );
+    this._animationFinished() && t ? (this.valueFn ? this.compute() : this.value = s, this._cleanUpAnimation(!1), this._animatedValue = null) : this._animatedValue = s;
+  }
+  _animationFinished() {
+    return this.animation ? this.animation.animator.duration + 20 <= this.currentTime - this.animation.start : !0;
+  }
+  _performTransform(t) {
+    let e;
+    if (this.transform) {
+      let i = this._cachedValue;
+      if (i && pt(i.raw, t))
+        e = i.result;
+      else {
+        let a = t;
+        e = this.transform(t, this._getComputeArg()), this.cacheTransform && (this._cachedValue = {
+          raw: a,
+          result: e
+        });
+      }
+    } else
+      e = t;
+    return e;
+  }
+  _cleanUpAnimation(t = !1) {
+    this.animation = null, this._animationCompleteCallbacks.forEach((e) => {
+      !t || !e.info.rejectOnCancel ? e.resolve(this) : e.reject({ newValue: this.last() });
+    }), this._animationCompleteCallbacks = [];
+  }
+  /**
+   * Retrieves the current (transformed) value. If a context is not provided,
+   * the value returned will be the final value of any active transitions being
+   * rendered.
+   */
+  get() {
+    return this._performTransform(this.getUntransformed());
+  }
+  /**
+   * Retrieves the current un-transformed value.
+   */
+  getUntransformed() {
+    this._computeAnimation();
+    let t;
+    return this._animatedValue != null ? t = this._animatedValue : this.valueFn ? ((this.recompute !== 2 || !this._hasComputed) && (this.compute(), this._hasComputed = !0), t = this._computedValue) : t = this.value, this._lastTickValue === void 0 && (this._lastTickValue = t), t;
+  }
+  /**
+   * Returns an object that tells a renderer how to animate this attribute,
+   * including four properties: `start` and `end` (the initial and final values of
+   * the attribute) and `startTime` and `endTime` (the timestamps for the start and
+   * end of the animation, in ms). If there is no animation, `startTime` and
+   * `endTime` will be equal.
+   *
+   * @param currentTime A timestamp. If provided, the `startTime` and `endTime`
+   *  values will be converted (assuming that the stored animation is computed
+   *  with respect to the attribute's internal time representation).
+   * @returns A preloadable animation for the attribute, where the `start` and
+   *  `end` values are expressed as transformed values.
+   */
+  getPreload(t = null) {
+    if (this._timeProvider && (this.currentTime = this._timeProvider()), !this.animation) {
+      let i = this.get();
+      return {
+        start: i,
+        end: i,
+        startTime: t || this.currentTime,
+        endTime: t || this.currentTime
+      };
+    }
+    let e = this.getPreloadUntransformed(t);
+    return {
+      start: this._performTransform(e.start),
+      end: this._performTransform(e.end),
+      startTime: e.startTime,
+      endTime: e.endTime
+    };
+  }
+  /**
+   * Returns an object that tells a renderer how to animate this attribute,
+   * including four properties: `start` and `end` (the initial and final values of
+   * the attribute) and `startTime` and `endTime` (the timestamps for the start and
+   * end of the animation, in ms). If there is no animation, `startTime` and
+   * `endTime` will be equal.
+   *
+   * @param currentTime A timestamp. If provided, the `startTime` and `endTime`
+   *  values will be converted (assuming that the stored animation is computed
+   *  with respect to the attribute's internal time representation).
+   * @returns A preloadable animation for the attribute, where the `start` and
+   *  `end` values are expressed as un-transformed values.
+   */
+  getPreloadUntransformed(t = null) {
+    if (this._timeProvider && (this.currentTime = this._timeProvider()), !this.animation) {
+      let s = this.getUntransformed();
+      return {
+        start: s,
+        end: s,
+        startTime: t || this.currentTime,
+        endTime: t || this.currentTime
+      };
+    }
+    if (this._animationFinished())
+      return this._computeAnimation(), this.getPreloadUntransformed(t);
+    let e;
+    this.valueFn ? ((this.recompute !== 2 || !this._hasComputed) && (this.compute(), this._hasComputed = !0), e = this._computedValue) : e = this.value;
+    let i = this.animation.animator.finalValue;
+    i === void 0 && console.error(
+      "Animations on preloadable attributes must have a final value"
+    );
+    let a = (t || this.currentTime) - this.currentTime;
+    return {
+      start: e,
+      end: i,
+      startTime: this.animation.start + a,
+      endTime: this.animation.start + this.animation.animator.duration + a
+    };
+  }
+  /**
+   * Synchronously sets the value of the attribute and marks that it needs to
+   * be updated on the next call to `advance()`.
+   *
+   * @param newValue The new value or value function.
+   */
+  set(t) {
+    typeof t == "function" ? (this.value != null && (this._computedValue = this.value), this.valueFn = t, this.value = void 0, this._animatedValue = null, this._lastTickValue = void 0) : (this.value = t, this.valueFn = null, this._animatedValue = null, this._lastTickValue = t), this.needsUpdate = !0, this.animation && this._cleanUpAnimation(!0), this._listeners.forEach((e) => e(this, !1));
+  }
+  /**
+   * Retrieves the non-animated value for the attribute, i.e. the final value
+   * if an animation is in progress or the current value otherwise. This method
+   * computes the value if specified as a value function.
+   */
+  data() {
+    return this.valueFn ? this.valueFn(this._getComputeArg()) : this.value;
+  }
+  /**
+   * Returns the last value known for this attribute _without_ running the value
+   * function.
+   */
+  last() {
+    return this.animation && this._computeAnimation(!1), this._lastTickValue !== void 0 ? this._lastTickValue : this._animatedValue != null ? this._animatedValue : this.value !== void 0 ? this.value : this._computedValue;
+  }
+  /**
+   * Returns the value that this attribute is approaching if animating (or `null`
+   * if not available), or the current value if not animating. This method does
+   * _not_ compute a new value for the attribute.
+   */
+  future() {
+    return this.animation ? this.animation.animator.finalValue : this._animatedValue != null ? this._animatedValue : this.value !== void 0 ? this.value : this._computedValue;
+  }
+  /**
+   * Marks that the transform has changed for this attribute. Only applies when
+   * `cached` is set to true.
+   */
+  updateTransform() {
+    this._cachedValue = null;
+  }
+  /**
+   * @returns Whether or not the attribute is currently being animated
+   */
+  animating() {
+    return this.animation != null;
+  }
+  /**
+   * Applies an animation to this attribute. The attribute will call the
+   * `evaluate` method on the animation every time the attribute's `advance()`
+   * method runs, until the time delta since the start of the animation exceeds
+   * the duration of the animation.
+   * @param animation an animation to run
+   * @param context the context in which the animation runs
+   */
+  animate(t) {
+    this._timeProvider && (this.currentTime = this._timeProvider()), this.animation && (this.valueFn ? this._computedValue = this._animatedValue : this.value = this._animatedValue, this._cleanUpAnimation(!0)), this.animation = {
+      animator: t,
+      initial: this.last(),
+      start: this.currentTime
+    }, this._computeAnimation(), this._listeners.forEach((e) => e(this, !0));
+  }
+  /**
+   * Wait until the attribute's current animation has finished.
+   *
+   * @param rejectOnCancel Whether or not to throw a promise rejection if the
+   *  animation is canceled. The default is true.
+   * @returns A `Promise` that resolves when the animation has completed, and
+   *  rejects if the animation is canceled or superseded by a different animation.
+   *  If `rejectOnCancel` is set to `false`, the promise resolves in both
+   *  situations. If there is no active animation, the promise resolves immediately.
+   */
+  wait(t = !0) {
+    if (!this.animation)
+      return new Promise((i, a) => i(this));
+    let e = new Mr({ rejectOnCancel: t });
+    return this._animationCompleteCallbacks.push(e), e.promise;
+  }
+  /**
+   * @returns whether or not this attribute changed value (due to animation or
+   * other updates) on the last call to `advance`
+   */
+  changed() {
+    return this._changedLastTick;
+  }
+}
+function b(r, t) {
+  let e = r.length;
+  Array.isArray(r[0]) || (r = [r]), Array.isArray(t[0]) || (t = t.map((n) => [n]));
+  let i = t[0].length, a = t[0].map((n, o) => t.map((h) => h[o])), s = r.map((n) => a.map((o) => {
+    let h = 0;
+    if (!Array.isArray(n)) {
+      for (let l of o)
+        h += n * l;
+      return h;
+    }
+    for (let l = 0; l < n.length; l++)
+      h += n[l] * (o[l] || 0);
+    return h;
   }));
-  return e === 1 && (n = n[0]), i === 1 ? n.map((s) => s[0]) : n;
+  return e === 1 && (s = s[0]), i === 1 ? s.map((n) => n[0]) : s;
 }
 function it(r) {
   return O(r) === "string";
@@ -23,7 +315,7 @@ function it(r) {
 function O(r) {
   return (Object.prototype.toString.call(r).match(/^\[object\s+(.*?)\]$/)[1] || "").toLowerCase();
 }
-function bt(r, t) {
+function yt(r, t) {
   r = +r, t = +t;
   let e = (Math.floor(r) + "").length;
   if (t > e)
@@ -33,7 +325,7 @@ function bt(r, t) {
     return Math.round(r / i) * i;
   }
 }
-function Ee(r) {
+function Be(r) {
   if (!r)
     return;
   r = r.trim();
@@ -41,8 +333,8 @@ function Ee(r) {
   let i = r.match(t);
   if (i) {
     let a = [];
-    return i[2].replace(/\/?\s*([-\w.]+(?:%|deg)?)/g, (n, s) => {
-      /%$/.test(s) ? (s = new Number(s.slice(0, -1) / 100), s.type = "<percentage>") : /deg$/.test(s) ? (s = new Number(+s.slice(0, -3)), s.type = "<angle>", s.unit = "deg") : e.test(s) && (s = new Number(s), s.type = "<number>"), n.startsWith("/") && (s = s instanceof Number ? s : new Number(s), s.alpha = !0), a.push(s);
+    return i[2].replace(/\/?\s*([-\w.]+(?:%|deg)?)/g, (s, n) => {
+      /%$/.test(n) ? (n = new Number(n.slice(0, -1) / 100), n.type = "<percentage>") : /deg$/.test(n) ? (n = new Number(+n.slice(0, -3)), n.type = "<angle>", n.unit = "deg") : e.test(n) && (n = new Number(n), n.type = "<number>"), s.startsWith("/") && (n = n instanceof Number ? n : new Number(n), n.alpha = !0), a.push(n);
     }), {
       name: i[1].toLowerCase(),
       rawName: i[1],
@@ -53,19 +345,19 @@ function Ee(r) {
     };
   }
 }
-function Be(r) {
+function ze(r) {
   return r[r.length - 1];
 }
-function yt(r, t, e) {
+function Mt(r, t, e) {
   return isNaN(r) ? t : isNaN(t) ? r : r + (t - r) * e;
 }
-function ze(r, t, e) {
+function Fe(r, t, e) {
   return (e - r) / (t - r);
 }
-function Gt(r, t, e) {
-  return yt(t[0], t[1], ze(r[0], r[1], e));
+function Ut(r, t, e) {
+  return Mt(t[0], t[1], Fe(r[0], r[1], e));
 }
-function Fe(r) {
+function Ye(r) {
   return r.map((t) => t.split("|").map((e) => {
     e = e.trim();
     let i = e.match(/^(<[a-z]+>)\[(-?[.\d]+),\s*(-?[.\d]+)\]?$/);
@@ -76,20 +368,20 @@ function Fe(r) {
     return e;
   }));
 }
-var br = /* @__PURE__ */ Object.freeze({
+var kr = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  interpolate: yt,
-  interpolateInv: ze,
+  interpolate: Mt,
+  interpolateInv: Fe,
   isString: it,
-  last: Be,
-  mapRange: Gt,
-  multiplyMatrices: M,
-  parseCoordGrammar: Fe,
-  parseFunction: Ee,
-  toPrecision: bt,
+  last: ze,
+  mapRange: Ut,
+  multiplyMatrices: b,
+  parseCoordGrammar: Ye,
+  parseFunction: Be,
+  toPrecision: yt,
   type: O
 });
-class yr {
+class wr {
   add(t, e, i) {
     if (typeof arguments[0] != "string") {
       for (var t in arguments[0])
@@ -106,71 +398,71 @@ class yr {
     });
   }
 }
-const X = new yr();
+const X = new wr();
 var F = {
   gamut_mapping: "lch.c",
   precision: 5,
   deltaE: "76"
   // Default deltaE method
 };
-const E = {
+const R = {
   // for compatibility, the four-digit chromaticity-derived ones everyone else uses
   D50: [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585],
   D65: [0.3127 / 0.329, 1, (1 - 0.3127 - 0.329) / 0.329]
 };
-function Yt(r) {
-  return Array.isArray(r) ? r : E[r];
+function $t(r) {
+  return Array.isArray(r) ? r : R[r];
 }
-function Mt(r, t, e, i = {}) {
-  if (r = Yt(r), t = Yt(t), !r || !t)
+function bt(r, t, e, i = {}) {
+  if (r = $t(r), t = $t(t), !r || !t)
     throw new TypeError(`Missing white point to convert ${r ? "" : "from"}${!r && !t ? "/" : ""}${t ? "" : "to"}`);
   if (r === t)
     return e;
   let a = { W1: r, W2: t, XYZ: e, options: i };
-  if (X.run("chromatic-adaptation-start", a), a.M || (a.W1 === E.D65 && a.W2 === E.D50 ? a.M = [
+  if (X.run("chromatic-adaptation-start", a), a.M || (a.W1 === R.D65 && a.W2 === R.D50 ? a.M = [
     [1.0479298208405488, 0.022946793341019088, -0.05019222954313557],
     [0.029627815688159344, 0.990434484573249, -0.01707382502938514],
     [-0.009243058152591178, 0.015055144896577895, 0.7518742899580008]
-  ] : a.W1 === E.D50 && a.W2 === E.D65 && (a.M = [
+  ] : a.W1 === R.D50 && a.W2 === R.D65 && (a.M = [
     [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
     [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
     [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
   ])), X.run("chromatic-adaptation-end", a), a.M)
-    return M(a.M, a.XYZ);
+    return b(a.M, a.XYZ);
   throw new TypeError("Only Bradford CAT with white points D50 and D65 supported for now.");
 }
-const Mr = 75e-6, C = class C {
+const xr = 75e-6, C = class C {
   constructor(t) {
-    var a, n, s;
+    var a, s, n;
     this.id = t.id, this.name = t.name, this.base = t.base ? C.get(t.base) : null, this.aliases = t.aliases, this.base && (this.fromBase = t.fromBase, this.toBase = t.toBase);
     let e = t.coords ?? this.base.coords;
     for (let o in e)
       "name" in e[o] || (e[o].name = o);
     this.coords = e;
     let i = t.white ?? this.base.white ?? "D65";
-    this.white = Yt(i), this.formats = t.formats ?? {};
+    this.white = $t(i), this.formats = t.formats ?? {};
     for (let o in this.formats) {
-      let l = this.formats[o];
-      l.type || (l.type = "function"), l.name || (l.name = o);
+      let h = this.formats[o];
+      h.type || (h.type = "function"), h.name || (h.name = o);
     }
-    t.cssId && !((a = this.formats.functions) != null && a.color) ? (this.formats.color = { id: t.cssId }, Object.defineProperty(this, "cssId", { value: t.cssId })) : (n = this.formats) != null && n.color && !((s = this.formats) != null && s.color.id) && (this.formats.color.id = this.id), this.referred = t.referred, Object.defineProperty(this, "path", {
-      value: vr(this).reverse(),
+    t.cssId && !((a = this.formats.functions) != null && a.color) ? (this.formats.color = { id: t.cssId }, Object.defineProperty(this, "cssId", { value: t.cssId })) : (s = this.formats) != null && s.color && !((n = this.formats) != null && n.color.id) && (this.formats.color.id = this.id), this.referred = t.referred, Object.defineProperty(this, "path", {
+      value: Sr(this).reverse(),
       writable: !1,
       enumerable: !0,
       configurable: !0
     }), X.run("colorspace-init-end", this);
   }
-  inGamut(t, { epsilon: e = Mr } = {}) {
+  inGamut(t, { epsilon: e = xr } = {}) {
     if (this.isPolar)
       return t = this.toBase(t), this.base.inGamut(t, { epsilon: e });
     let i = Object.values(this.coords);
-    return t.every((a, n) => {
-      let s = i[n];
-      if (s.type !== "angle" && s.range) {
+    return t.every((a, s) => {
+      let n = i[s];
+      if (n.type !== "angle" && n.range) {
         if (Number.isNaN(a))
           return !0;
-        let [o, l] = s.range;
-        return (o === void 0 || a >= o - e) && (l === void 0 || a <= l + e);
+        let [o, h] = n.range;
+        return (o === void 0 || a >= o - e) && (h === void 0 || a <= h + e);
       }
       return !0;
     });
@@ -199,14 +491,14 @@ const Mr = 75e-6, C = class C {
     if (arguments.length === 1 && ([t, e] = [t.space, t.coords]), t = C.get(t), this.equals(t))
       return e;
     e = e.map((o) => Number.isNaN(o) ? 0 : o);
-    let i = this.path, a = t.path, n, s;
+    let i = this.path, a = t.path, s, n;
     for (let o = 0; o < i.length && i[o].equals(a[o]); o++)
-      n = i[o], s = o;
-    if (!n)
+      s = i[o], n = o;
+    if (!s)
       throw new Error(`Cannot convert between color spaces ${this} and ${t}: no connection space was found`);
-    for (let o = i.length - 1; o > s; o--)
+    for (let o = i.length - 1; o > n; o--)
       e = i[o].toBase(e);
-    for (let o = s + 1; o < a.length; o++)
+    for (let o = n + 1; o < a.length; o++)
       e = a[o].fromBase(e);
     return e;
   }
@@ -262,32 +554,32 @@ const Mr = 75e-6, C = class C {
    * @return {Object}
    */
   static resolveCoord(t, e) {
-    var l;
-    let i = O(t), a, n;
-    if (i === "string" ? t.includes(".") ? [a, n] = t.split(".") : [a, n] = [, t] : Array.isArray(t) ? [a, n] = t : (a = t.space, n = t.coordId), a = C.get(a), a || (a = e), !a)
+    var h;
+    let i = O(t), a, s;
+    if (i === "string" ? t.includes(".") ? [a, s] = t.split(".") : [a, s] = [, t] : Array.isArray(t) ? [a, s] = t : (a = t.space, s = t.coordId), a = C.get(a), a || (a = e), !a)
       throw new TypeError(`Cannot resolve coordinate reference ${t}: No color space specified and relative references are not allowed here`);
-    if (i = O(n), i === "number" || i === "string" && n >= 0) {
-      let h = Object.entries(a.coords)[n];
-      if (h)
-        return { space: a, id: h[0], index: n, ...h[1] };
+    if (i = O(s), i === "number" || i === "string" && s >= 0) {
+      let l = Object.entries(a.coords)[s];
+      if (l)
+        return { space: a, id: l[0], index: s, ...l[1] };
     }
     a = C.get(a);
-    let s = n.toLowerCase(), o = 0;
-    for (let h in a.coords) {
-      let u = a.coords[h];
-      if (h.toLowerCase() === s || ((l = u.name) == null ? void 0 : l.toLowerCase()) === s)
-        return { space: a, id: h, index: o, ...u };
+    let n = s.toLowerCase(), o = 0;
+    for (let l in a.coords) {
+      let u = a.coords[l];
+      if (l.toLowerCase() === n || ((h = u.name) == null ? void 0 : h.toLowerCase()) === n)
+        return { space: a, id: l, index: o, ...u };
       o++;
     }
-    throw new TypeError(`No "${n}" coordinate found in ${a.name}. Its coordinates are: ${Object.keys(a.coords).join(", ")}`);
+    throw new TypeError(`No "${s}" coordinate found in ${a.name}. Its coordinates are: ${Object.keys(a.coords).join(", ")}`);
   }
 };
-At(C, "registry", {}), At(C, "DEFAULT_FORMAT", {
+Et(C, "registry", {}), Et(C, "DEFAULT_FORMAT", {
   type: "functions",
   name: "color"
 });
-let d = C;
-function vr(r) {
+let f = C;
+function Sr(r) {
   let t = [r];
   for (let e = r; e = e.base; )
     t.push(e);
@@ -295,19 +587,19 @@ function vr(r) {
 }
 function ee(r, { coords: t } = {}) {
   if (r.coords && !r.coordGrammar) {
-    r.type || (r.type = "function"), r.name || (r.name = "color"), r.coordGrammar = Fe(r.coords);
-    let e = Object.entries(t).map(([i, a], n) => {
-      let s = r.coordGrammar[n][0], o = a.range || a.refRange, l = s.range, h = "";
-      return s == "<percentage>" ? (l = [0, 100], h = "%") : s == "<angle>" && (h = "deg"), { fromRange: o, toRange: l, suffix: h };
+    r.type || (r.type = "function"), r.name || (r.name = "color"), r.coordGrammar = Ye(r.coords);
+    let e = Object.entries(t).map(([i, a], s) => {
+      let n = r.coordGrammar[s][0], o = a.range || a.refRange, h = n.range, l = "";
+      return n == "<percentage>" ? (h = [0, 100], l = "%") : n == "<angle>" && (l = "deg"), { fromRange: o, toRange: h, suffix: l };
     });
-    r.serializeCoords = (i, a) => i.map((n, s) => {
-      let { fromRange: o, toRange: l, suffix: h } = e[s];
-      return o && l && (n = Gt(o, l, n)), n = bt(n, a), h && (n += h), n;
+    r.serializeCoords = (i, a) => i.map((s, n) => {
+      let { fromRange: o, toRange: h, suffix: l } = e[n];
+      return o && h && (s = Ut(o, h, s)), s = yt(s, a), l && (s += l), s;
     });
   }
   return r;
 }
-var R = new d({
+var E = new f({
   id: "xyz-d65",
   name: "XYZ D65",
   coords: {
@@ -323,7 +615,7 @@ var R = new d({
   },
   aliases: ["xyz"]
 });
-class k extends d {
+class x extends f {
   /**
    * Creates a new RGB ColorSpace.
    * If coords are not specified, they will use the default RGB coords.
@@ -347,87 +639,87 @@ class k extends d {
         range: [0, 1],
         name: "Blue"
       }
-    }), t.base || (t.base = R), t.toXYZ_M && t.fromXYZ_M && (t.toBase ?? (t.toBase = (e) => {
-      let i = M(t.toXYZ_M, e);
-      return this.white !== this.base.white && (i = Mt(this.white, this.base.white, i)), i;
-    }), t.fromBase ?? (t.fromBase = (e) => (e = Mt(this.base.white, this.white, e), M(t.fromXYZ_M, e)))), t.referred ?? (t.referred = "display"), super(t);
+    }), t.base || (t.base = E), t.toXYZ_M && t.fromXYZ_M && (t.toBase ?? (t.toBase = (e) => {
+      let i = b(t.toXYZ_M, e);
+      return this.white !== this.base.white && (i = bt(this.white, this.base.white, i)), i;
+    }), t.fromBase ?? (t.fromBase = (e) => (e = bt(this.base.white, this.white, e), b(t.fromXYZ_M, e)))), t.referred ?? (t.referred = "display"), super(t);
   }
 }
-function Ye(r, { meta: t } = {}) {
-  var i, a, n, s, o;
+function $e(r, { meta: t } = {}) {
+  var i, a, s, n, o;
   let e = { str: (i = String(r)) == null ? void 0 : i.trim() };
   if (X.run("parse-start", e), e.color)
     return e.color;
-  if (e.parsed = Ee(e.str), e.parsed) {
-    let l = e.parsed.name;
-    if (l === "color") {
-      let h = e.parsed.args.shift(), u = e.parsed.rawArgs.indexOf("/") > 0 ? e.parsed.args.pop() : 1;
-      for (let f of d.all) {
-        let m = f.getFormat("color");
-        if (m && (h === m.id || (a = m.ids) != null && a.includes(h))) {
-          const p = Object.keys(f.coords).map((b, y) => e.parsed.args[y] || 0);
-          return t && (t.formatId = "color"), { spaceId: f.id, coords: p, alpha: u };
+  if (e.parsed = Be(e.str), e.parsed) {
+    let h = e.parsed.name;
+    if (h === "color") {
+      let l = e.parsed.args.shift(), u = e.parsed.rawArgs.indexOf("/") > 0 ? e.parsed.args.pop() : 1;
+      for (let d of f.all) {
+        let m = d.getFormat("color");
+        if (m && (l === m.id || (a = m.ids) != null && a.includes(l))) {
+          const p = Object.keys(d.coords).map((y, M) => e.parsed.args[M] || 0);
+          return t && (t.formatId = "color"), { spaceId: d.id, coords: p, alpha: u };
         }
       }
       let c = "";
-      if (h in d.registry) {
-        let f = (o = (s = (n = d.registry[h].formats) == null ? void 0 : n.functions) == null ? void 0 : s.color) == null ? void 0 : o.id;
-        f && (c = `Did you mean color(${f})?`);
+      if (l in f.registry) {
+        let d = (o = (n = (s = f.registry[l].formats) == null ? void 0 : s.functions) == null ? void 0 : n.color) == null ? void 0 : o.id;
+        d && (c = `Did you mean color(${d})?`);
       }
-      throw new TypeError(`Cannot parse color(${h}). ` + (c || "Missing a plugin?"));
+      throw new TypeError(`Cannot parse color(${l}). ` + (c || "Missing a plugin?"));
     } else
-      for (let h of d.all) {
-        let u = h.getFormat(l);
+      for (let l of f.all) {
+        let u = l.getFormat(h);
         if (u && u.type === "function") {
           let c = 1;
-          (u.lastAlpha || Be(e.parsed.args).alpha) && (c = e.parsed.args.pop());
-          let f = e.parsed.args, m;
-          return u.coordGrammar && (m = Object.entries(h.coords).map(([p, b], y) => {
+          (u.lastAlpha || ze(e.parsed.args).alpha) && (c = e.parsed.args.pop());
+          let d = e.parsed.args, m;
+          return u.coordGrammar && (m = Object.entries(l.coords).map(([p, y], M) => {
             var U;
-            let v = u.coordGrammar[y], w = (U = f[y]) == null ? void 0 : U.type, D = v.find(($) => $ == w);
+            let k = u.coordGrammar[M], w = (U = d[M]) == null ? void 0 : U.type, D = k.find(($) => $ == w);
             if (!D) {
-              let $ = b.name || p;
-              throw new TypeError(`${w} not allowed for ${$} in ${l}()`);
+              let $ = y.name || p;
+              throw new TypeError(`${w} not allowed for ${$} in ${h}()`);
             }
-            let x = D.range;
-            w === "<percentage>" && (x || (x = [0, 1]));
-            let L = b.range || b.refRange;
-            return x && L && (f[y] = Gt(x, L, f[y])), D;
+            let S = D.range;
+            w === "<percentage>" && (S || (S = [0, 1]));
+            let P = y.range || y.refRange;
+            return S && P && (d[M] = Ut(S, P, d[M])), D;
           })), t && Object.assign(t, { formatId: u.name, types: m }), {
-            spaceId: h.id,
-            coords: f,
+            spaceId: l.id,
+            coords: d,
             alpha: c
           };
         }
       }
   } else
-    for (let l of d.all)
-      for (let h in l.formats) {
-        let u = l.formats[h];
+    for (let h of f.all)
+      for (let l in h.formats) {
+        let u = h.formats[l];
         if (u.type !== "custom" || u.test && !u.test(e.str))
           continue;
         let c = u.parse(e.str);
         if (c)
-          return c.alpha ?? (c.alpha = 1), t && (t.formatId = h), c;
+          return c.alpha ?? (c.alpha = 1), t && (t.formatId = l), c;
       }
   throw new TypeError(`Could not parse ${r} as a color. Missing a plugin?`);
 }
 function g(r) {
   if (!r)
     throw new TypeError("Empty color reference");
-  it(r) && (r = Ye(r));
+  it(r) && (r = $e(r));
   let t = r.space || r.spaceId;
-  return t instanceof d || (r.space = d.get(t)), r.alpha === void 0 && (r.alpha = 1), r;
+  return t instanceof f || (r.space = f.get(t)), r.alpha === void 0 && (r.alpha = 1), r;
 }
 function at(r, t) {
-  return t = d.get(t), t.from(r);
+  return t = f.get(t), t.from(r);
 }
-function P(r, t) {
-  let { space: e, index: i } = d.resolveCoord(t, r.space);
+function A(r, t) {
+  let { space: e, index: i } = f.resolveCoord(t, r.space);
   return at(r, e)[i];
 }
-function $e(r, t, e) {
-  return t = d.get(t), r.coords = t.to(r.space, e), r;
+function Oe(r, t, e) {
+  return t = f.get(t), r.coords = t.to(r.space, e), r;
 }
 function I(r, t, e) {
   if (r = g(r), arguments.length === 2 && O(arguments[1]) === "object") {
@@ -435,26 +727,26 @@ function I(r, t, e) {
     for (let a in i)
       I(r, a, i[a]);
   } else {
-    typeof e == "function" && (e = e(P(r, t)));
-    let { space: i, index: a } = d.resolveCoord(t, r.space), n = at(r, i);
-    n[a] = e, $e(r, i, n);
+    typeof e == "function" && (e = e(A(r, t)));
+    let { space: i, index: a } = f.resolveCoord(t, r.space), s = at(r, i);
+    s[a] = e, Oe(r, i, s);
   }
   return r;
 }
-var Zt = new d({
+var Gt = new f({
   id: "xyz-d50",
   name: "XYZ D50",
   white: "D50",
-  base: R,
-  fromBase: (r) => Mt(R.white, "D50", r),
-  toBase: (r) => Mt("D50", R.white, r),
+  base: E,
+  fromBase: (r) => bt(E.white, "D50", r),
+  toBase: (r) => bt("D50", E.white, r),
   formats: {
     color: {}
   }
 });
-const wr = 216 / 24389, re = 24 / 116, ot = 24389 / 27;
-let Rt = E.D50;
-var T = new d({
+const Cr = 216 / 24389, re = 24 / 116, ot = 24389 / 27;
+let At = R.D50;
+var T = new f({
   id: "lab",
   name: "Lab",
   coords: {
@@ -471,12 +763,12 @@ var T = new d({
   },
   // Assuming XYZ is relative to D50, convert to CIE Lab
   // from CIE standard, which now defines these as a rational fraction
-  white: Rt,
-  base: Zt,
+  white: At,
+  base: Gt,
   // Convert D50-adapted XYX to Lab
   //  CIE 15.3:2004 section 8.2.1.1
   fromBase(r) {
-    let e = r.map((i, a) => i / Rt[a]).map((i) => i > wr ? Math.cbrt(i) : (ot * i + 16) / 116);
+    let e = r.map((i, a) => i / At[a]).map((i) => i > Cr ? Math.cbrt(i) : (ot * i + 16) / 116);
     return [
       116 * e[1] - 16,
       // L
@@ -495,7 +787,7 @@ var T = new d({
       t[0] > re ? Math.pow(t[0], 3) : (116 * t[0] - 16) / ot,
       r[0] > 8 ? Math.pow((r[0] + 16) / 116, 3) : r[0] / ot,
       t[2] > re ? Math.pow(t[2], 3) : (116 * t[2] - 16) / ot
-    ].map((i, a) => i * Rt[a]);
+    ].map((i, a) => i * At[a]);
   },
   formats: {
     lab: {
@@ -503,16 +795,16 @@ var T = new d({
     }
   }
 });
-function St(r) {
+function Ct(r) {
   return (r % 360 + 360) % 360;
 }
-function kr(r, t) {
+function Tr(r, t) {
   if (r === "raw")
     return t;
-  let [e, i] = t.map(St), a = i - e;
+  let [e, i] = t.map(Ct), a = i - e;
   return r === "increasing" ? a < 0 && (i += 360) : r === "decreasing" ? a > 0 && (e += 360) : r === "longer" ? -180 < a && a < 180 && (a > 0 ? e += 360 : i += 360) : r === "shorter" && (a > 180 ? e += 360 : a < -180 && (i += 360)), [e, i];
 }
-var tt = new d({
+var tt = new f({
   id: "lch",
   name: "LCH",
   coords: {
@@ -533,13 +825,13 @@ var tt = new d({
   base: T,
   fromBase(r) {
     let [t, e, i] = r, a;
-    const n = 0.02;
-    return Math.abs(e) < n && Math.abs(i) < n ? a = NaN : a = Math.atan2(i, e) * 180 / Math.PI, [
+    const s = 0.02;
+    return Math.abs(e) < s && Math.abs(i) < s ? a = NaN : a = Math.atan2(i, e) * 180 / Math.PI, [
       t,
       // L is still L
       Math.sqrt(e ** 2 + i ** 2),
       // Chroma
-      St(a)
+      Ct(a)
       // Hue, in degrees [0 to 360)
     ];
   },
@@ -560,24 +852,24 @@ var tt = new d({
     }
   }
 });
-const ie = 25 ** 7, vt = Math.PI, ae = 180 / vt, N = vt / 180;
-function $t(r, t, { kL: e = 1, kC: i = 1, kH: a = 1 } = {}) {
-  let [n, s, o] = T.from(r), l = tt.from(T, [n, s, o])[1], [h, u, c] = T.from(t), f = tt.from(T, [h, u, c])[1];
-  l < 0 && (l = 0), f < 0 && (f = 0);
-  let p = ((l + f) / 2) ** 7, b = 0.5 * (1 - Math.sqrt(p / (p + ie))), y = (1 + b) * s, v = (1 + b) * u, w = Math.sqrt(y ** 2 + o ** 2), D = Math.sqrt(v ** 2 + c ** 2), x = y === 0 && o === 0 ? 0 : Math.atan2(o, y), L = v === 0 && c === 0 ? 0 : Math.atan2(c, v);
-  x < 0 && (x += 2 * vt), L < 0 && (L += 2 * vt), x *= ae, L *= ae;
-  let U = h - n, $ = D - w, z = L - x, H = x + L, Ht = Math.abs(z), W;
-  w * D === 0 ? W = 0 : Ht <= 180 ? W = z : z > 180 ? W = z - 360 : z < -180 ? W = z + 360 : console.log("the unthinkable has happened");
-  let Wt = 2 * Math.sqrt(D * w) * Math.sin(W * N / 2), cr = (n + h) / 2, Dt = (w + D) / 2, Jt = Math.pow(Dt, 7), Y;
-  w * D === 0 ? Y = H : Ht <= 180 ? Y = H / 2 : H < 360 ? Y = (H + 360) / 2 : Y = (H - 360) / 2;
-  let Qt = (cr - 50) ** 2, fr = 1 + 0.015 * Qt / Math.sqrt(20 + Qt), Kt = 1 + 0.045 * Dt, J = 1;
-  J -= 0.17 * Math.cos((Y - 30) * N), J += 0.24 * Math.cos(2 * Y * N), J += 0.32 * Math.cos((3 * Y + 6) * N), J -= 0.2 * Math.cos((4 * Y - 63) * N);
-  let te = 1 + 0.015 * Dt * J, dr = 30 * Math.exp(-1 * ((Y - 275) / 25) ** 2), mr = 2 * Math.sqrt(Jt / (Jt + ie)), gr = -1 * Math.sin(2 * dr * N) * mr, st = (U / (e * fr)) ** 2;
-  return st += ($ / (i * Kt)) ** 2, st += (Wt / (a * te)) ** 2, st += gr * ($ / (i * Kt)) * (Wt / (a * te)), Math.sqrt(st);
+const ie = 25 ** 7, vt = Math.PI, ae = 180 / vt, H = vt / 180;
+function Ot(r, t, { kL: e = 1, kC: i = 1, kH: a = 1 } = {}) {
+  let [s, n, o] = T.from(r), h = tt.from(T, [s, n, o])[1], [l, u, c] = T.from(t), d = tt.from(T, [l, u, c])[1];
+  h < 0 && (h = 0), d < 0 && (d = 0);
+  let p = ((h + d) / 2) ** 7, y = 0.5 * (1 - Math.sqrt(p / (p + ie))), M = (1 + y) * n, k = (1 + y) * u, w = Math.sqrt(M ** 2 + o ** 2), D = Math.sqrt(k ** 2 + c ** 2), S = M === 0 && o === 0 ? 0 : Math.atan2(o, M), P = k === 0 && c === 0 ? 0 : Math.atan2(c, k);
+  S < 0 && (S += 2 * vt), P < 0 && (P += 2 * vt), S *= ae, P *= ae;
+  let U = l - s, $ = D - w, B = P - S, N = S + P, Nt = Math.abs(B), W;
+  w * D === 0 ? W = 0 : Nt <= 180 ? W = B : B > 180 ? W = B - 360 : B < -180 ? W = B + 360 : console.log("the unthinkable has happened");
+  let Wt = 2 * Math.sqrt(D * w) * Math.sin(W * H / 2), cr = (s + l) / 2, Lt = (w + D) / 2, Jt = Math.pow(Lt, 7), Y;
+  w * D === 0 ? Y = N : Nt <= 180 ? Y = N / 2 : N < 360 ? Y = (N + 360) / 2 : Y = (N - 360) / 2;
+  let Qt = (cr - 50) ** 2, dr = 1 + 0.015 * Qt / Math.sqrt(20 + Qt), Kt = 1 + 0.045 * Lt, J = 1;
+  J -= 0.17 * Math.cos((Y - 30) * H), J += 0.24 * Math.cos(2 * Y * H), J += 0.32 * Math.cos((3 * Y + 6) * H), J -= 0.2 * Math.cos((4 * Y - 63) * H);
+  let te = 1 + 0.015 * Lt * J, fr = 30 * Math.exp(-1 * ((Y - 275) / 25) ** 2), mr = 2 * Math.sqrt(Jt / (Jt + ie)), gr = -1 * Math.sin(2 * fr * H) * mr, nt = (U / (e * dr)) ** 2;
+  return nt += ($ / (i * Kt)) ** 2, nt += (Wt / (a * te)) ** 2, nt += gr * ($ / (i * Kt)) * (Wt / (a * te)), Math.sqrt(nt);
 }
-const xr = 75e-6;
-function K(r, t = r.space, { epsilon: e = xr } = {}) {
-  r = g(r), t = d.get(t);
+const Dr = 75e-6;
+function K(r, t = r.space, { epsilon: e = Dr } = {}) {
+  r = g(r), t = f.get(t);
   let i = r.coords;
   return t !== r.space && (i = t.from(r)), t.inGamut(i, { epsilon: e });
 }
@@ -589,143 +881,143 @@ function et(r) {
   };
 }
 function j(r, { method: t = F.gamut_mapping, space: e = r.space } = {}) {
-  if (it(arguments[1]) && (e = arguments[1]), e = d.get(e), K(r, e, { epsilon: 0 }))
+  if (it(arguments[1]) && (e = arguments[1]), e = f.get(e), K(r, e, { epsilon: 0 }))
     return g(r);
-  let i = A(r, e);
+  let i = L(r, e);
   if (t !== "clip" && !K(r, e)) {
     let a = j(et(i), { method: "clip", space: e });
-    if ($t(r, a) > 2) {
-      let n = d.resolveCoord(t), s = n.space, o = n.id, l = A(i, s), u = (n.range || n.refRange)[0], c = 0.01, f = u, m = P(l, o);
-      for (; m - f > c; ) {
-        let p = et(l);
-        p = j(p, { space: e, method: "clip" }), $t(l, p) - 2 < c ? f = P(l, o) : m = P(l, o), I(l, o, (f + m) / 2);
+    if (Ot(r, a) > 2) {
+      let s = f.resolveCoord(t), n = s.space, o = s.id, h = L(i, n), u = (s.range || s.refRange)[0], c = 0.01, d = u, m = A(h, o);
+      for (; m - d > c; ) {
+        let p = et(h);
+        p = j(p, { space: e, method: "clip" }), Ot(h, p) - 2 < c ? d = A(h, o) : m = A(h, o), I(h, o, (d + m) / 2);
       }
-      i = A(l, e);
+      i = L(h, e);
     } else
       i = a;
   }
   if (t === "clip" || !K(i, e, { epsilon: 0 })) {
-    let a = Object.values(e.coords).map((n) => n.range || []);
-    i.coords = i.coords.map((n, s) => {
-      let [o, l] = a[s];
-      return o !== void 0 && (n = Math.max(o, n)), l !== void 0 && (n = Math.min(n, l)), n;
+    let a = Object.values(e.coords).map((s) => s.range || []);
+    i.coords = i.coords.map((s, n) => {
+      let [o, h] = a[n];
+      return o !== void 0 && (s = Math.max(o, s)), h !== void 0 && (s = Math.min(s, h)), s;
     });
   }
-  return e !== r.space && (i = A(i, r.space)), r.coords = i.coords, r;
+  return e !== r.space && (i = L(i, r.space)), r.coords = i.coords, r;
 }
 j.returns = "color";
-function A(r, t, { inGamut: e } = {}) {
-  r = g(r), t = d.get(t);
+function L(r, t, { inGamut: e } = {}) {
+  r = g(r), t = f.get(t);
   let i = t.from(r), a = { space: t, coords: i, alpha: r.alpha };
   return e && (a = j(a)), a;
 }
-A.returns = "color";
-function wt(r, {
+L.returns = "color";
+function kt(r, {
   precision: t = F.precision,
   format: e = "default",
   inGamut: i = !0,
   ...a
 } = {}) {
-  var l;
-  let n;
+  var h;
+  let s;
   r = g(r);
-  let s = e;
-  e = r.space.getFormat(e) ?? r.space.getFormat("default") ?? d.DEFAULT_FORMAT, i || (i = e.toGamut);
+  let n = e;
+  e = r.space.getFormat(e) ?? r.space.getFormat("default") ?? f.DEFAULT_FORMAT, i || (i = e.toGamut);
   let o = r.coords;
-  if (o = o.map((h) => h || 0), i && !K(r) && (o = j(et(r), i === !0 ? void 0 : i).coords), e.type === "custom")
+  if (o = o.map((l) => l || 0), i && !K(r) && (o = j(et(r), i === !0 ? void 0 : i).coords), e.type === "custom")
     if (a.precision = t, e.serialize)
-      n = e.serialize(o, r.alpha, a);
+      s = e.serialize(o, r.alpha, a);
     else
-      throw new TypeError(`format ${s} can only be used to parse colors, not for serialization`);
+      throw new TypeError(`format ${n} can only be used to parse colors, not for serialization`);
   else {
-    let h = e.name || "color";
-    e.serializeCoords ? o = e.serializeCoords(o, t) : t !== null && (o = o.map((m) => bt(m, t)));
+    let l = e.name || "color";
+    e.serializeCoords ? o = e.serializeCoords(o, t) : t !== null && (o = o.map((m) => yt(m, t)));
     let u = [...o];
-    if (h === "color") {
-      let m = e.id || ((l = e.ids) == null ? void 0 : l[0]) || r.space.id;
+    if (l === "color") {
+      let m = e.id || ((h = e.ids) == null ? void 0 : h[0]) || r.space.id;
       u.unshift(m);
     }
     let c = r.alpha;
-    t !== null && (c = bt(c, t));
-    let f = r.alpha < 1 && !e.noAlpha ? `${e.commas ? "," : " /"} ${c}` : "";
-    n = `${h}(${u.join(e.commas ? ", " : " ")}${f})`;
+    t !== null && (c = yt(c, t));
+    let d = r.alpha < 1 && !e.noAlpha ? `${e.commas ? "," : " /"} ${c}` : "";
+    s = `${l}(${u.join(e.commas ? ", " : " ")}${d})`;
   }
-  return n;
+  return s;
 }
-const Sr = [
+const Lr = [
   [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
   [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
   [0, 0.028072693049087428, 1.060985057710791]
-], Cr = [
+], Er = [
   [1.716651187971268, -0.355670783776392, -0.25336628137366],
   [-0.666684351832489, 1.616481236634939, 0.0157685458139111],
   [0.017639857445311, -0.042770613257809, 0.942103121235474]
 ];
-var Ct = new k({
+var Tt = new x({
   id: "rec2020-linear",
   name: "Linear REC.2020",
   white: "D65",
-  toXYZ_M: Sr,
-  fromXYZ_M: Cr,
+  toXYZ_M: Lr,
+  fromXYZ_M: Er,
   formats: {
     color: {}
   }
 });
-const lt = 1.09929682680944, ne = 0.018053968510807;
-var Oe = new k({
+const ht = 1.09929682680944, se = 0.018053968510807;
+var Xe = new x({
   id: "rec2020",
   name: "REC.2020",
-  base: Ct,
+  base: Tt,
   // Non-linear transfer function from Rec. ITU-R BT.2020-2 table 4
   toBase(r) {
     return r.map(function(t) {
-      return t < ne * 4.5 ? t / 4.5 : Math.pow((t + lt - 1) / lt, 1 / 0.45);
+      return t < se * 4.5 ? t / 4.5 : Math.pow((t + ht - 1) / ht, 1 / 0.45);
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      return t >= ne ? lt * Math.pow(t, 0.45) - (lt - 1) : 4.5 * t;
+      return t >= se ? ht * Math.pow(t, 0.45) - (ht - 1) : 4.5 * t;
     });
   },
   formats: {
     color: {}
   }
 });
-const Tr = [
+const Ar = [
   [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
   [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
   [0, 0.04511338185890264, 1.043944368900976]
-], Dr = [
+], Pr = [
   [2.493496911941425, -0.9313836179191239, -0.40271078445071684],
   [-0.8294889695615747, 1.7626640603183463, 0.023624685841943577],
   [0.03584583024378447, -0.07617238926804182, 0.9568845240076872]
 ];
-var Xe = new k({
+var Ie = new x({
   id: "p3-linear",
   name: "Linear P3",
   white: "D65",
-  toXYZ_M: Tr,
-  fromXYZ_M: Dr
+  toXYZ_M: Ar,
+  fromXYZ_M: Pr
 });
-const Ar = [
+const Rr = [
   [0.41239079926595934, 0.357584339383878, 0.1804807884018343],
   [0.21263900587151027, 0.715168678767756, 0.07219231536073371],
   [0.01933081871559182, 0.11919477979462598, 0.9505321522496607]
-], Rr = [
+], Br = [
   [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
   [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
   [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
 ];
-var Ie = new k({
+var je = new x({
   id: "srgb-linear",
   name: "Linear sRGB",
   white: "D65",
-  toXYZ_M: Ar,
-  fromXYZ_M: Rr,
+  toXYZ_M: Rr,
+  fromXYZ_M: Br,
   formats: {
     color: {}
   }
-}), se = {
+}), ne = {
   aliceblue: [240 / 255, 248 / 255, 1],
   antiquewhite: [250 / 255, 235 / 255, 215 / 255],
   aqua: [0, 1, 1],
@@ -875,11 +1167,11 @@ var Ie = new k({
   yellow: [1, 1, 0],
   yellowgreen: [154 / 255, 205 / 255, 50 / 255]
 };
-let oe = Array(3).fill("<percentage> | <number>[0, 255]"), le = Array(3).fill("<number>[0, 255]");
-var rt = new k({
+let oe = Array(3).fill("<percentage> | <number>[0, 255]"), he = Array(3).fill("<number>[0, 255]");
+var rt = new x({
   id: "srgb",
   name: "sRGB",
-  base: Ie,
+  base: je,
   fromBase: (r) => r.map((t) => {
     let e = t < 0 ? -1 : 1, i = t * e;
     return i > 31308e-7 ? e * (1.055 * i ** (1 / 2.4) - 0.055) : 12.92 * t;
@@ -895,7 +1187,7 @@ var rt = new k({
     rgb_number: {
       name: "rgb",
       commas: !0,
-      coords: le,
+      coords: he,
       noAlpha: !0
     },
     color: {
@@ -909,7 +1201,7 @@ var rt = new k({
     rgba_number: {
       name: "rgba",
       commas: !0,
-      coords: le
+      coords: he
     },
     hex: {
       type: "custom",
@@ -930,9 +1222,9 @@ var rt = new k({
         collapse: e = !0
         // collapse to 3-4 digit hex when possible?
       } = {}) => {
-        t < 1 && r.push(t), r = r.map((n) => Math.round(n * 255));
-        let i = e && r.every((n) => n % 17 === 0);
-        return "#" + r.map((n) => i ? (n / 17).toString(16) : n.toString(16).padStart(2, "0")).join("");
+        t < 1 && r.push(t), r = r.map((s) => Math.round(s * 255));
+        let i = e && r.every((s) => s % 17 === 0);
+        return "#" + r.map((s) => i ? (s / 17).toString(16) : s.toString(16).padStart(2, "0")).join("");
       }
     },
     keyword: {
@@ -941,15 +1233,15 @@ var rt = new k({
       parse(r) {
         r = r.toLowerCase();
         let t = { spaceId: "srgb", coords: null, alpha: 1 };
-        if (r === "transparent" ? (t.coords = se.black, t.alpha = 0) : t.coords = se[r], t.coords)
+        if (r === "transparent" ? (t.coords = ne.black, t.alpha = 0) : t.coords = ne[r], t.coords)
           return t;
       }
     }
   }
-}), je = new k({
+}), qe = new x({
   id: "p3",
   name: "P3",
-  base: Xe,
+  base: Ie,
   // Gamma encoding/decoding is the same as sRGB
   fromBase: rt.fromBase,
   toBase: rt.toBase,
@@ -961,41 +1253,41 @@ var rt = new k({
 });
 F.display_space = rt;
 if (typeof CSS < "u" && CSS.supports)
-  for (let r of [T, Oe, je]) {
-    let t = r.getMinCoords(), i = wt({ space: r, coords: t, alpha: 1 });
+  for (let r of [T, Xe, qe]) {
+    let t = r.getMinCoords(), i = kt({ space: r, coords: t, alpha: 1 });
     if (CSS.supports("color", i)) {
       F.display_space = r;
       break;
     }
   }
-function Pr(r, { space: t = F.display_space, ...e } = {}) {
-  let i = wt(r, e);
+function zr(r, { space: t = F.display_space, ...e } = {}) {
+  let i = kt(r, e);
   if (typeof CSS > "u" || CSS.supports("color", i) || !F.display_space)
     i = new String(i), i.color = r;
   else {
-    let a = A(r, t);
-    i = new String(wt(a, e)), i.color = a;
+    let a = L(r, t);
+    i = new String(kt(a, e)), i.color = a;
   }
   return i;
 }
-function qe(r, t, e = "lab") {
-  e = d.get(e);
+function Ue(r, t, e = "lab") {
+  e = f.get(e);
   let i = e.from(r), a = e.from(t);
-  return Math.sqrt(i.reduce((n, s, o) => {
-    let l = a[o];
-    return isNaN(s) || isNaN(l) ? n : n + (l - s) ** 2;
+  return Math.sqrt(i.reduce((s, n, o) => {
+    let h = a[o];
+    return isNaN(n) || isNaN(h) ? s : s + (h - n) ** 2;
   }, 0));
 }
-function Lr(r, t) {
+function Fr(r, t) {
   return r = g(r), t = g(t), r.space === t.space && r.alpha === t.alpha && r.coords.every((e, i) => e === t.coords[i]);
 }
 function q(r) {
-  return P(r, [R, "y"]);
+  return A(r, [E, "y"]);
 }
 function Ge(r, t) {
-  I(r, [R, "y"], t);
+  I(r, [E, "y"], t);
 }
-function Er(r) {
+function Yr(r) {
   Object.defineProperty(r.prototype, "luminance", {
     get() {
       return q(this);
@@ -1005,55 +1297,55 @@ function Er(r) {
     }
   });
 }
-var Br = /* @__PURE__ */ Object.freeze({
+var $r = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   getLuminance: q,
-  register: Er,
+  register: Yr,
   setLuminance: Ge
 });
-function zr(r, t) {
+function Or(r, t) {
   r = g(r), t = g(t);
   let e = Math.max(q(r), 0), i = Math.max(q(t), 0);
   return i > e && ([e, i] = [i, e]), (e + 0.05) / (i + 0.05);
 }
-const Fr = 0.56, Yr = 0.57, $r = 0.62, Or = 0.65, he = 0.022, Xr = 1.414, Ir = 0.1, jr = 5e-4, qr = 1.14, ue = 0.027, Gr = 1.14;
+const Xr = 0.56, Ir = 0.57, jr = 0.62, qr = 0.65, le = 0.022, Ur = 1.414, Gr = 0.1, Zr = 5e-4, Hr = 1.14, ue = 0.027, Vr = 1.14;
 function ce(r) {
-  return r >= he ? r : r + (he - r) ** Xr;
+  return r >= le ? r : r + (le - r) ** Ur;
 }
 function V(r) {
   let t = r < 0 ? -1 : 1, e = Math.abs(r);
   return t * Math.pow(e, 2.4);
 }
-function Zr(r, t) {
+function Nr(r, t) {
   t = g(t), r = g(r);
-  let e, i, a, n, s, o;
-  t = A(t, "srgb"), [n, s, o] = t.coords;
-  let l = V(n) * 0.2126729 + V(s) * 0.7151522 + V(o) * 0.072175;
-  r = A(r, "srgb"), [n, s, o] = r.coords;
-  let h = V(n) * 0.2126729 + V(s) * 0.7151522 + V(o) * 0.072175, u = ce(l), c = ce(h), f = c > u;
-  return Math.abs(c - u) < jr ? i = 0 : f ? (e = c ** Fr - u ** Yr, i = e * qr) : (e = c ** Or - u ** $r, i = e * Gr), Math.abs(i) < Ir ? a = 0 : i > 0 ? a = i - ue : a = i + ue, a * 100;
+  let e, i, a, s, n, o;
+  t = L(t, "srgb"), [s, n, o] = t.coords;
+  let h = V(s) * 0.2126729 + V(n) * 0.7151522 + V(o) * 0.072175;
+  r = L(r, "srgb"), [s, n, o] = r.coords;
+  let l = V(s) * 0.2126729 + V(n) * 0.7151522 + V(o) * 0.072175, u = ce(h), c = ce(l), d = c > u;
+  return Math.abs(c - u) < Zr ? i = 0 : d ? (e = c ** Xr - u ** Ir, i = e * Hr) : (e = c ** qr - u ** jr, i = e * Vr), Math.abs(i) < Gr ? a = 0 : i > 0 ? a = i - ue : a = i + ue, a * 100;
 }
-function Ur(r, t) {
+function Wr(r, t) {
   r = g(r), t = g(t);
   let e = Math.max(q(r), 0), i = Math.max(q(t), 0);
   i > e && ([e, i] = [i, e]);
   let a = e + i;
   return a === 0 ? 0 : (e - i) / a;
 }
-const Nr = 5e4;
-function Vr(r, t) {
+const Jr = 5e4;
+function Qr(r, t) {
   r = g(r), t = g(t);
   let e = Math.max(q(r), 0), i = Math.max(q(t), 0);
-  return i > e && ([e, i] = [i, e]), i === 0 ? Nr : (e - i) / i;
+  return i > e && ([e, i] = [i, e]), i === 0 ? Jr : (e - i) / i;
 }
-function Hr(r, t) {
+function Kr(r, t) {
   r = g(r), t = g(t);
-  let e = P(r, [T, "l"]), i = P(t, [T, "l"]);
+  let e = A(r, [T, "l"]), i = A(t, [T, "l"]);
   return Math.abs(e - i);
 }
-const Wr = 216 / 24389, fe = 24 / 116, ht = 24389 / 27;
-let Pt = E.D65;
-var Ot = new d({
+const ti = 216 / 24389, de = 24 / 116, lt = 24389 / 27;
+let Pt = R.D65;
+var Xt = new f({
   id: "lab-d65",
   name: "Lab D65",
   coords: {
@@ -1071,11 +1363,11 @@ var Ot = new d({
   // Assuming XYZ is relative to D65, convert to CIE Lab
   // from CIE standard, which now defines these as a rational fraction
   white: Pt,
-  base: R,
+  base: E,
   // Convert D65-adapted XYZ to Lab
   //  CIE 15.3:2004 section 8.2.1.1
   fromBase(r) {
-    let e = r.map((i, a) => i / Pt[a]).map((i) => i > Wr ? Math.cbrt(i) : (ht * i + 16) / 116);
+    let e = r.map((i, a) => i / Pt[a]).map((i) => i > ti ? Math.cbrt(i) : (lt * i + 16) / 116);
     return [
       116 * e[1] - 16,
       // L
@@ -1091,9 +1383,9 @@ var Ot = new d({
   toBase(r) {
     let t = [];
     return t[1] = (r[0] + 16) / 116, t[0] = r[1] / 500 + t[1], t[2] = t[1] - r[2] / 200, [
-      t[0] > fe ? Math.pow(t[0], 3) : (116 * t[0] - 16) / ht,
-      r[0] > 8 ? Math.pow((r[0] + 16) / 116, 3) : r[0] / ht,
-      t[2] > fe ? Math.pow(t[2], 3) : (116 * t[2] - 16) / ht
+      t[0] > de ? Math.pow(t[0], 3) : (116 * t[0] - 16) / lt,
+      r[0] > 8 ? Math.pow((r[0] + 16) / 116, 3) : r[0] / lt,
+      t[2] > de ? Math.pow(t[2], 3) : (116 * t[2] - 16) / lt
     ].map((i, a) => i * Pt[a]);
   },
   formats: {
@@ -1102,75 +1394,75 @@ var Ot = new d({
     }
   }
 });
-const Lt = Math.pow(5, 0.5) * 0.5 + 0.5;
-function Jr(r, t) {
+const Rt = Math.pow(5, 0.5) * 0.5 + 0.5;
+function ei(r, t) {
   r = g(r), t = g(t);
-  let e = P(r, [Ot, "l"]), i = P(t, [Ot, "l"]), a = Math.abs(Math.pow(e, Lt) - Math.pow(i, Lt)), n = Math.pow(a, 1 / Lt) * Math.SQRT2 - 40;
-  return n < 7.5 ? 0 : n;
+  let e = A(r, [Xt, "l"]), i = A(t, [Xt, "l"]), a = Math.abs(Math.pow(e, Rt) - Math.pow(i, Rt)), s = Math.pow(a, 1 / Rt) * Math.SQRT2 - 40;
+  return s < 7.5 ? 0 : s;
 }
-var pt = /* @__PURE__ */ Object.freeze({
+var _t = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  contrastAPCA: Zr,
-  contrastDeltaPhi: Jr,
-  contrastLstar: Hr,
-  contrastMichelson: Ur,
-  contrastWCAG21: zr,
-  contrastWeber: Vr
+  contrastAPCA: Nr,
+  contrastDeltaPhi: ei,
+  contrastLstar: Kr,
+  contrastMichelson: Wr,
+  contrastWCAG21: Or,
+  contrastWeber: Qr
 });
-function Qr(r, t, e = {}) {
+function ri(r, t, e = {}) {
   it(e) && (e = { algorithm: e });
   let { algorithm: i, ...a } = e;
   if (!i) {
-    let n = Object.keys(pt).map((s) => s.replace(/^contrast/, "")).join(", ");
-    throw new TypeError(`contrast() function needs a contrast algorithm. Please specify one of: ${n}`);
+    let s = Object.keys(_t).map((n) => n.replace(/^contrast/, "")).join(", ");
+    throw new TypeError(`contrast() function needs a contrast algorithm. Please specify one of: ${s}`);
   }
   r = g(r), t = g(t);
-  for (let n in pt)
-    if ("contrast" + i.toLowerCase() === n.toLowerCase())
-      return pt[n](r, t, a);
+  for (let s in _t)
+    if ("contrast" + i.toLowerCase() === s.toLowerCase())
+      return _t[s](r, t, a);
   throw new TypeError(`Unknown contrast algorithm: ${i}`);
 }
 function Ze(r) {
-  let [t, e, i] = at(r, R), a = t + 15 * e + 3 * i;
+  let [t, e, i] = at(r, E), a = t + 15 * e + 3 * i;
   return [4 * t / a, 9 * e / a];
 }
-function Ue(r) {
-  let [t, e, i] = at(r, R), a = t + e + i;
+function He(r) {
+  let [t, e, i] = at(r, E), a = t + e + i;
   return [t / a, e / a];
 }
-function Kr(r) {
+function ii(r) {
   Object.defineProperty(r.prototype, "uv", {
     get() {
       return Ze(this);
     }
   }), Object.defineProperty(r.prototype, "xy", {
     get() {
-      return Ue(this);
+      return He(this);
     }
   });
 }
-var ti = /* @__PURE__ */ Object.freeze({
+var ai = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  register: Kr,
+  register: ii,
   uv: Ze,
-  xy: Ue
+  xy: He
 });
-function ei(r, t) {
-  return qe(r, t, "lab");
+function si(r, t) {
+  return Ue(r, t, "lab");
 }
-const ri = Math.PI, de = ri / 180;
-function ii(r, t, { l: e = 2, c: i = 1 } = {}) {
-  let [a, n, s] = T.from(r), [, o, l] = tt.from(T, [a, n, s]), [h, u, c] = T.from(t), f = tt.from(T, [h, u, c])[1];
-  o < 0 && (o = 0), f < 0 && (f = 0);
-  let m = a - h, p = o - f, b = n - u, y = s - c, v = b ** 2 + y ** 2 - p ** 2, w = 0.511;
+const ni = Math.PI, fe = ni / 180;
+function oi(r, t, { l: e = 2, c: i = 1 } = {}) {
+  let [a, s, n] = T.from(r), [, o, h] = tt.from(T, [a, s, n]), [l, u, c] = T.from(t), d = tt.from(T, [l, u, c])[1];
+  o < 0 && (o = 0), d < 0 && (d = 0);
+  let m = a - l, p = o - d, y = s - u, M = n - c, k = y ** 2 + M ** 2 - p ** 2, w = 0.511;
   a >= 16 && (w = 0.040975 * a / (1 + 0.01765 * a));
-  let D = 0.0638 * o / (1 + 0.0131 * o) + 0.638, x;
-  Number.isNaN(l) && (l = 0), l >= 164 && l <= 345 ? x = 0.56 + Math.abs(0.2 * Math.cos((l + 168) * de)) : x = 0.36 + Math.abs(0.4 * Math.cos((l + 35) * de));
-  let L = Math.pow(o, 4), U = Math.sqrt(L / (L + 1900)), $ = D * (U * x + 1 - U), z = (m / (e * w)) ** 2;
-  return z += (p / (i * D)) ** 2, z += v / $ ** 2, Math.sqrt(z);
+  let D = 0.0638 * o / (1 + 0.0131 * o) + 0.638, S;
+  Number.isNaN(h) && (h = 0), h >= 164 && h <= 345 ? S = 0.56 + Math.abs(0.2 * Math.cos((h + 168) * fe)) : S = 0.36 + Math.abs(0.4 * Math.cos((h + 35) * fe));
+  let P = Math.pow(o, 4), U = Math.sqrt(P / (P + 1900)), $ = D * (U * S + 1 - U), B = (m / (e * w)) ** 2;
+  return B += (p / (i * D)) ** 2, B += k / $ ** 2, Math.sqrt(B);
 }
 const me = 203;
-var Ut = new d({
+var Zt = new f({
   // Absolute CIE XYZ, with a D65 whitepoint,
   // as used in most HDR colorspaces as a starting point.
   // SDR spaces are converted per BT.2048
@@ -1191,7 +1483,7 @@ var Ut = new d({
       name: "Za"
     }
   },
-  base: R,
+  base: E,
   fromBase(r) {
     return r.map((t) => Math.max(t * me, 0));
   },
@@ -1199,24 +1491,24 @@ var Ut = new d({
     return r.map((t) => Math.max(t / me, 0));
   }
 });
-const ut = 1.15, ct = 0.66, ge = 2610 / 2 ** 14, ai = 2 ** 14 / 2610, pe = 3424 / 2 ** 12, _e = 2413 / 2 ** 7, be = 2392 / 2 ** 7, ni = 1.7 * 2523 / 2 ** 5, ye = 2 ** 5 / (1.7 * 2523), ft = -0.56, Et = 16295499532821565e-27, si = [
+const ut = 1.15, ct = 0.66, ge = 2610 / 2 ** 14, hi = 2 ** 14 / 2610, pe = 3424 / 2 ** 12, _e = 2413 / 2 ** 7, ye = 2392 / 2 ** 7, li = 1.7 * 2523 / 2 ** 5, Me = 2 ** 5 / (1.7 * 2523), dt = -0.56, Bt = 16295499532821565e-27, ui = [
   [0.41478972, 0.579999, 0.014648],
   [-0.20151, 1.120649, 0.0531008],
   [-0.0166008, 0.2648, 0.6684799]
-], oi = [
+], ci = [
   [1.9242264357876067, -1.0047923125953657, 0.037651404030618],
   [0.35031676209499907, 0.7264811939316552, -0.06538442294808501],
   [-0.09098281098284752, -0.3127282905230739, 1.5227665613052603]
-], li = [
+], di = [
   [0.5, 0.5, 0],
   [3.524, -4.066708, 0.542708],
   [0.199076, 1.096799, -1.295875]
-], hi = [
+], fi = [
   [1, 0.1386050432715393, 0.05804731615611886],
   [0.9999999999999999, -0.1386050432715393, -0.05804731615611886],
   [0.9999999999999998, -0.09601924202631895, -0.8118918960560388]
 ];
-var Ne = new d({
+var Ve = new f({
   id: "jzazbz",
   name: "Jzazbz",
   coords: {
@@ -1231,26 +1523,26 @@ var Ne = new d({
       refRange: [-0.5, 0.5]
     }
   },
-  base: Ut,
+  base: Zt,
   fromBase(r) {
-    let [t, e, i] = r, a = ut * t - (ut - 1) * i, n = ct * e - (ct - 1) * t, o = M(si, [a, n, i]).map(function(f) {
-      let m = pe + _e * (f / 1e4) ** ge, p = 1 + be * (f / 1e4) ** ge;
-      return (m / p) ** ni;
-    }), [l, h, u] = M(li, o);
-    return [(1 + ft) * l / (1 + ft * l) - Et, h, u];
+    let [t, e, i] = r, a = ut * t - (ut - 1) * i, s = ct * e - (ct - 1) * t, o = b(ui, [a, s, i]).map(function(d) {
+      let m = pe + _e * (d / 1e4) ** ge, p = 1 + ye * (d / 1e4) ** ge;
+      return (m / p) ** li;
+    }), [h, l, u] = b(di, o);
+    return [(1 + dt) * h / (1 + dt * h) - Bt, l, u];
   },
   toBase(r) {
-    let [t, e, i] = r, a = (t + Et) / (1 + ft - ft * (t + Et)), s = M(hi, [a, e, i]).map(function(f) {
-      let m = pe - f ** ye, p = be * f ** ye - _e;
-      return 1e4 * (m / p) ** ai;
-    }), [o, l, h] = M(oi, s), u = (o + (ut - 1) * h) / ut, c = (l + (ct - 1) * u) / ct;
-    return [u, c, h];
+    let [t, e, i] = r, a = (t + Bt) / (1 + dt - dt * (t + Bt)), n = b(fi, [a, e, i]).map(function(d) {
+      let m = pe - d ** Me, p = ye * d ** Me - _e;
+      return 1e4 * (m / p) ** hi;
+    }), [o, h, l] = b(ci, n), u = (o + (ut - 1) * l) / ut, c = (h + (ct - 1) * u) / ct;
+    return [u, c, l];
   },
   formats: {
     // https://drafts.csswg.org/css-color-hdr/#Jzazbz
     color: {}
   }
-}), Xt = new d({
+}), It = new f({
   id: "jzczhz",
   name: "JzCzHz",
   coords: {
@@ -1268,16 +1560,16 @@ var Ne = new d({
       name: "Hue"
     }
   },
-  base: Ne,
+  base: Ve,
   fromBase(r) {
     let [t, e, i] = r, a;
-    const n = 2e-4;
-    return Math.abs(e) < n && Math.abs(i) < n ? a = NaN : a = Math.atan2(i, e) * 180 / Math.PI, [
+    const s = 2e-4;
+    return Math.abs(e) < s && Math.abs(i) < s ? a = NaN : a = Math.atan2(i, e) * 180 / Math.PI, [
       t,
       // Jz is still Jz
       Math.sqrt(e ** 2 + i ** 2),
       // Chroma
-      St(a)
+      Ct(a)
       // Hue, in degrees [0 to 360)
     ];
   },
@@ -1295,30 +1587,30 @@ var Ne = new d({
     color: {}
   }
 });
-function ui(r, t) {
-  let [e, i, a] = Xt.from(r), [n, s, o] = Xt.from(t), l = e - n, h = i - s;
+function mi(r, t) {
+  let [e, i, a] = It.from(r), [s, n, o] = It.from(t), h = e - s, l = i - n;
   Number.isNaN(a) && Number.isNaN(o) ? (a = 0, o = 0) : Number.isNaN(a) ? a = o : Number.isNaN(o) && (o = a);
-  let u = a - o, c = 2 * Math.sqrt(i * s) * Math.sin(u / 2 * (Math.PI / 180));
-  return Math.sqrt(l ** 2 + h ** 2 + c ** 2);
+  let u = a - o, c = 2 * Math.sqrt(i * n) * Math.sin(u / 2 * (Math.PI / 180));
+  return Math.sqrt(h ** 2 + l ** 2 + c ** 2);
 }
-const Ve = 3424 / 4096, He = 2413 / 128, We = 2392 / 128, Me = 2610 / 16384, ci = 2523 / 32, fi = 16384 / 2610, ve = 32 / 2523, di = [
+const Ne = 3424 / 4096, We = 2413 / 128, Je = 2392 / 128, be = 2610 / 16384, gi = 2523 / 32, pi = 16384 / 2610, ve = 32 / 2523, _i = [
   [0.3592, 0.6976, -0.0358],
   [-0.1922, 1.1004, 0.0755],
   [7e-3, 0.0749, 0.8434]
-], mi = [
+], yi = [
   [2048 / 4096, 2048 / 4096, 0],
   [6610 / 4096, -13613 / 4096, 7003 / 4096],
   [17933 / 4096, -17390 / 4096, -543 / 4096]
-], gi = [
+], Mi = [
   [0.9999888965628402, 0.008605050147287059, 0.11103437159861648],
   [1.00001110343716, -0.008605050147287059, -0.11103437159861648],
   [1.0000320633910054, 0.56004913547279, -0.3206339100541203]
-], pi = [
+], bi = [
   [2.0701800566956137, -1.326456876103021, 0.20661600684785517],
   [0.3649882500326575, 0.6804673628522352, -0.04542175307585323],
   [-0.04959554223893211, -0.04942116118675749, 1.1879959417328034]
 ];
-var It = new d({
+var jt = new f({
   id: "ictcp",
   name: "ICTCP",
   // From BT.2100-2 page 7:
@@ -1346,54 +1638,54 @@ var It = new d({
       name: "CP"
     }
   },
-  base: Ut,
+  base: Zt,
   fromBase(r) {
-    let t = M(di, r);
-    return _i(t);
+    let t = b(_i, r);
+    return vi(t);
   },
   toBase(r) {
-    let t = bi(r);
-    return M(pi, t);
+    let t = ki(r);
+    return b(bi, t);
   },
   formats: {
     color: {}
   }
 });
-function _i(r) {
+function vi(r) {
   let t = r.map(function(e) {
-    let i = Ve + He * (e / 1e4) ** Me, a = 1 + We * (e / 1e4) ** Me;
-    return (i / a) ** ci;
+    let i = Ne + We * (e / 1e4) ** be, a = 1 + Je * (e / 1e4) ** be;
+    return (i / a) ** gi;
   });
-  return M(mi, t);
+  return b(yi, t);
 }
-function bi(r) {
-  return M(gi, r).map(function(i) {
-    let a = Math.max(i ** ve - Ve, 0), n = He - We * i ** ve;
-    return 1e4 * (a / n) ** fi;
+function ki(r) {
+  return b(Mi, r).map(function(i) {
+    let a = Math.max(i ** ve - Ne, 0), s = We - Je * i ** ve;
+    return 1e4 * (a / s) ** pi;
   });
 }
-function yi(r, t) {
-  let [e, i, a] = It.from(r), [n, s, o] = It.from(t);
-  return 720 * Math.sqrt((e - n) ** 2 + 0.25 * (i - s) ** 2 + (a - o) ** 2);
+function wi(r, t) {
+  let [e, i, a] = jt.from(r), [s, n, o] = jt.from(t);
+  return 720 * Math.sqrt((e - s) ** 2 + 0.25 * (i - n) ** 2 + (a - o) ** 2);
 }
-const Mi = [
+const xi = [
   [0.8190224432164319, 0.3619062562801221, -0.12887378261216414],
   [0.0329836671980271, 0.9292868468965546, 0.03614466816999844],
   [0.048177199566046255, 0.26423952494422764, 0.6335478258136937]
-], vi = [
+], Si = [
   [1.2268798733741557, -0.5578149965554813, 0.28139105017721583],
   [-0.04057576262431372, 1.1122868293970594, -0.07171106666151701],
   [-0.07637294974672142, -0.4214933239627914, 1.5869240244272418]
-], wi = [
+], Ci = [
   [0.2104542553, 0.793617785, -0.0040720468],
   [1.9779984951, -2.428592205, 0.4505937099],
   [0.0259040371, 0.7827717662, -0.808675766]
-], ki = [
+], Ti = [
   [0.9999999984505198, 0.39633779217376786, 0.2158037580607588],
   [1.0000000088817609, -0.10556134232365635, -0.06385417477170591],
   [1.0000000546724108, -0.08948418209496575, -1.2914855378640917]
 ];
-var kt = new d({
+var wt = new f({
   id: "oklab",
   name: "Oklab",
   coords: {
@@ -1410,14 +1702,14 @@ var kt = new d({
   },
   // Note that XYZ is relative to D65
   white: "D65",
-  base: R,
+  base: E,
   fromBase(r) {
-    let e = M(Mi, r).map((i) => Math.cbrt(i));
-    return M(wi, e);
+    let e = b(xi, r).map((i) => Math.cbrt(i));
+    return b(Ci, e);
   },
   toBase(r) {
-    let e = M(ki, r).map((i) => i ** 3);
-    return M(vi, e);
+    let e = b(Ti, r).map((i) => i ** 3);
+    return b(Si, e);
   },
   formats: {
     oklab: {
@@ -1425,121 +1717,121 @@ var kt = new d({
     }
   }
 });
-function xi(r, t) {
-  let [e, i, a] = kt.from(r), [n, s, o] = kt.from(t), l = e - n, h = i - s, u = a - o;
-  return Math.sqrt(l ** 2 + h ** 2 + u ** 2);
+function Di(r, t) {
+  let [e, i, a] = wt.from(r), [s, n, o] = wt.from(t), h = e - s, l = i - n, u = a - o;
+  return Math.sqrt(h ** 2 + l ** 2 + u ** 2);
 }
 var xt = {
-  deltaE76: ei,
-  deltaECMC: ii,
-  deltaE2000: $t,
-  deltaEJz: ui,
-  deltaEITP: yi,
-  deltaEOK: xi
+  deltaE76: si,
+  deltaECMC: oi,
+  deltaE2000: Ot,
+  deltaEJz: mi,
+  deltaEITP: wi,
+  deltaEOK: Di
 };
 function Q(r, t, e = {}) {
   it(e) && (e = { method: e });
   let { method: i = F.deltaE, ...a } = e;
   r = g(r), t = g(t);
-  for (let n in xt)
-    if ("deltae" + i.toLowerCase() === n.toLowerCase())
-      return xt[n](r, t, a);
+  for (let s in xt)
+    if ("deltae" + i.toLowerCase() === s.toLowerCase())
+      return xt[s](r, t, a);
   throw new TypeError(`Unknown deltaE method: ${i}`);
 }
-function Si(r, t = 0.25) {
-  let i = [d.get("oklch", "lch"), "l"];
+function Li(r, t = 0.25) {
+  let i = [f.get("oklch", "lch"), "l"];
   return I(r, i, (a) => a * (1 + t));
 }
-function Ci(r, t = 0.25) {
-  let i = [d.get("oklch", "lch"), "l"];
+function Ei(r, t = 0.25) {
+  let i = [f.get("oklch", "lch"), "l"];
   return I(r, i, (a) => a * (1 - t));
 }
-var Ti = /* @__PURE__ */ Object.freeze({
+var Ai = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  darken: Ci,
-  lighten: Si
+  darken: Ei,
+  lighten: Li
 });
-function Je(r, t, e = 0.5, i = {}) {
+function Qe(r, t, e = 0.5, i = {}) {
   [r, t] = [g(r), g(t)], O(e) === "object" && ([e, i] = [0.5, e]);
-  let { space: a, outputSpace: n, premultiplied: s } = i;
-  return nt(r, t, { space: a, outputSpace: n, premultiplied: s })(e);
+  let { space: a, outputSpace: s, premultiplied: n } = i;
+  return st(r, t, { space: a, outputSpace: s, premultiplied: n })(e);
 }
-function Qe(r, t, e = {}) {
+function Ke(r, t, e = {}) {
   let i;
-  Nt(r) && ([i, e] = [r, t], [r, t] = i.rangeArgs.colors);
+  Ht(r) && ([i, e] = [r, t], [r, t] = i.rangeArgs.colors);
   let {
     maxDeltaE: a,
-    deltaEMethod: n,
-    steps: s = 2,
+    deltaEMethod: s,
+    steps: n = 2,
     maxSteps: o = 1e3,
-    ...l
+    ...h
   } = e;
-  i || ([r, t] = [g(r), g(t)], i = nt(r, t, l));
-  let h = Q(r, t), u = a > 0 ? Math.max(s, Math.ceil(h / a) + 1) : s, c = [];
+  i || ([r, t] = [g(r), g(t)], i = st(r, t, h));
+  let l = Q(r, t), u = a > 0 ? Math.max(n, Math.ceil(l / a) + 1) : n, c = [];
   if (o !== void 0 && (u = Math.min(u, o)), u === 1)
     c = [{ p: 0.5, color: i(0.5) }];
   else {
-    let f = 1 / (u - 1);
+    let d = 1 / (u - 1);
     c = Array.from({ length: u }, (m, p) => {
-      let b = p * f;
-      return { p: b, color: i(b) };
+      let y = p * d;
+      return { p: y, color: i(y) };
     });
   }
   if (a > 0) {
-    let f = c.reduce((m, p, b) => {
-      if (b === 0)
+    let d = c.reduce((m, p, y) => {
+      if (y === 0)
         return 0;
-      let y = Q(p.color, c[b - 1].color, n);
-      return Math.max(m, y);
+      let M = Q(p.color, c[y - 1].color, s);
+      return Math.max(m, M);
     }, 0);
-    for (; f > a; ) {
-      f = 0;
+    for (; d > a; ) {
+      d = 0;
       for (let m = 1; m < c.length && c.length < o; m++) {
-        let p = c[m - 1], b = c[m], y = (b.p + p.p) / 2, v = i(y);
-        f = Math.max(f, Q(v, p.color), Q(v, b.color)), c.splice(m, 0, { p: y, color: i(y) }), m++;
+        let p = c[m - 1], y = c[m], M = (y.p + p.p) / 2, k = i(M);
+        d = Math.max(d, Q(k, p.color), Q(k, y.color)), c.splice(m, 0, { p: M, color: i(M) }), m++;
       }
     }
   }
-  return c = c.map((f) => f.color), c;
+  return c = c.map((d) => d.color), c;
 }
-function nt(r, t, e = {}) {
-  if (Nt(r)) {
-    let [l, h] = [r, t];
-    return nt(...l.rangeArgs.colors, { ...l.rangeArgs.options, ...h });
+function st(r, t, e = {}) {
+  if (Ht(r)) {
+    let [h, l] = [r, t];
+    return st(...h.rangeArgs.colors, { ...h.rangeArgs.options, ...l });
   }
-  let { space: i, outputSpace: a, progression: n, premultiplied: s } = e;
+  let { space: i, outputSpace: a, progression: s, premultiplied: n } = e;
   r = g(r), t = g(t), r = et(r), t = et(t);
   let o = { colors: [r, t], options: e };
-  if (i ? i = d.get(i) : i = d.registry[F.interpolationSpace] || r.space, a = a ? d.get(a) : i, r = A(r, i), t = A(t, i), r = j(r), t = j(t), i.coords.h && i.coords.h.type === "angle") {
-    let l = e.hue = e.hue || "shorter", h = [i, "h"], [u, c] = [P(r, h), P(t, h)];
-    [u, c] = kr(l, [u, c]), I(r, h, u), I(t, h, c);
+  if (i ? i = f.get(i) : i = f.registry[F.interpolationSpace] || r.space, a = a ? f.get(a) : i, r = L(r, i), t = L(t, i), r = j(r), t = j(t), i.coords.h && i.coords.h.type === "angle") {
+    let h = e.hue = e.hue || "shorter", l = [i, "h"], [u, c] = [A(r, l), A(t, l)];
+    [u, c] = Tr(h, [u, c]), I(r, l, u), I(t, l, c);
   }
-  return s && (r.coords = r.coords.map((l) => l * r.alpha), t.coords = t.coords.map((l) => l * t.alpha)), Object.assign((l) => {
-    l = n ? n(l) : l;
-    let h = r.coords.map((f, m) => {
+  return n && (r.coords = r.coords.map((h) => h * r.alpha), t.coords = t.coords.map((h) => h * t.alpha)), Object.assign((h) => {
+    h = s ? s(h) : h;
+    let l = r.coords.map((d, m) => {
       let p = t.coords[m];
-      return yt(f, p, l);
-    }), u = yt(r.alpha, t.alpha, l), c = { space: i, coords: h, alpha: u };
-    return s && (c.coords = c.coords.map((f) => f / u)), a !== i && (c = A(c, a)), c;
+      return Mt(d, p, h);
+    }), u = Mt(r.alpha, t.alpha, h), c = { space: i, coords: l, alpha: u };
+    return n && (c.coords = c.coords.map((d) => d / u)), a !== i && (c = L(c, a)), c;
   }, {
     rangeArgs: o
   });
 }
-function Nt(r) {
+function Ht(r) {
   return O(r) === "function" && !!r.rangeArgs;
 }
 F.interpolationSpace = "lab";
-function Di(r) {
-  r.defineFunction("mix", Je, { returns: "color" }), r.defineFunction("range", nt, { returns: "function<color>" }), r.defineFunction("steps", Qe, { returns: "array<color>" });
+function Pi(r) {
+  r.defineFunction("mix", Qe, { returns: "color" }), r.defineFunction("range", st, { returns: "function<color>" }), r.defineFunction("steps", Ke, { returns: "array<color>" });
 }
-var Ai = /* @__PURE__ */ Object.freeze({
+var Ri = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  isRange: Nt,
-  mix: Je,
-  range: nt,
-  register: Di,
-  steps: Qe
-}), Ke = new d({
+  isRange: Ht,
+  mix: Qe,
+  range: st,
+  register: Pi,
+  steps: Ke
+}), tr = new f({
   id: "hsl",
   name: "HSL",
   coords: {
@@ -1560,29 +1852,29 @@ var Ai = /* @__PURE__ */ Object.freeze({
   base: rt,
   // Adapted from https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
   fromBase: (r) => {
-    let t = Math.max(...r), e = Math.min(...r), [i, a, n] = r, [s, o, l] = [NaN, 0, (e + t) / 2], h = t - e;
-    if (h !== 0) {
-      switch (o = l === 0 || l === 1 ? 0 : (t - l) / Math.min(l, 1 - l), t) {
+    let t = Math.max(...r), e = Math.min(...r), [i, a, s] = r, [n, o, h] = [NaN, 0, (e + t) / 2], l = t - e;
+    if (l !== 0) {
+      switch (o = h === 0 || h === 1 ? 0 : (t - h) / Math.min(h, 1 - h), t) {
         case i:
-          s = (a - n) / h + (a < n ? 6 : 0);
+          n = (a - s) / l + (a < s ? 6 : 0);
           break;
         case a:
-          s = (n - i) / h + 2;
+          n = (s - i) / l + 2;
           break;
-        case n:
-          s = (i - a) / h + 4;
+        case s:
+          n = (i - a) / l + 4;
       }
-      s = s * 60;
+      n = n * 60;
     }
-    return [s, o * 100, l * 100];
+    return [n, o * 100, h * 100];
   },
   // Adapted from https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB_alternative
   toBase: (r) => {
     let [t, e, i] = r;
     t = t % 360, t < 0 && (t += 360), e /= 100, i /= 100;
-    function a(n) {
-      let s = (n + t / 30) % 12, o = e * Math.min(i, 1 - i);
-      return i - o * Math.max(-1, Math.min(s - 3, 9 - s, 1));
+    function a(s) {
+      let n = (s + t / 30) % 12, o = e * Math.min(i, 1 - i);
+      return i - o * Math.max(-1, Math.min(n - 3, 9 - n, 1));
     }
     return [a(0), a(8), a(4)];
   },
@@ -1597,7 +1889,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       lastAlpha: !0
     }
   }
-}), tr = new d({
+}), er = new f({
   id: "hsv",
   name: "HSV",
   coords: {
@@ -1615,7 +1907,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       name: "Value"
     }
   },
-  base: Ke,
+  base: tr,
   // https://en.wikipedia.org/wiki/HSL_and_HSV#Interconversion
   fromBase(r) {
     let [t, e, i] = r;
@@ -1646,7 +1938,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       toGamut: !0
     }
   }
-}), Ri = new d({
+}), Bi = new f({
   id: "hwb",
   name: "HWB",
   coords: {
@@ -1664,7 +1956,7 @@ var Ai = /* @__PURE__ */ Object.freeze({
       name: "Blackness"
     }
   },
-  base: tr,
+  base: er,
   fromBase(r) {
     let [t, e, i] = r;
     return [t, i * (100 - e) / 100, 100 - i];
@@ -1677,8 +1969,8 @@ var Ai = /* @__PURE__ */ Object.freeze({
       let o = e / a;
       return [t, 0, o * 100];
     }
-    let n = 1 - i, s = n === 0 ? 0 : 1 - e / n;
-    return [t, s * 100, n * 100];
+    let s = 1 - i, n = s === 0 ? 0 : 1 - e / s;
+    return [t, n * 100, s * 100];
   },
   formats: {
     hwb: {
@@ -1687,25 +1979,25 @@ var Ai = /* @__PURE__ */ Object.freeze({
     }
   }
 });
-const Pi = [
+const zi = [
   [0.5766690429101305, 0.1855582379065463, 0.1882286462349947],
   [0.29734497525053605, 0.6273635662554661, 0.07529145849399788],
   [0.02703136138641234, 0.07068885253582723, 0.9913375368376388]
-], Li = [
+], Fi = [
   [2.0415879038107465, -0.5650069742788596, -0.34473135077832956],
   [-0.9692436362808795, 1.8759675015077202, 0.04155505740717557],
   [0.013444280632031142, -0.11836239223101838, 1.0151749943912054]
 ];
-var er = new k({
+var rr = new x({
   id: "a98rgb-linear",
   name: "Linear Adobe® 98 RGB compatible",
   white: "D65",
-  toXYZ_M: Pi,
-  fromXYZ_M: Li
-}), Ei = new k({
+  toXYZ_M: zi,
+  fromXYZ_M: Fi
+}), Yi = new x({
   id: "a98rgb",
   name: "Adobe® 98 RGB compatible",
-  base: er,
+  base: rr,
   toBase: (r) => r.map((t) => Math.pow(Math.abs(t), 563 / 256) * Math.sign(t)),
   fromBase: (r) => r.map((t) => Math.pow(Math.abs(t), 256 / 563) * Math.sign(t)),
   formats: {
@@ -1714,40 +2006,40 @@ var er = new k({
     }
   }
 });
-const Bi = [
+const $i = [
   [0.7977604896723027, 0.13518583717574031, 0.0313493495815248],
   [0.2880711282292934, 0.7118432178101014, 8565396060525902e-20],
   [0, 0, 0.8251046025104601]
-], zi = [
+], Oi = [
   [1.3457989731028281, -0.25558010007997534, -0.05110628506753401],
   [-0.5446224939028347, 1.5082327413132781, 0.02053603239147973],
   [0, 0, 1.2119675456389454]
 ];
-var rr = new k({
+var ir = new x({
   id: "prophoto-linear",
   name: "Linear ProPhoto",
   white: "D50",
-  base: Zt,
-  toXYZ_M: Bi,
-  fromXYZ_M: zi
+  base: Gt,
+  toXYZ_M: $i,
+  fromXYZ_M: Oi
 });
-const Fi = 1 / 512, Yi = 16 / 512;
-var $i = new k({
+const Xi = 1 / 512, Ii = 16 / 512;
+var ji = new x({
   id: "prophoto",
   name: "ProPhoto",
-  base: rr,
+  base: ir,
   toBase(r) {
-    return r.map((t) => t < Yi ? t / 16 : t ** 1.8);
+    return r.map((t) => t < Ii ? t / 16 : t ** 1.8);
   },
   fromBase(r) {
-    return r.map((t) => t >= Fi ? t ** (1 / 1.8) : 16 * t);
+    return r.map((t) => t >= Xi ? t ** (1 / 1.8) : 16 * t);
   },
   formats: {
     color: {
       id: "prophoto-rgb"
     }
   }
-}), Oi = new d({
+}), qi = new f({
   id: "oklch",
   name: "Oklch",
   coords: {
@@ -1766,23 +2058,23 @@ var $i = new k({
     }
   },
   white: "D65",
-  base: kt,
+  base: wt,
   fromBase(r) {
     let [t, e, i] = r, a;
-    const n = 2e-4;
-    return Math.abs(e) < n && Math.abs(i) < n ? a = NaN : a = Math.atan2(i, e) * 180 / Math.PI, [
+    const s = 2e-4;
+    return Math.abs(e) < s && Math.abs(i) < s ? a = NaN : a = Math.atan2(i, e) * 180 / Math.PI, [
       t,
       // OKLab L is still L
       Math.sqrt(e ** 2 + i ** 2),
       // Chroma
-      St(a)
+      Ct(a)
       // Hue, in degrees [0 to 360)
     ];
   },
   // Convert from polar form
   toBase(r) {
-    let [t, e, i] = r, a, n;
-    return isNaN(i) ? (a = 0, n = 0) : (a = e * Math.cos(i * Math.PI / 180), n = e * Math.sin(i * Math.PI / 180)), [t, a, n];
+    let [t, e, i] = r, a, s;
+    return isNaN(i) ? (a = 0, s = 0) : (a = e * Math.cos(i * Math.PI / 180), s = e * Math.sin(i * Math.PI / 180)), [t, a, s];
   },
   formats: {
     oklch: {
@@ -1790,20 +2082,20 @@ var $i = new k({
     }
   }
 });
-const we = 203, ke = 2610 / 2 ** 14, Xi = 2 ** 14 / 2610, Ii = 2523 / 2 ** 5, xe = 2 ** 5 / 2523, Se = 3424 / 2 ** 12, Ce = 2413 / 2 ** 7, Te = 2392 / 2 ** 7;
-var ji = new k({
+const ke = 203, we = 2610 / 2 ** 14, Ui = 2 ** 14 / 2610, Gi = 2523 / 2 ** 5, xe = 2 ** 5 / 2523, Se = 3424 / 2 ** 12, Ce = 2413 / 2 ** 7, Te = 2392 / 2 ** 7;
+var Zi = new x({
   id: "rec2100pq",
   name: "REC.2100-PQ",
-  base: Ct,
+  base: Tt,
   toBase(r) {
     return r.map(function(t) {
-      return (Math.max(t ** xe - Se, 0) / (Ce - Te * t ** xe)) ** Xi * 1e4 / we;
+      return (Math.max(t ** xe - Se, 0) / (Ce - Te * t ** xe)) ** Ui * 1e4 / ke;
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      let e = Math.max(t * we / 1e4, 0), i = Se + Ce * e ** ke, a = 1 + Te * e ** ke;
-      return (i / a) ** Ii;
+      let e = Math.max(t * ke / 1e4, 0), i = Se + Ce * e ** we, a = 1 + Te * e ** we;
+      return (i / a) ** Gi;
     });
   },
   formats: {
@@ -1812,21 +2104,21 @@ var ji = new k({
     }
   }
 });
-const De = 0.17883277, Ae = 0.28466892, Re = 0.55991073, Bt = 3.7743;
-var qi = new k({
+const De = 0.17883277, Le = 0.28466892, Ee = 0.55991073, zt = 3.7743;
+var Hi = new x({
   id: "rec2100hlg",
   cssid: "rec2100-hlg",
   name: "REC.2100-HLG",
   referred: "scene",
-  base: Ct,
+  base: Tt,
   toBase(r) {
     return r.map(function(t) {
-      return t <= 0.5 ? t ** 2 / 3 * Bt : (Math.exp((t - Re) / De) + Ae) / 12 * Bt;
+      return t <= 0.5 ? t ** 2 / 3 * zt : (Math.exp((t - Ee) / De) + Le) / 12 * zt;
     });
   },
   fromBase(r) {
     return r.map(function(t) {
-      return t /= Bt, t <= 1 / 12 ? Math.sqrt(3 * t) : De * Math.log(12 * t - Ae) + Re;
+      return t /= zt, t <= 1 / 12 ? Math.sqrt(3 * t) : De * Math.log(12 * t - Le) + Ee;
     });
   },
   formats: {
@@ -1835,25 +2127,25 @@ var qi = new k({
     }
   }
 });
-const ir = {};
+const ar = {};
 X.add("chromatic-adaptation-start", (r) => {
-  r.options.method && (r.M = ar(r.W1, r.W2, r.options.method));
+  r.options.method && (r.M = sr(r.W1, r.W2, r.options.method));
 });
 X.add("chromatic-adaptation-end", (r) => {
-  r.M || (r.M = ar(r.W1, r.W2, r.options.method));
+  r.M || (r.M = sr(r.W1, r.W2, r.options.method));
 });
-function Tt({ id: r, toCone_M: t, fromCone_M: e }) {
-  ir[r] = arguments[0];
+function Dt({ id: r, toCone_M: t, fromCone_M: e }) {
+  ar[r] = arguments[0];
 }
-function ar(r, t, e = "Bradford") {
-  let i = ir[e], [a, n, s] = M(i.toCone_M, r), [o, l, h] = M(i.toCone_M, t), u = [
+function sr(r, t, e = "Bradford") {
+  let i = ar[e], [a, s, n] = b(i.toCone_M, r), [o, h, l] = b(i.toCone_M, t), u = [
     [o / a, 0, 0],
-    [0, l / n, 0],
-    [0, 0, h / s]
-  ], c = M(u, i.toCone_M);
-  return M(i.fromCone_M, c);
+    [0, h / s, 0],
+    [0, 0, l / n]
+  ], c = b(u, i.toCone_M);
+  return b(i.fromCone_M, c);
 }
-Tt({
+Dt({
   id: "von Kries",
   toCone_M: [
     [0.40024, 0.7076, -0.08081],
@@ -1866,7 +2158,7 @@ Tt({
     [0, 0, 1.0890636]
   ]
 });
-Tt({
+Dt({
   id: "Bradford",
   // Convert an array of XYZ values in the range 0.0 - 1.0
   // to cone fundamentals
@@ -1882,7 +2174,7 @@ Tt({
     [-85287e-7, 0.0400428, 0.9684867]
   ]
 });
-Tt({
+Dt({
   id: "CAT02",
   // with complete chromatic adaptation to W2, so D = 1.0
   toCone_M: [
@@ -1896,7 +2188,7 @@ Tt({
     [-96276e-7, -5698e-6, 1.0153256]
   ]
 });
-Tt({
+Dt({
   id: "CAT16",
   toCone_M: [
     [0.401288, 0.650173, -0.051461],
@@ -1910,7 +2202,7 @@ Tt({
     [-0.01584149884933386, -0.03412293802851557, 1.04996443687785]
   ]
 });
-Object.assign(E, {
+Object.assign(R, {
   // whitepoint values from ASTM E308-01 with 10nm spacing, 1931 2 degree observer
   // all normalized to Y (luminance) = 1.00000
   // Illuminant A is a tungsten electric light, giving a very warm, orange light.
@@ -1929,17 +2221,17 @@ Object.assign(E, {
   F7: [0.95041, 1, 1.08747],
   F11: [1.00962, 1, 0.6435]
 });
-E.ACES = [0.32168 / 0.33767, 1, (1 - 0.32168 - 0.33767) / 0.33767];
-const Gi = [
+R.ACES = [0.32168 / 0.33767, 1, (1 - 0.32168 - 0.33767) / 0.33767];
+const Vi = [
   [0.6624541811085053, 0.13400420645643313, 0.1561876870049078],
   [0.27222871678091454, 0.6740817658111484, 0.05368951740793705],
   [-0.005574649490394108, 0.004060733528982826, 1.0103391003129971]
-], Zi = [
+], Ni = [
   [1.6410233796943257, -0.32480329418479, -0.23642469523761225],
   [-0.6636628587229829, 1.6153315916573379, 0.016756347685530137],
   [0.011721894328375376, -0.008284441996237409, 0.9883948585390215]
 ];
-var nr = new k({
+var nr = new x({
   id: "acescg",
   name: "ACEScg",
   // ACEScg – A scene-referred, linear-light encoding of ACES Data
@@ -1960,15 +2252,15 @@ var nr = new k({
     }
   },
   referred: "scene",
-  white: E.ACES,
-  toXYZ_M: Gi,
-  fromXYZ_M: Zi,
+  white: R.ACES,
+  toXYZ_M: Vi,
+  fromXYZ_M: Ni,
   formats: {
     color: {}
   }
 });
-const dt = 2 ** -16, zt = -0.35828683, mt = (Math.log2(65504) + 9.72) / 17.52;
-var Ui = new k({
+const ft = 2 ** -16, Ft = -0.35828683, mt = (Math.log2(65504) + 9.72) / 17.52;
+var Wi = new x({
   id: "acescc",
   name: "ACEScc",
   // see S-2014-003 ACEScc – A Logarithmic Encoding of ACES Data
@@ -1980,15 +2272,15 @@ var Ui = new k({
   // so that all positive ACES values are maintained."
   coords: {
     r: {
-      range: [zt, mt],
+      range: [Ft, mt],
       name: "Red"
     },
     g: {
-      range: [zt, mt],
+      range: [Ft, mt],
       name: "Green"
     },
     b: {
-      range: [zt, mt],
+      range: [Ft, mt],
       name: "Blue"
     }
   },
@@ -1998,13 +2290,13 @@ var Ui = new k({
   toBase(r) {
     const t = -0.3013698630136986;
     return r.map(function(e) {
-      return e <= t ? (2 ** (e * 17.52 - 9.72) - dt) * 2 : e < mt ? 2 ** (e * 17.52 - 9.72) : 65504;
+      return e <= t ? (2 ** (e * 17.52 - 9.72) - ft) * 2 : e < mt ? 2 ** (e * 17.52 - 9.72) : 65504;
     });
   },
   // Non-linear encoding function from S-2014-003, section 4.4.1 Encoding Function
   fromBase(r) {
     return r.map(function(t) {
-      return t <= 0 ? (Math.log2(dt) + 9.72) / 17.52 : t < dt ? (Math.log2(dt + t * 0.5) + 9.72) / 17.52 : (Math.log2(t) + 9.72) / 17.52;
+      return t <= 0 ? (Math.log2(ft) + 9.72) / 17.52 : t < ft ? (Math.log2(ft + t * 0.5) + 9.72) / 17.52 : (Math.log2(t) + 9.72) / 17.52;
     });
   },
   // encoded media white (rgb 1,1,1) => linear  [ 222.861, 222.861, 222.861 ]
@@ -2012,36 +2304,36 @@ var Ui = new k({
   formats: {
     color: {}
   }
-}), Pe = /* @__PURE__ */ Object.freeze({
+}), Ae = /* @__PURE__ */ Object.freeze({
   __proto__: null,
-  A98RGB: Ei,
-  A98RGB_Linear: er,
-  ACEScc: Ui,
+  A98RGB: Yi,
+  A98RGB_Linear: rr,
+  ACEScc: Wi,
   ACEScg: nr,
-  HSL: Ke,
-  HSV: tr,
-  HWB: Ri,
-  ICTCP: It,
-  JzCzHz: Xt,
-  Jzazbz: Ne,
+  HSL: tr,
+  HSV: er,
+  HWB: Bi,
+  ICTCP: jt,
+  JzCzHz: It,
+  Jzazbz: Ve,
   LCH: tt,
   Lab: T,
-  Lab_D65: Ot,
-  OKLCH: Oi,
-  OKLab: kt,
-  P3: je,
-  P3_Linear: Xe,
-  ProPhoto: $i,
-  ProPhoto_Linear: rr,
-  REC_2020: Oe,
-  REC_2020_Linear: Ct,
-  REC_2100_HLG: qi,
-  REC_2100_PQ: ji,
-  XYZ_ABS_D65: Ut,
-  XYZ_D50: Zt,
-  XYZ_D65: R,
+  Lab_D65: Xt,
+  OKLCH: qi,
+  OKLab: wt,
+  P3: qe,
+  P3_Linear: Ie,
+  ProPhoto: ji,
+  ProPhoto_Linear: ir,
+  REC_2020: Xe,
+  REC_2020_Linear: Tt,
+  REC_2100_HLG: Hi,
+  REC_2100_PQ: Zi,
+  XYZ_ABS_D65: Zt,
+  XYZ_D50: Gt,
+  XYZ_D65: E,
   sRGB: rt,
-  sRGB_Linear: Ie
+  sRGB_Linear: je
 });
 class _ {
   /**
@@ -2056,20 +2348,20 @@ class _ {
   constructor(...t) {
     let e;
     t.length === 1 && (e = g(t[0]));
-    let i, a, n;
-    e ? (i = e.space || e.spaceId, a = e.coords, n = e.alpha) : [i, a, n] = t, Object.defineProperty(this, "space", {
-      value: d.get(i),
+    let i, a, s;
+    e ? (i = e.space || e.spaceId, a = e.coords, s = e.alpha) : [i, a, s] = t, Object.defineProperty(this, "space", {
+      value: f.get(i),
       writable: !1,
       enumerable: !0,
       configurable: !0
       // see note in https://262.ecma-international.org/8.0/#sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver
-    }), this.coords = a ? a.slice() : [0, 0, 0], this.alpha = n < 1 ? n : 1;
-    for (let s = 0; s < this.coords.length; s++)
-      this.coords[s] === "NaN" && (this.coords[s] = NaN);
-    for (let s in this.space.coords)
-      Object.defineProperty(this, s, {
-        get: () => this.get(s),
-        set: (o) => this.set(s, o)
+    }), this.coords = a ? a.slice() : [0, 0, 0], this.alpha = s < 1 ? s : 1;
+    for (let n = 0; n < this.coords.length; n++)
+      this.coords[n] === "NaN" && (this.coords[n] = NaN);
+    for (let n in this.space.coords)
+      Object.defineProperty(this, n, {
+        get: () => this.get(n),
+        set: (o) => this.set(n, o)
       });
   }
   get spaceId() {
@@ -2086,7 +2378,7 @@ class _ {
     };
   }
   display(...t) {
-    let e = Pr(this, ...t);
+    let e = zr(this, ...t);
     return e.color = new _(e.color), e;
   }
   /**
@@ -2097,22 +2389,22 @@ class _ {
     return t instanceof _ ? t : new _(t, ...e);
   }
   static defineFunction(t, e, i = e) {
-    let { instance: a = !0, returns: n } = i, s = function(...o) {
-      let l = e(...o);
-      if (n === "color")
-        l = _.get(l);
-      else if (n === "function<color>") {
-        let h = l;
-        l = function(...u) {
-          let c = h(...u);
+    let { instance: a = !0, returns: s } = i, n = function(...o) {
+      let h = e(...o);
+      if (s === "color")
+        h = _.get(h);
+      else if (s === "function<color>") {
+        let l = h;
+        h = function(...u) {
+          let c = l(...u);
           return _.get(c);
-        }, Object.assign(l, h);
+        }, Object.assign(h, l);
       } else
-        n === "array<color>" && (l = l.map((h) => _.get(h)));
-      return l;
+        s === "array<color>" && (h = h.map((l) => _.get(l)));
+      return h;
     };
-    t in _ || (_[t] = s), a && (_.prototype[t] = function(...o) {
-      return s(this, ...o);
+    t in _ || (_[t] = n), a && (_.prototype[t] = function(...o) {
+      return n(this, ...o);
     });
   }
   static defineFunctions(t) {
@@ -2128,38 +2420,38 @@ class _ {
   }
 }
 _.defineFunctions({
-  get: P,
+  get: A,
   getAll: at,
   set: I,
-  setAll: $e,
-  to: A,
-  equals: Lr,
+  setAll: Oe,
+  to: L,
+  equals: Fr,
   inGamut: K,
   toGamut: j,
-  distance: qe,
-  toString: wt
+  distance: Ue,
+  toString: kt
 });
 Object.assign(_, {
-  util: br,
+  util: kr,
   hooks: X,
-  WHITES: E,
-  Space: d,
-  spaces: d.registry,
-  parse: Ye,
+  WHITES: R,
+  Space: f,
+  spaces: f.registry,
+  parse: $e,
   // Global defaults one may want to configure
   defaults: F
 });
-for (let r of Object.keys(Pe))
-  d.register(Pe[r]);
-for (let r in d.registry)
-  jt(r, d.registry[r]);
+for (let r of Object.keys(Ae))
+  f.register(Ae[r]);
+for (let r in f.registry)
+  qt(r, f.registry[r]);
 X.add("colorspace-init-end", (r) => {
   var t;
-  jt(r.id, r), (t = r.aliases) == null || t.forEach((e) => {
-    jt(e, r);
+  qt(r.id, r), (t = r.aliases) == null || t.forEach((e) => {
+    qt(e, r);
   });
 });
-function jt(r, t) {
+function qt(r, t) {
   Object.keys(t.coords), Object.values(t.coords).map((i) => i.name);
   let e = r.replace(/-/g, "_");
   Object.defineProperty(_.prototype, e, {
@@ -2169,28 +2461,28 @@ function jt(r, t) {
     get() {
       let i = this.getAll(r);
       return typeof Proxy > "u" ? i : new Proxy(i, {
-        has: (a, n) => {
+        has: (a, s) => {
           try {
-            return d.resolveCoord([t, n]), !0;
+            return f.resolveCoord([t, s]), !0;
           } catch {
           }
-          return Reflect.has(a, n);
+          return Reflect.has(a, s);
         },
-        get: (a, n, s) => {
-          if (n && typeof n != "symbol" && !(n in a)) {
-            let { index: o } = d.resolveCoord([t, n]);
+        get: (a, s, n) => {
+          if (s && typeof s != "symbol" && !(s in a)) {
+            let { index: o } = f.resolveCoord([t, s]);
             if (o >= 0)
               return a[o];
           }
-          return Reflect.get(a, n, s);
+          return Reflect.get(a, s, n);
         },
-        set: (a, n, s, o) => {
-          if (n && typeof n != "symbol" && !(n in a) || n >= 0) {
-            let { index: l } = d.resolveCoord([t, n]);
-            if (l >= 0)
-              return a[l] = s, this.setAll(r, a), !0;
+        set: (a, s, n, o) => {
+          if (s && typeof s != "symbol" && !(s in a) || s >= 0) {
+            let { index: h } = f.resolveCoord([t, s]);
+            if (h >= 0)
+              return a[h] = n, this.setAll(r, a), !0;
           }
-          return Reflect.set(a, n, s, o);
+          return Reflect.set(a, s, n, o);
         }
       });
     },
@@ -2207,22 +2499,22 @@ function jt(r, t) {
 _.extend(xt);
 _.extend({ deltaE: Q });
 Object.assign(_, { deltaEMethods: xt });
-_.extend(Ti);
-_.extend({ contrast: Qr });
-_.extend(ti);
-_.extend(Br);
 _.extend(Ai);
-_.extend(pt);
-function sr(r) {
+_.extend({ contrast: ri });
+_.extend(ai);
+_.extend($r);
+_.extend(Ri);
+_.extend(_t);
+function or(r) {
   return r;
 }
 function G(r) {
   return r * r * (3 - 2 * r);
 }
-function or(r, t, e, i) {
+function hr(r, t, e, i) {
   return r * t + e * i;
 }
-function Ni(r, t, e, i) {
+function Ji(r, t, e, i) {
   let a = [
     Math.round((r.r * t + e.r * i) * 255),
     Math.round((r.g * t + e.g * i) * 255),
@@ -2230,24 +2522,24 @@ function Ni(r, t, e, i) {
   ];
   return `rgb(${a[0]}, ${a[1]}, ${a[2]})`;
 }
-function Vi(r, t, e, i) {
+function Qi(r, t, e, i) {
   return r.map(
-    (a, n) => or(a, t, e[n], i)
+    (a, s) => hr(a, t, e[s], i)
   );
 }
 function Vt(r) {
   if (typeof r == "number")
-    return or;
+    return hr;
   if (typeof r == "string") {
     let t = {};
-    return (e, i, a, n) => (t[e] || (t[e] = new _(e).srgb), t[a] || (t[a] = new _(a).srgb), Ni(
+    return (e, i, a, s) => (t[e] || (t[e] = new _(e).srgb), t[a] || (t[a] = new _(a).srgb), Ji(
       t[e],
       i,
       t[a],
-      n
+      s
     ));
   } else if (Array.isArray(r))
-    return Vi;
+    return Qi;
   return (t, e, i, a) => e < 1 ? t : i;
 }
 function Z(r, t = void 0) {
@@ -2261,7 +2553,7 @@ function Z(r, t = void 0) {
     )
   };
 }
-function aa(r, t = void 0) {
+function ha(r, t = void 0) {
   return t === void 0 && (t = Vt(r())), {
     interpolate: (e, i) => t(
       e,
@@ -2271,29 +2563,29 @@ function aa(r, t = void 0) {
     )
   };
 }
-function na(r, t = void 0) {
+function la(r, t = void 0) {
   return t === void 0 && (t = Vt(r[0])), {
     interpolate: (e, i) => {
-      let a = Math.min(i, 1) * (r.length - 1) - 1, n = Math.min(
+      let a = Math.min(i, 1) * (r.length - 1) - 1, s = Math.min(
         a - Math.floor(a),
         1
       );
       return a < 0 ? t(
         e,
-        1 - n,
+        1 - s,
         r[0],
-        n
+        s
       ) : t(
         r[Math.floor(a)],
-        1 - n,
+        1 - s,
         r[Math.floor(a) + 1],
-        n
+        s
       );
     }
   };
 }
-class B {
-  constructor(t, e = 1e3, i = sr) {
+class z {
+  constructor(t, e = 1e3, i = or) {
     this.duration = 0, this.finalValue = void 0, this.interpolator = null, this.duration = e, t.hasOwnProperty("finalValue") ? this.finalValue = t.finalValue : this.finalValue = void 0, this.interpolator = t, this.curve = i;
   }
   evaluate(t, e) {
@@ -2301,15 +2593,10 @@ class B {
     return this.interpolator.interpolate(t, i);
   }
   withDelay(t) {
-    return t ? new Hi(this, t) : this;
+    return t ? new Ki(this, t) : this;
   }
 }
-class qt extends B {
-  constructor(t, e) {
-    super(Z(t), e, G);
-  }
-}
-class Hi extends B {
+class Ki extends z {
   constructor(t, e) {
     super(t.interpolator, t.duration + e, t.curve), this.delay = e;
   }
@@ -2320,288 +2607,235 @@ class Hi extends B {
     );
   }
 }
-function sa(r, t = 1e3, e = sr) {
-  return new B(Z(r), t, e);
+function ua(r, t = 1e3, e = or) {
+  return new z(Z(r), t, e);
 }
-function _t(r, t) {
-  return typeof r == "number" && typeof t == "number" ? Math.abs(r - t) <= 1e-3 : r == t;
-}
-function lr() {
-  var r = 0;
-  return Object.assign(function() {
-    return r;
-  }, {
-    advance: (e) => {
-      r += e;
-    }
-  });
-}
-function Wi(r) {
-  let t = /* @__PURE__ */ new Set();
-  for (; r = Reflect.getPrototypeOf(r); )
-    Reflect.ownKeys(r).forEach((i) => t.add(i));
-  return t;
-}
-class Ji {
-  constructor(t = void 0) {
-    this.info = t, this.promise = new Promise((e, i) => {
-      this.reject = i, this.resolve = e;
+var ta = /* @__PURE__ */ ((r) => (r.Waiting = "waiting", r.Entering = "entering", r.Visible = "visible", r.Exiting = "exiting", r.Completed = "completed", r))(ta || {}), ea = /* @__PURE__ */ ((r) => (r.Show = "show", r.Hide = "hide", r))(ea || {});
+class ra {
+  constructor(t = {}) {
+    this.markStates = /* @__PURE__ */ new Map(), this.marksByID = /* @__PURE__ */ new Map(), this.queuedAnimations = /* @__PURE__ */ new Map(), this._flushTimer = null, this.defer = !1, this.saveExitedMarks = !1, this._callbacks = {
+      initialize: t.initialize || (() => {
+      }),
+      enter: t.enter || (() => {
+      }),
+      exit: t.exit || (() => {
+      })
+    };
+  }
+  /**
+   * Tells the stage manager that the given set of marks is already visible.
+   *
+   * @param marks The marks that are already visible
+   *
+   * @returns This stage manager object
+   */
+  setVisibleMarks(t) {
+    return t.forEach((e) => {
+      this.markStates.set(
+        e,
+        "visible"
+        /* Visible */
+      ), this.marksByID.set(e.id, e);
+    }), this;
+  }
+  /**
+   * Sets options on the stage manager.
+   *
+   * @param opts Options to configure. Currently the only option supported is
+   *  `{@link defer}`.
+   * @returns This stage manager object with the options updated
+   */
+  configure(t = {}) {
+    return this.defer = t.defer ?? this.defer, this.saveExitedMarks = t.saveExitedMarks ?? this.saveExitedMarks, this;
+  }
+  onInitialize(t) {
+    this._callbacks.initialize = t || (() => {
     });
   }
-}
-function Qi(r) {
-  let t = 1e12, e = -1e12, i = 1e12, a = -1e12;
-  return r.forEach((n) => {
-    n.x < t && (t = n.x), n.x > e && (e = n.x), n.y < i && (i = n.y), n.y > a && (a = n.y);
-  }), { x: [t, e], y: [i, a] };
-}
-var Ki = /* @__PURE__ */ ((r) => (r[r.DEFAULT = 0] = "DEFAULT", r[r.ALWAYS = 1] = "ALWAYS", r[r.WHEN_UPDATED = 2] = "WHEN_UPDATED", r))(Ki || {});
-class S {
-  /**
-   *
-   * @param info Arguments describing how to populate the attribute, or a single
-   *    value that should be stored as the `value` or `valueFn` of the attribute.
-   */
-  constructor(t) {
-    if (this.valueFn = void 0, this.transform = void 0, this.cacheTransform = !1, this._cachedValue = null, this.computeArg = void 0, this.recompute = 0, this.needsUpdate = !1, this.animation = null, this.label = null, this._computedValue = null, this._lastTickValue = void 0, this._animatedValue = null, this._hasComputed = !1, this._timeProvider = null, this.currentTime = 0, this._changedLastTick = !1, this._listeners = [], this._animationCompleteCallbacks = [], t == null || t == null || !(t.hasOwnProperty("value") || t.hasOwnProperty("valueFn")))
-      typeof t == "function" ? this.valueFn = t : this.value = t;
-    else {
-      let e = t;
-      e.valueFn !== void 0 ? this.valueFn = e.valueFn : e.value !== void 0 ? this.value = e.value : console.error(
-        "One of `value` or `valueFn` must be defined to create an Attribute"
-      ), this.transform = e.transform ?? null, this.cacheTransform = e.cacheTransform ?? !1, this._cachedValue = null, this.computeArg = e.computeArg ?? null, this.recompute = e.recompute ?? 0;
-    }
+  onEnter(t) {
+    this._callbacks.enter = t || (() => {
+    });
   }
-  addListener(t) {
-    this._listeners.push(t);
-  }
-  removeListener(t) {
-    let e = this._listeners.indexOf(t);
-    e >= 0 && (this._listeners = this._listeners.splice(e, 1));
-  }
-  setTimeProvider(t) {
-    this._timeProvider = t;
-  }
-  _getComputeArg() {
-    return this.computeArg !== void 0 ? this.computeArg : this;
+  onExit(t) {
+    this._callbacks.exit = t || (() => {
+    });
   }
   /**
-   * Synchronously computes the value of the attribute.
+   * Performs the action for the mark with the given ID, and calls the
+   * appropriate callbacks.
    */
-  compute() {
-    this.valueFn && (this._computedValue = this.valueFn(this._getComputeArg()));
-  }
-  // Advances the time of the animation by the given number of msec,
-  // and returns whether or not a redraw is needed
-  advance(t = void 0) {
-    return (this.animation != null || this.needsUpdate || this.valueFn) && (this._timeProvider === null ? this.currentTime += t : this.currentTime = this._timeProvider()), this.animation == null && this._animationCompleteCallbacks.length > 0 && (console.warn(
-      "Found animation-complete callbacks for a non-existent animation"
-    ), this._cleanUpAnimation(!0)), this._lastTickValue = this.getUntransformed(), this.animation != null || this.needsUpdate ? (this.needsUpdate = !1, this._changedLastTick = !0, !0) : (this._changedLastTick = !1, !1);
-  }
-  _computeAnimation(t = !0) {
-    if (!this.animation)
-      return;
-    this._timeProvider && (this.currentTime = this._timeProvider());
-    let { animator: e, start: i, initial: a } = this.animation, n = e.evaluate(
-      a,
-      Math.min(this.currentTime - i, e.duration)
-      // can add a debug flag here
-    );
-    this._animationFinished() && t ? (this.valueFn ? this.compute() : this.value = n, this._cleanUpAnimation(!1), this._animatedValue = null) : this._animatedValue = n;
-  }
-  _animationFinished() {
-    return this.animation ? this.animation.animator.duration + 20 <= this.currentTime - this.animation.start : !0;
-  }
-  _transform(t) {
-    let e;
-    if (this.transform) {
-      let i = this._cachedValue;
-      if (i && _t(i.raw, t))
-        e = i.result;
-      else {
-        let a = t;
-        e = this.transform(t, this._getComputeArg()), this.cacheTransform && (this._cachedValue = {
-          raw: a,
-          result: e
-        });
+  _perform(t, e) {
+    if (t) {
+      if (e == "show") {
+        if (this.markStates.get(t) === "visible")
+          return;
+        this.markStates.set(
+          t,
+          "entering"
+          /* Entering */
+        ), this.marksByID.set(t.id, t);
+        let i = this._callbacks.enter(t);
+        i && i instanceof Promise ? i.then(
+          () => {
+            this.markStates.has(t) && this.markStates.get(t) == "entering" && this.markStates.set(
+              t,
+              "visible"
+              /* Visible */
+            );
+          },
+          () => {
+          }
+        ) : this.markStates.set(
+          t,
+          "visible"
+          /* Visible */
+        );
+      } else if (e == "hide") {
+        let i = this.markStates.get(t) ?? null;
+        if (i === "waiting" || i === "completed")
+          return;
+        this.markStates.set(
+          t,
+          "exiting"
+          /* Exiting */
+        ), this.marksByID.set(t.id, t);
+        let a = this._callbacks.exit(t);
+        a && a instanceof Promise ? a.then(
+          () => {
+            this.markStates.has(t) && this.markStates.get(t) == "exiting" && (this.saveExitedMarks ? this.markStates.set(
+              t,
+              "completed"
+              /* Completed */
+            ) : (this.marksByID.delete(t.id), this.markStates.delete(t)));
+          },
+          () => {
+          }
+        ) : this.saveExitedMarks ? this.markStates.set(
+          t,
+          "completed"
+          /* Completed */
+        ) : (this.marksByID.delete(t.id), this.markStates.delete(t));
       }
+    }
+  }
+  /**
+   * Adds the given action to the queue if `{@link defer}` is `true`, otherwise
+   * performs the action immediately.
+   *
+   * @returns `true` if the action was performed or queued successfully, or
+   *  `false` if the current state of the mark indicated that a similar action
+   *  has already been queued.
+   */
+  _enqueue(t, e) {
+    let i = this.markStates.get(t);
+    if (i === void 0)
+      return !1;
+    if (e == "show") {
+      if (i == "entering" || i == "visible")
+        return !1;
+      this.markStates.set(
+        t,
+        "entering"
+        /* Entering */
+      );
+    } else if (e == "hide") {
+      if (i == "exiting" || i == "completed")
+        return !1;
+      this.markStates.set(
+        t,
+        "exiting"
+        /* Exiting */
+      );
     } else
-      e = t;
-    return e;
-  }
-  _cleanUpAnimation(t = !1) {
-    this.animation = null, this._animationCompleteCallbacks.forEach((e) => {
-      !t || !e.info.rejectOnCancel ? e.resolve(this) : e.reject({ newValue: this.last() });
-    }), this._animationCompleteCallbacks = [];
+      console.error("Unknown action enqueued:", e);
+    return this.defer ? (this.queuedAnimations.set(t, e), this._flushTimer || (this._flushTimer = window.setTimeout(() => this._flush(), 0))) : this._perform(t, e), !0;
   }
   /**
-   * Retrieves the current (transformed) value.
+   * Performs all actions that have been queued and clears the queue.
    */
-  get() {
-    return this._transform(this.getUntransformed());
+  _flush() {
+    this._flushTimer = null, this.queuedAnimations.forEach((t, e) => {
+      this._perform(e, t);
+    }), this.queuedAnimations.clear();
   }
   /**
-   * Retrieves the current un-transformed value.
-   */
-  getUntransformed() {
-    this._computeAnimation();
-    let t;
-    return this._animatedValue != null ? t = this._animatedValue : this.valueFn ? ((this.recompute !== 2 || !this._hasComputed) && (this.compute(), this._hasComputed = !0), t = this._computedValue) : t = this.value, this._lastTickValue === void 0 && (this._lastTickValue = t), t;
-  }
-  /**
-   * Returns an object that tells a renderer how to animate this attribute,
-   * including four properties: `start` and `end` (the initial and final values of
-   * the attribute) and `startTime` and `endTime` (the timestamps for the start and
-   * end of the animation, in ms). If there is no animation, `startTime` and
-   * `endTime` will be equal.
+   * Attempts to show a given mark.
    *
-   * @param currentTime A timestamp. If provided, the `startTime` and `endTime`
-   *  values will be converted (assuming that the stored animation is computed
-   *  with respect to the attribute's internal time representation).
-   * @returns A preloadable animation for the attribute, where the `start` and
-   *  `end` values are expressed as transformed values.
+   * @param id The ID of the mark to show, which should contain sufficient
+   *    information to uniquely describe the mark.
+   * @returns `true` if the mark was not visible and will be made visible, or
+   *    `false` otherwise.
    */
-  getPreload(t = null) {
-    if (this._timeProvider && (this.currentTime = this._timeProvider()), !this.animation) {
-      let i = this.get();
-      return {
-        start: i,
-        end: i,
-        startTime: t || this.currentTime,
-        endTime: t || this.currentTime
-      };
+  show(t) {
+    return this.markStates.has(t) || (this._callbacks.initialize(t), this.markStates.set(
+      t,
+      "waiting"
+      /* Waiting */
+    ), this.marksByID.set(t.id, t)), this._enqueue(
+      t,
+      "show"
+      /* Show */
+    );
+  }
+  /**
+   * Attempts to hide a mark with the given ID.
+   *
+   * @param id The ID of the mark to hide.
+   * @returns `true` if the mark was visible and will be made invisible and
+   *    subsequently destroyed, or `false` otherwise.
+   */
+  hide(t) {
+    return this.markStates.has(t) ? this._enqueue(
+      t,
+      "hide"
+      /* Hide */
+    ) : !1;
+  }
+  /**
+   * Returns the Mark with the given ID if it exists (in any state, including
+   * exiting), or undefined if none exists.
+   *
+   * @param id The ID to lookup
+   * @param visibleOnly If true, only return marks that are visible or scheduled
+   *  to be visible. Otherwise, return any mark in the pool (including exiting).
+   * @returns the mark with the given ID or undefined
+   */
+  getMarkByID(t, e = !1) {
+    let i = this.marksByID.get(t);
+    if (i && e) {
+      let a = this.markStates.get(i);
+      if (a === "exiting" || a === "completed")
+        return;
     }
-    let e = this.getPreloadUntransformed(t);
-    return {
-      start: this._transform(e.start),
-      end: this._transform(e.end),
-      startTime: e.startTime,
-      endTime: e.endTime
-    };
+    return i;
+  }
+  forEach(t) {
+    let e = 0;
+    this.markStates.forEach((i, a) => {
+      (i === "entering" || i === "visible" || i === "exiting") && (t(a, e), e++);
+    });
   }
   /**
-   * Returns an object that tells a renderer how to animate this attribute,
-   * including four properties: `start` and `end` (the initial and final values of
-   * the attribute) and `startTime` and `endTime` (the timestamps for the start and
-   * end of the animation, in ms). If there is no animation, `startTime` and
-   * `endTime` will be equal.
-   *
-   * @param currentTime A timestamp. If provided, the `startTime` and `endTime`
-   *  values will be converted (assuming that the stored animation is computed
-   *  with respect to the attribute's internal time representation).
-   * @returns A preloadable animation for the attribute, where the `start` and
-   *  `end` values are expressed as un-transformed values.
+   * Returns all marks that this stage manager knows about.
    */
-  getPreloadUntransformed(t = null) {
-    if (this._timeProvider && (this.currentTime = this._timeProvider()), !this.animation) {
-      let n = this.getUntransformed();
-      return {
-        start: n,
-        end: n,
-        startTime: t || this.currentTime,
-        endTime: t || this.currentTime
-      };
-    }
-    if (!(this.animation.animator instanceof qt))
-      return console.error(
-        "Calling getPreload for a non-preloadable animation is forbidden. If using MarkSet, make sure this attribute is registered as preloadable."
-      ), null;
-    if (this._animationFinished())
-      return this._computeAnimation(), this.getPreloadUntransformed(t);
-    let e;
-    this.valueFn ? ((this.recompute !== 2 || !this._hasComputed) && (this.compute(), this._hasComputed = !0), e = this._computedValue) : e = this.value;
-    let i = this.animation.animator.finalValue, a = (t || this.currentTime) - this.currentTime;
-    return {
-      start: e,
-      end: i,
-      startTime: this.animation.start + a,
-      endTime: this.animation.start + this.animation.animator.duration + a
-    };
+  getMarks() {
+    return Array.from(this.markStates.keys());
   }
   /**
-   * Synchronously sets the value of the attribute and marks that it needs to
-   * be updated on the next call to `advance()`.
-   *
-   * @param newValue The new value or value function.
+   * Returns all marks that are either waiting, entering, or visible.
    */
-  set(t) {
-    typeof t == "function" ? (this.value != null && (this._computedValue = this.value), this.valueFn = t, this.value = void 0, this._animatedValue = null, this._lastTickValue = void 0) : (this.value = t, this.valueFn = null, this._animatedValue = null, this._lastTickValue = t), this.needsUpdate = !0, this.animation && this._cleanUpAnimation(!0), this._listeners.forEach((e) => e(this, !1));
-  }
-  /**
-   * Retrieves the non-animated value for the attribute, i.e. the final value
-   * if an animation is in progress or the current value otherwise. This method
-   * computes the value if specified as a value function.
-   */
-  data() {
-    return this.valueFn ? this.valueFn(this._getComputeArg()) : this.value;
-  }
-  /**
-   * Returns the last value known for this attribute _without_ running the value
-   * function.
-   */
-  last() {
-    return this.animation && this._computeAnimation(!1), this._lastTickValue !== void 0 ? this._lastTickValue : this._animatedValue != null ? this._animatedValue : this.value !== void 0 ? this.value : this._computedValue;
-  }
-  /**
-   * Returns the value that this attribute is approaching if animating (or `null`
-   * if not available), or the current value if not animating. This method does
-   * _not_ compute a new value for the attribute.
-   */
-  future() {
-    return this.animation ? this.animation.animator.finalValue : this._animatedValue != null ? this._animatedValue : this.value !== void 0 ? this.value : this._computedValue;
-  }
-  /**
-   * Marks that the transform has changed for this attribute. Only applies when
-   * `cached` is set to true.
-   */
-  updateTransform() {
-    this._cachedValue = null;
-  }
-  /**
-   * @returns Whether or not the attribute is currently being animated
-   */
-  animating() {
-    return this.animation != null;
-  }
-  /**
-   * Applies an animation to this attribute. The attribute will call the
-   * `evaluate` method on the animation every time the attribute's `advance()`
-   * method runs, until the time delta since the start of the animation exceeds
-   * the duration of the animation.
-   * @param animation an animation to run
-   */
-  animate(t) {
-    this._timeProvider && (this.currentTime = this._timeProvider()), this.animation && (this.valueFn ? this._computedValue = this._animatedValue : this.value = this._animatedValue, this._cleanUpAnimation(!0)), this.animation = {
-      animator: t,
-      initial: this.last(),
-      start: this.currentTime
-    }, this._computeAnimation(), this._listeners.forEach((e) => e(this, !0));
-  }
-  /**
-   * Wait until the attribute's current animation has finished.
-   *
-   * @param rejectOnCancel Whether or not to throw a promise rejection if the
-   *  animation is canceled. The default is true.
-   * @returns A `Promise` that resolves when the animation has completed, and
-   *  rejects if the animation is canceled or superseded by a different animation.
-   *  If `rejectOnCancel` is set to `false`, the promise resolves in both
-   *  situations. If there is no active animation, the promise resolves immediately.
-   */
-  wait(t = !0) {
-    if (!this.animation)
-      return new Promise((i, a) => i(this));
-    let e = new Ji({ rejectOnCancel: t });
-    return this._animationCompleteCallbacks.push(e), e.promise;
-  }
-  /**
-   * @returns whether or not this attribute changed value (due to animation or
-   * other updates) on the last call to `advance`
-   */
-  changed() {
-    return this._changedLastTick;
+  getVisibleMarks() {
+    return Array.from(this.markStates.keys()).filter(
+      (t) => [
+        "waiting",
+        "entering",
+        "visible"
+        /* Visible */
+      ].includes(this.markStates.get(t))
+    );
   }
 }
-function Ft(r, t, e) {
+function Pe(r, t, e) {
   return Object.fromEntries(
     Object.entries(r).map(([i, a]) => [
       i,
@@ -2609,7 +2843,7 @@ function Ft(r, t, e) {
     ])
   );
 }
-class hr {
+class lr {
   /**
    * @param marks The set of marks that this group should manage, all including
    *  the same set of attributes.
@@ -2619,13 +2853,13 @@ class hr {
     animationDuration: 1e3,
     animationCurve: G
   }) {
-    this.timeProvider = null, this.lazyUpdates = !0, this.animatingMarks = /* @__PURE__ */ new Set(), this.updatedMarks = /* @__PURE__ */ new Set(), this.preloadableProperties = /* @__PURE__ */ new Set(), this._forceUpdate = !1, this._markListChanged = !1, this._changedLastTick = !1, this.timeProvider = lr(), this.lazyUpdates = !0, this._defaultDuration = 1e3, this._defaultCurve = G, this.configure(e), this.marks = t, this.marksByID = /* @__PURE__ */ new Map(), this.marks.forEach((i) => {
+    this.timeProvider = null, this.lazyUpdates = !0, this.useStaging = !0, this.stage = null, this.animatingMarks = /* @__PURE__ */ new Set(), this.updatedMarks = /* @__PURE__ */ new Set(), this.preloadableProperties = /* @__PURE__ */ new Set(), this._forceUpdate = !1, this._markListChanged = !1, this._changedLastTick = !1, this._updateListeners = {}, this._eventListeners = {}, this.timeProvider = Re(), this.lazyUpdates = !0, this._defaultDuration = 1e3, this._defaultCurve = G, this.configure(e), this.marks = t, this.marksByID = /* @__PURE__ */ new Map(), this.marks.forEach((i) => {
       if (this.marksByID.has(i.id)) {
         console.error(`ID '${i.id}' is duplicated in mark render group`);
         return;
       }
-      this.marksByID.set(i.id, i), this._configureMark(i);
-    });
+      this.marksByID.set(i.id, i), this._setupMark(i);
+    }), this.stage && this.stage.setVisibleMarks(this.marks);
   }
   /**
    * Applies configuration options to the render group.
@@ -2642,19 +2876,61 @@ class hr {
    * @returns this render group
    */
   configure(t) {
-    return t.timeProvider !== void 0 && (this.timeProvider = t.timeProvider), t.lazyUpdates !== void 0 && (this.lazyUpdates = t.lazyUpdates), t.animationDuration !== void 0 && (this._defaultDuration = t.animationDuration), t.animationCurve !== void 0 && (this._defaultCurve = t.animationCurve), this.marks && this.getMarks().forEach((e) => this._configureMark(e)), this;
+    return t.timeProvider !== void 0 && (this.timeProvider = t.timeProvider), t.lazyUpdates !== void 0 && (this.lazyUpdates = t.lazyUpdates), t.animationDuration !== void 0 && (this._defaultDuration = t.animationDuration), t.animationCurve !== void 0 && (this._defaultCurve = t.animationCurve), this.marks && this.getMarks().forEach((e) => this._configureMark(e)), this.useStaging = t.useStaging ?? this.useStaging, this.useStaging ? (this.stage = new ra(), this.marks && this.stage.setVisibleMarks(this.marks)) : this.stage = null, this;
+  }
+  configureStaging(t, e = void 0) {
+    return this.useStaging || console.error(
+      "Can't configure staging without setting useStaging to true"
+    ), this.stage.onInitialize(t.initialize), this.stage.onEnter(t.enter), this.stage.onExit(t.exit), e && this.stage.configure(e), this;
   }
   /**
-   * Configures a mark's callbacks and default properties.
+   * Sets up a mark for the first time.
+   */
+  _setupMark(t) {
+    this._configureMark(t), t.addListener((e, i, a) => {
+      this.updatedMarks.add(e), !this.preloadableProperties.has(i) && a && this.animatingMarks.add(e), this._changedLastTick = !0;
+    }), t.addGraphListener((e, i, a, s) => {
+      a.forEach((n) => {
+        !s.includes(n) && n.sourceMarks().length == 1 && this.removeMark(n);
+      }), s.forEach((n) => {
+        a.includes(n) || this.addMark(n);
+      });
+    });
+  }
+  /**
+   * Configures a mark's default properties.
    * @param m the mark to configure
    */
   _configureMark(t) {
     t.setTimeProvider(this.timeProvider), t.configure({
       animationDuration: this._defaultDuration,
       animationCurve: this._defaultCurve
-    }), t.addListener((e, i, a) => {
-      this.updatedMarks.add(e), !this.preloadableProperties.has(i) && a && this.animatingMarks.add(e), this._changedLastTick = !0;
-    });
+    }), Object.entries(this._updateListeners).forEach(
+      ([e, i]) => t.onUpdate(e, i)
+    ), Object.entries(this._eventListeners).forEach(
+      ([e, i]) => t.onEvent(e, i)
+    );
+  }
+  onUpdate(t, e) {
+    return this._updateListeners[t] = e, this.getMarks().forEach((i) => i.onUpdate(t, e)), this;
+  }
+  onEvent(t, e) {
+    return this._eventListeners[t] = e, this.getMarks().forEach((i) => i.onEvent(t, e)), this;
+  }
+  /**
+   * Sends an event to the mark and runs its event listener if it has one.
+   *
+   * @param eventName The name of the event
+   * @param details A details object to pass to the event listener
+   * @returns a Promise if the event listener for this event name returns a Promise,
+   *  otherwise nothing
+   */
+  dispatch(t, e = void 0) {
+    let i = this.getMarks().map((a) => a.dispatch(t, e)).filter((a) => a instanceof Promise);
+    if (i.length > 0)
+      return new Promise((a, s) => {
+        Promise.all(i).then(() => a()).catch(s);
+      });
   }
   /**
    * Triggers the mark group to run an update even when no marks have been
@@ -2686,9 +2962,6 @@ class hr {
    * only initial changes will be reflected in {@link marksChanged}. This permits
    * faster rendering by computing animations in shaders, and only computing
    * them on the CPU when explicitly requested through a call to {@link Attribute.get()}.
-   * Note that animations to these properties must be created through
-   * {@link animatePreload}, {@link animateComputed}, or {@link animateOne} with a
-   * {@link PreloadableAnimator}.
    *
    * @param attrName the attribute to register
    * @returns this render group
@@ -2732,20 +3005,11 @@ class hr {
    * @returns this render group
    */
   animateTo(t, e, i = {}) {
-    return this.preloadableProperties.has(t) ? this.forEach((n, s) => {
-      let o = Ft(i, n, s), l = o.duration === void 0 ? this._defaultDuration : o.duration;
-      n.animate(
+    return this.forEach((a, s) => {
+      a.animateTo(
         t,
-        new qt(
-          typeof e == "function" ? e(n, s) : e,
-          l
-        ).withDelay(o.delay || 0)
-      );
-    }) : this.forEach((n, s) => {
-      n.animateTo(
-        t,
-        typeof e == "function" ? e(n, s) : e,
-        Ft(i, n, s)
+        typeof e == "function" ? e(a, s) : e,
+        Pe(i, a, s)
       );
     }), this;
   }
@@ -2760,21 +3024,11 @@ class hr {
    * @returns this render group
    */
   animate(t, e = {}) {
-    let i = this.preloadableProperties.has(t);
-    return i && e.interpolator ? (console.error(
+    return this.preloadableProperties.has(t) && e.interpolator ? (console.error(
       "Cannot apply custom interpolator function on preloadable property."
-    ), this) : (this.forEach((a, n) => {
-      let s = Ft(e, a, n);
-      if (i) {
-        let o = s.duration === void 0 ? this._defaultDuration : s.duration, l = a.data(t);
-        a.animate(
-          t,
-          new qt(l, o).withDelay(
-            s.delay || 0
-          )
-        );
-      } else
-        a.animate(t, s);
+    ), this) : (this.forEach((a, s) => {
+      let n = Pe(e, a, s);
+      a.animate(t, n);
     }), this);
   }
   /**
@@ -2840,12 +3094,12 @@ class hr {
       e[a] = this[a];
     }), e.marks = i, e.marksByID = /* @__PURE__ */ new Map(), i.forEach((a) => {
       e.marksByID.set(a.id, a);
-    }), Wi(this).forEach((a) => {
-      a == "getMarks" ? e[a] = () => i : e[a] = (...n) => {
-        let s = this.getMarks();
-        this.marks = i;
-        let o = this[a](...n);
-        return this.marks = s, o === this ? e : o;
+    }), yr(this).forEach((a) => {
+      a == "getMarks" ? e[a] = () => i : e[a] = (...s) => {
+        let n = this.getMarks(), o = this.marksByID;
+        this.marks = i, this.marksByID = e.marksByID;
+        let h = this[a](...s);
+        return this.marks = n, this.marksByID = o, h === this ? e : h;
       };
     }), e;
   }
@@ -2869,7 +3123,7 @@ class hr {
   addMark(t) {
     if (this.marksByID.has(t.id))
       return console.error("Attempted to add mark with ID that exists:", t.id), this;
-    this.marks.push(t), this.marksByID.set(t.id, t), this._configureMark(t), this._markListChanged = !0;
+    this.marks.push(t), this.marksByID.set(t.id, t), this._setupMark(t), this._markListChanged = !0, this.stage && this.stage.show(t);
   }
   /**
    * Removes a mark from the render group.
@@ -2881,7 +3135,7 @@ class hr {
     let e = this.marks.indexOf(t);
     if (e < 0)
       return console.warn("Attempted to remove mark that does not exist"), this;
-    this.marks.splice(e, 1), this.marksByID.delete(t.id), this._markListChanged = !0;
+    this.marks.splice(e, 1), this.marksByID.delete(t.id), this._markListChanged = !0, this.stage && this.stage.hide(t);
   }
   /**
    * @returns the number of marks in the render group
@@ -2900,26 +3154,26 @@ class hr {
     return t === void 0 ? this._changedLastTick : this._changedLastTick && this.getMarks().some((e) => e.changed(t));
   }
 }
-function oa(r = []) {
-  return new hr(r);
+function ca(r = []) {
+  return new lr(r);
 }
-const ta = 5e3;
-class Le {
+const ia = 5e3;
+class St {
   constructor(t, e) {
-    this._timeProvider = null, this._listeners = [], this._defaultDuration = 1e3, this._defaultCurve = G, this._changedLastTick = !1, this.framesWithUpdate = 0, this.id = t, e === void 0 && console.error(
+    this._timeProvider = null, this._listeners = [], this._graphListeners = [], this._defaultDuration = 1e3, this._defaultCurve = G, this._changedLastTick = !1, this._adjacency = {}, this._reverseAdjacency = /* @__PURE__ */ new Set(), this._updateListeners = {}, this._eventListeners = {}, this.framesWithUpdate = 0, this.id = t, e === void 0 && console.error(
       "Mark constructor requires an ID and an object defining attributes"
     );
     let i = {};
     Object.keys(e).forEach(
       (a) => {
-        let n = new S(
+        let s = new v(
           Object.assign(Object.assign({}, e[a]), {
             computeArg: this
           })
         );
-        n.addListener(
-          (s, o) => this._attributesChanged(a, o)
-        ), i[a] = n;
+        s.addListener(
+          (n, o) => this._attributesChanged(a, o)
+        ), i[a] = s;
       }
     ), this.attributes = i;
   }
@@ -2935,6 +3189,24 @@ class Le {
   configure(t) {
     return t.animationDuration !== void 0 && (this._defaultDuration = t.animationDuration), t.animationCurve !== void 0 && (this._defaultCurve = t.animationCurve), this;
   }
+  onUpdate(t, e) {
+    return this._updateListeners[t] = e, this;
+  }
+  onEvent(t, e) {
+    return this._eventListeners[t] = e, this;
+  }
+  /**
+   * Sends an event to the mark and runs its event listener if it has one.
+   *
+   * @param eventName The name of the event
+   * @param details A details object to pass to the event listener
+   * @returns a Promise if the event listener for this event name returns a Promise,
+   *  otherwise nothing
+   */
+  dispatch(t, e = void 0) {
+    if (this._eventListeners[t])
+      return this._eventListeners[t](this, e, t);
+  }
   addListener(t) {
     return this._listeners.push(t), this;
   }
@@ -2942,8 +3214,15 @@ class Le {
     let e = this._listeners.indexOf(t);
     return e >= 0 && (this._listeners = this._listeners.splice(e, 1)), this;
   }
+  addGraphListener(t) {
+    return this._graphListeners.push(t), this;
+  }
+  removeGraphListener(t) {
+    let e = this._graphListeners.indexOf(t);
+    return e >= 0 && (this._graphListeners = this._graphListeners.splice(e, 1)), this;
+  }
   _attributesChanged(t, e) {
-    this._changedLastTick = !0, this._listeners.forEach((i) => i(this, t, e));
+    this._changedLastTick = !0, this._listeners.forEach((i) => i(this, t, e)), this._updateListeners[t] && this._updateListeners[t](this, this.attributes[t].future());
   }
   setTimeProvider(t) {
     return this._timeProvider = t, Object.values(this.attributes).forEach(
@@ -2963,7 +3242,7 @@ class Le {
     let e = !1;
     return Object.values(this.attributes).forEach((i) => {
       i.advance(t) && (e = !0);
-    }), e ? (this.framesWithUpdate += 1, this.framesWithUpdate > ta && console.warn("Marks are being updated excessively!"), this._changedLastTick = !0, !0) : (this.framesWithUpdate = 0, this._changedLastTick = !1, !1);
+    }), e ? (this.framesWithUpdate += 1, this.framesWithUpdate > ia && console.warn("Marks are being updated excessively!"), this._changedLastTick = !0, !0) : (this.framesWithUpdate = 0, this._changedLastTick = !1, !1);
   }
   /**
    * Instantaneously sets the value of an attribute, either taking the new
@@ -2977,7 +3256,7 @@ class Le {
     let i = this.attributes[t];
     i === void 0 && console.error(`No attribute named '${String(t)}'`);
     let a = i.last();
-    return e === void 0 ? i.compute() : i.set(e), _t(a, i.data()) || this._listeners.forEach((n) => n(this, t, !1)), this;
+    return e === void 0 ? i.compute() : i.set(e), pt(a, i.data()) || this._listeners.forEach((s) => s(this, t, !1)), this;
   }
   /**
    * Gets the (potentially transformed) value of an attribute.
@@ -3020,12 +3299,12 @@ class Le {
         duration: i.duration,
         curve: i.curve
       }), this;
-    let a = i.duration === void 0 ? this._defaultDuration : i.duration, n = i.curve === void 0 ? this._defaultCurve : i.curve, s = new B(
+    let a = i.duration === void 0 ? this._defaultDuration : i.duration, s = i.curve === void 0 ? this._defaultCurve : i.curve, n = new z(
       Z(e),
       a,
-      n
+      s
     ).withDelay(i.delay || 0);
-    return this.attributes[t].animate(s), this;
+    return this.attributes[t].animate(n), this;
   }
   animate(t, e = {}) {
     if (!this.attributes.hasOwnProperty(t))
@@ -3033,24 +3312,25 @@ class Le {
         `Attempting to animate undefined property ${String(t)}`
       ), this;
     let i;
-    if (e instanceof B)
+    if (e instanceof z)
       i = e;
     else if (e.interpolator !== void 0) {
       let a = e.interpolator;
-      i = new B(
+      i = new z(
         a,
         e.duration !== void 0 ? e.duration : this._defaultDuration,
         e.curve !== void 0 ? e.curve : this._defaultCurve
       ).withDelay(e.delay || 0);
     } else {
       let a = this.data(t);
-      if (!_t(a, this.attributes[t].last()) || !_t(a, this.attributes[t].future()))
-        i = new B(
+      if (!pt(a, this.attributes[t].last()) || !pt(a, this.attributes[t].future())) {
+        let s = e.duration !== void 0 ? e.duration : this._defaultDuration, n = e.curve !== void 0 ? e.curve : this._defaultCurve;
+        i = new z(
           Z(a),
-          e.duration !== void 0 ? e.duration : this._defaultDuration,
-          e.curve !== void 0 ? e.curve : this._defaultCurve
+          s,
+          n
         ).withDelay(e.delay || 0);
-      else
+      } else
         return this;
     }
     return this.attributes[t].animate(i), this;
@@ -3083,8 +3363,63 @@ class Le {
   changed(t = void 0) {
     return t === void 0 ? this._changedLastTick : Array.isArray(t) ? this._changedLastTick && t.some((e) => this.attributes[e].changed()) : this._changedLastTick && this.attributes[t].changed();
   }
+  /**
+   * Returns a copy of the mark with the given ID and new attribute values. The
+   * Mark's adjacency data is not copied.
+   *
+   * @param id the ID for the new mark
+   * @param newValues new values for the mark's attributes. Each entry in the
+   *  given object should be keyed by an attribute name, and its value should be
+   *  either a value of the same type as the attribute's value, a new value
+   *  function, or a new attribute of the same type.
+   * @returns a new `Mark` instance
+   */
+  copy(t, e = {}) {
+    return new St(t, {
+      ...this.attributes,
+      ...Object.fromEntries(
+        Object.entries(e).map(([i, a]) => a instanceof v ? [i, a] : typeof a == "function" ? [
+          i,
+          this.attributes[i].copy({ valueFn: a })
+        ] : [i, this.attributes[i].copy({ value: a })])
+      )
+    });
+  }
+  adj(t, e = void 0) {
+    if (e !== void 0) {
+      let i = this._adjacency[t] ?? /* @__PURE__ */ new Set();
+      this._graphListeners.forEach(
+        (a) => a(this, t, Array.from(i), e)
+      ), i.forEach((a) => a._removeEdgeFrom(this)), this._adjacency[t] = new Set(e), e.forEach((a) => a._addEdgeFrom(this));
+      return;
+    }
+    return Array.from(this._adjacency[t] ?? /* @__PURE__ */ new Set());
+  }
+  /**
+   * Returns the marks that have an edge to this mark.
+   */
+  sourceMarks() {
+    return Array.from(this._reverseAdjacency);
+  }
+  /**
+   * TODO make sure if you remove a source edge but another named edge to the
+   * same mark exists, it's not removed from _reverseAdjacency!!
+   *
+   * Tells the mark that it has an edge from the given mark.
+   * @param sourceMark the mark that has an edge to this mark
+   */
+  _addEdgeFrom(t) {
+    return this._reverseAdjacency.add(t), this;
+  }
+  /**
+   * Tells the mark that it no longer has an edge from the given mark.
+   * @param sourceMark the mark that has no longer has an edge to this mark
+   */
+  _removeEdgeFrom(t) {
+    return this._reverseAdjacency.delete(t), this;
+  }
 }
-class la {
+class da {
   constructor(t) {
     this._callbacks = [], this._lastTick = void 0, this.stopped = !0, typeof t.advance == "function" ? this.toAdvance = [t] : this.toAdvance = t, this.start();
   }
@@ -3101,7 +3436,7 @@ class la {
     this._lastTick === void 0 && (this._lastTick = window.performance.now()), this.toAdvance.map((e) => e.advance(t - this._lastTick)).some((e) => e) && this._callbacks.forEach((e) => e()), this.stopped || requestAnimationFrame((e) => this.tick(e)), this._lastTick = t;
   }
 }
-class ha {
+class fa {
   constructor(t) {
     this._callbacks = [], this._lastTick = void 0, this.stopped = !0, typeof t.advance == "function" ? this.toAdvance = [t] : this.toAdvance = t, this.start();
   }
@@ -3119,235 +3454,28 @@ class ha {
     this._lastTick === void 0 && (this._lastTick = window.performance.now()), this.toAdvance.map((e) => e.advance(t - this._lastTick)).some((e) => e) ? (this._callbacks.forEach((e) => e()), this.stopped || requestAnimationFrame((e) => this.tick(e)), this._lastTick = t) : this.stop();
   }
 }
-var ea = /* @__PURE__ */ ((r) => (r.Waiting = "waiting", r.Entering = "entering", r.Visible = "visible", r.Exiting = "exiting", r))(ea || {}), ra = /* @__PURE__ */ ((r) => (r.Show = "show", r.Hide = "hide", r))(ra || {});
-class ua {
-  constructor(t) {
-    this.pool = /* @__PURE__ */ new Map(), this.queuedAnimations = /* @__PURE__ */ new Map(), this._flushTimer = null, this._renderGroup = null, this.defer = !1, t.create || console.error("StageManager requires a create callback"), this._callbacks = {
-      create: t.create,
-      show: t.show || (async () => {
-      }),
-      hide: t.hide || (async () => {
-      }),
-      destroy: t.destroy || (() => {
-      })
-    };
-  }
-  /**
-   * Sets options on the stage manager.
-   *
-   * @param opts Options to configure. Currently the only option supported is
-   *  `{@link defer}`.
-   * @returns This stage manager object with the options updated
-   */
-  configure(t = {}) {
-    return t.defer !== void 0 && (this.defer = t.defer), this;
-  }
-  /**
-   * Attaches this stage manager to a render group so that it can add and remove
-   * marks before showing and after hiding them.
-   *
-   * @param renderGroup the render group to add and remove marks from
-   * @returns this stage manager
-   */
-  attach(t) {
-    return this._renderGroup = t, this;
-  }
-  /**
-   * Performs the action for the mark with the given ID, and calls the
-   * appropriate callbacks.
-   */
-  _perform(t, e) {
-    let i = this.pool.get(t);
-    if (!(!i || !i.element)) {
-      if (e == "show") {
-        if (i.lastState == "visible")
-          return;
-        i.lastState = "entering", this._callbacks.show(i.element, i.info).then(
-          () => {
-            i.state == "entering" && (i.state = "visible", i.lastState = "visible");
-          },
-          () => {
-          }
-        );
-      } else if (e == "hide") {
-        if (i.lastState == "exiting" || i.lastState == "waiting")
-          return;
-        i.lastState = "exiting", this._callbacks.hide(i.element, i.info).then(
-          () => {
-            let a = this.pool.get(t);
-            a && a.lastState == "exiting" && (this._renderGroup && this._renderGroup.removeMark(a.element), this._callbacks.destroy(t, a.info), this.pool.delete(t));
-          },
-          () => {
-          }
-        );
-      }
-    }
-  }
-  /**
-   * Adds the given action to the queue if `{@link defer}` is `true`, otherwise
-   * performs the action immediately.
-   *
-   * @returns `true` if the action was performed or queued successfully, or
-   *  `false` if the current state of the mark indicated that a similar action
-   *  has already been queued.
-   */
-  _enqueue(t, e) {
-    let i = this.pool.get(t);
-    if (!i.element)
-      return !1;
-    if (e == "show") {
-      if (i.state == "entering" || i.state == "visible")
-        return !1;
-      i.state = "entering";
-    } else if (e == "hide") {
-      if (i.state == "exiting")
-        return !1;
-      i.state = "exiting";
-    } else
-      console.error("Unknown action enqueued:", e);
-    return this.defer ? (this.queuedAnimations.set(t, e), this._flushTimer || (this._flushTimer = window.setTimeout(() => this._flush(), 0))) : this._perform(t, e), !0;
-  }
-  /**
-   * Performs all actions that have been queued and clears the queue.
-   */
-  _flush() {
-    this._flushTimer = null, this.queuedAnimations.forEach((t, e) => {
-      this._perform(e, t);
-    }), this.queuedAnimations.clear();
-  }
-  /**
-   * Attempts to show a mark with the given ID.
-   *
-   * @param id The ID of the mark to show, which should contain sufficient
-   *    information to uniquely describe the mark.
-   * @param infoCB Additional info about the mark to create. This info will be
-   *    stored along with the mark and passed in subsequent callbacks involving
-   *    this ID. If this value is a function, the function will be called with
-   *    the ID as a parameter (only if the mark does not already exist). This
-   *    can allow for saving computation when repeatedly showing a mark for the
-   *    same ID.
-   * @returns `true` if the mark was not visible and will be made visible, or
-   *    `false` otherwise.
-   */
-  show(t, e = void 0) {
-    if (!this.pool.has(t)) {
-      let i = e != null ? typeof e == "function" ? e(t) : e : null, a = this._callbacks.create(t, i);
-      this._renderGroup && this._renderGroup.addMark(a), this.pool.set(t, {
-        element: a,
-        info: i,
-        state: "waiting",
-        lastState: "waiting"
-        /* Waiting */
-      });
-    }
-    return this._enqueue(
-      t,
-      "show"
-      /* Show */
-    );
-  }
-  /**
-   * Attempts to hide a mark with the given ID.
-   *
-   * @param id The ID of the mark to hide.
-   * @returns `true` if the mark was visible and will be made invisible and
-   *    subsequently destroyed, or `false` otherwise.
-   */
-  hide(t) {
-    return this.pool.has(t) ? this._enqueue(
-      t,
-      "hide"
-      /* Hide */
-    ) : !1;
-  }
-  /**
-   * Retrieves the stored information for the mark with the given ID
-   * @param id the ID of the mark to look up
-   * @returns the stored information for this mark, or `null` if the mark is not
-   *  currently visible, entering, or exiting.
-   */
-  getInfo(t) {
-    return this.pool.has(t) ? this.pool.get(t).info : null;
-  }
-  /**
-   * Retrieves the mark element with the given ID
-   * @param id the ID of the mark to look up
-   * @returns the mark element if it is visible or being staged, or `null`
-   *    otherwise
-   */
-  getElement(t) {
-    return this.pool.has(t) ? this.pool.get(t).element : null;
-  }
-  /**
-   * @returns a `Map` where the keys are mark IDs, and the values are instances
-   *   of `{@link StagedMark}` representing the mark elements and their current
-   *   and previous states
-   *
-   * @see getAllVisible
-   */
-  getAll() {
-    return new Map(this.pool);
-  }
-  /**
-   * @returns an array of the mark IDs that are currently visible or being
-   *    staged (including those that are exiting)
-   * @see getAllVisibleIDs
-   */
-  getAllIDs() {
-    return Array.from(this.pool.keys());
-  }
-  /**
-   * @returns a `Map` where the keys are mark IDs for marks that are either
-   *   visible or currently entering, and the values are instances of
-   *   `{@link StagedMark}` representing the mark elements and their current
-   *   and previous states
-   *
-   * @see getAll
-   */
-  getAllVisible() {
-    let t = /* @__PURE__ */ new Map();
-    for (let [e, i] of this.pool)
-      (i.state == "visible" || i.state == "entering") && i.element && t.set(e, i);
-    return t;
-  }
-  /**
-   * @returns an array of the mark IDs that are currently visible or entering
-   * @see getAllIDs
-   */
-  getAllVisibleIDs() {
-    return Array.from(this.pool.keys()).filter(
-      (t) => (this.pool.get(t).state == "visible" || this.pool.get(t).state == "entering") && !!this.pool.get(t).element
-    );
-  }
-  /**
-   * @returns whether the mark with the given ID is visible or entering
-   */
-  isVisible(t) {
-    return this.pool.has(t) && (this.pool.get(t).state == "visible" || this.pool.get(t).state == "entering");
-  }
-}
 function gt(r, t, e) {
   e > 0 ? (r[0].animate(
-    new B(Z(t[0]), e, G)
+    new z(Z(t[0]), e, G)
   ), r[1].animate(
-    new B(Z(t[1]), e, G)
+    new z(Z(t[1]), e, G)
   )) : (r[0].set(t[0]), r[1].set(t[1]));
 }
-class ca {
+class ma {
   constructor(t = {}) {
     this.animationDuration = 1e3, this.squareAspect = !0, this._xDomain = [
-      new S(0),
-      new S(1)
+      new v(0),
+      new v(1)
     ], this._yDomain = [
-      new S(0),
-      new S(1)
+      new v(0),
+      new v(1)
     ], this._xRange = [
-      new S(0),
-      new S(1)
+      new v(0),
+      new v(1)
     ], this._yRange = [
-      new S(0),
-      new S(1)
-    ], this._xScaleFactor = new S(1), this._yScaleFactor = new S(1), this._translateX = new S(0), this._translateY = new S(0), this._calculatingTransform = !1, this.timeProvider = lr(), this.controller = null, this._updatedNoAdvance = !1, this.listeners = [], this.xScale = Object.assign(
+      new v(0),
+      new v(1)
+    ], this._xScaleFactor = new v(1), this._yScaleFactor = new v(1), this._translateX = new v(0), this._translateY = new v(0), this._calculatingTransform = !1, this.timeProvider = Re(), this.controller = null, this._updatedNoAdvance = !1, this.listeners = [], this.xScale = Object.assign(
       (e) => ((e - this.xDomain()[0]) * this.xRSpan() / this.xDSpan() + this.xRange()[0]) * this._xScaleFactor.get() + this._translateX.get(),
       {
         domain: () => {
@@ -3420,11 +3548,11 @@ class ca {
   makeSquareAspect() {
     let t = this.xRSpan() / this.xDSpan(), e = this.yRSpan() / this.yDSpan(), i = this.yDomain(), a = this.xDomain();
     if (t < e) {
-      let n = (i[0] + i[1]) * 0.5, s = this.yRSpan() / t;
-      this.yDomain([n - s * 0.5, n + s * 0.5]);
+      let s = (i[0] + i[1]) * 0.5, n = this.yRSpan() / t;
+      this.yDomain([s - n * 0.5, s + n * 0.5]);
     } else {
-      let n = (a[0] + a[1]) * 0.5, s = this.xRSpan() / e;
-      this.xDomain([n - s * 0.5, n + s * 0.5]);
+      let s = (a[0] + a[1]) * 0.5, n = this.xRSpan() / e;
+      this.xDomain([s - n * 0.5, s + n * 0.5]);
     }
     return this;
   }
@@ -3454,13 +3582,13 @@ class ca {
   // point in transformed pixel space
   scaleBy(t, e = null) {
     this.unfollow();
-    let i = this._translateX.get(), a = this._translateY.get(), n = this._xScaleFactor.get(), s = this._yScaleFactor.get();
-    e ? e = [(e[0] - i) / n, (e[1] - a) / s] : e = [
+    let i = this._translateX.get(), a = this._translateY.get(), s = this._xScaleFactor.get(), n = this._yScaleFactor.get();
+    e ? e = [(e[0] - i) / s, (e[1] - a) / n] : e = [
       (this.xRange[0] + this.xRange[1]) * 0.5,
       (this.yRange[0] + this.yRange[1]) * 0.5
     ];
-    let o = typeof t == "number" ? t : t[0], l = typeof t == "number" ? t : t[1], h = n + o;
-    return h <= this.maxScale && h >= this.minScale && (this._xScaleFactor.set(h), this._translateX.set(i - o * e[0])), h = s + l, h <= this.maxScale && h >= this.minScale && (this._yScaleFactor.set(h), this._translateY.set(a - l * e[1])), this;
+    let o = typeof t == "number" ? t : t[0], h = typeof t == "number" ? t : t[1], l = s + o;
+    return l <= this.maxScale && l >= this.minScale && (this._xScaleFactor.set(l), this._translateX.set(i - o * e[0])), l = n + h, l <= this.maxScale && l >= this.minScale && (this._yScaleFactor.set(l), this._translateY.set(a - h * e[1])), this;
   }
   // Translates the scales by the given amount
   translateBy(t, e) {
@@ -3469,7 +3597,7 @@ class ca {
   transform(t = void 0, e = !1) {
     if (t !== void 0) {
       if (this.unfollow(), e) {
-        let i = (a) => new B(
+        let i = (a) => new z(
           Z(a),
           this.animationDuration,
           G
@@ -3537,7 +3665,7 @@ class ca {
       let i = this._calculateControllerTransform();
       return i.ky || i.k;
     }), this._translateX.set(() => this._calculatingTransform ? this._translateX.last() : this._calculateControllerTransform().x), this._translateY.set(() => this._calculatingTransform ? this._translateY.last() : this._calculateControllerTransform().y), e) {
-      let i = (a) => new B(
+      let i = (a) => new z(
         Z(a),
         this.animationDuration,
         G
@@ -3600,28 +3728,28 @@ class ur {
   transform(t) {
     if (this.lastCompute && this.lastCompute.scales === t && this.lastCompute.time == t.timeProvider())
       return this.lastCompute.result;
-    let e = this.marks.map((v) => this._getMarkLocation(t, v)), i, a, n, s, o = this.centerMark !== void 0 ? this._getMarkLocation(t, this.centerMark) : null, l = t.transform(), { x: h, y: u } = Qi(e);
+    let e = this.marks.map((k) => this._getMarkLocation(t, k)), i, a, s, n, o = this.centerMark !== void 0 ? this._getMarkLocation(t, this.centerMark) : null, h = t.transform(), { x: l, y: u } = br(e);
     if (o) {
-      let v = Math.max(
-        h[1] - o.x,
-        o.x - h[0]
+      let k = Math.max(
+        l[1] - o.x,
+        o.x - l[0]
       ), w = Math.max(
         u[1] - o.y,
         o.y - u[0]
       );
-      h = [o.x - v, o.x + v], u = [o.y - w, o.y + w];
+      l = [o.x - k, o.x + k], u = [o.y - w, o.y + w];
     }
-    let c, f;
-    Math.abs(h[1] - h[0]) > 0 ? c = (Math.abs(t.xRSpan()) - this.padding * 2) / (h[1] - h[0]) / (Math.abs(t.xRSpan()) / Math.abs(t.xDSpan())) : c = l.kx, Math.abs(u[1] - u[0]) > 0 ? f = (Math.abs(t.yRSpan()) - this.padding * 2) / (u[1] - u[0]) / (Math.abs(t.yRSpan()) / Math.abs(t.yDSpan())) : f = l.ky;
-    let m = l.ky / l.kx;
-    c = Math.min(c, t.maxScale), f = Math.min(f, t.maxScale), f < c * m ? (n = f / m, s = f) : (n = c, s = c * m), i = (h[0] + h[1]) * 0.5, a = (u[0] + u[1]) * 0.5, i = (i - t.xDomain()[0]) * t.xRSpan() / t.xDSpan() + t.xRange()[0], a = (a - t.yDomain()[0]) * t.yRSpan() / t.yDSpan() + t.yRange()[0];
-    let p = -i * n + (t.xRange()[0] + t.xRange()[1]) * 0.5, b = -a * s + (t.yRange()[0] + t.yRange()[1]) * 0.5, y = {
-      kx: n,
-      ky: s,
+    let c, d;
+    Math.abs(l[1] - l[0]) > 0 ? c = (Math.abs(t.xRSpan()) - this.padding * 2) / (l[1] - l[0]) / (Math.abs(t.xRSpan()) / Math.abs(t.xDSpan())) : c = h.kx, Math.abs(u[1] - u[0]) > 0 ? d = (Math.abs(t.yRSpan()) - this.padding * 2) / (u[1] - u[0]) / (Math.abs(t.yRSpan()) / Math.abs(t.yDSpan())) : d = h.ky;
+    let m = h.ky / h.kx;
+    c = Math.min(c, t.maxScale), d = Math.min(d, t.maxScale), d < c * m ? (s = d / m, n = d) : (s = c, n = c * m), i = (l[0] + l[1]) * 0.5, a = (u[0] + u[1]) * 0.5, i = (i - t.xDomain()[0]) * t.xRSpan() / t.xDSpan() + t.xRange()[0], a = (a - t.yDomain()[0]) * t.yRSpan() / t.yDSpan() + t.yRange()[0];
+    let p = -i * s + (t.xRange()[0] + t.xRange()[1]) * 0.5, y = -a * n + (t.yRange()[0] + t.yRange()[1]) * 0.5, M = {
+      kx: s,
+      ky: n,
       x: p,
-      y: b
+      y
     };
-    return this.lastCompute = { scales: t, time: t.timeProvider(), result: y }, y;
+    return this.lastCompute = { scales: t, time: t.timeProvider(), result: M }, M;
   }
   _getMarkLocation(t, e) {
     let i = {
@@ -3634,13 +3762,13 @@ class ur {
     }), i;
   }
 }
-function fa(r, t = {}) {
+function ga(r, t = {}) {
   return new ur([r], { centerMark: r, ...t });
 }
-function da(r, t = {}) {
+function pa(r, t = {}) {
   return new ur(r, { ...t });
 }
-class ma {
+class _a {
   constructor(t = {}) {
     this.markCollections = [], this._positionMap = null, this._binSizes = null, this._extents = null, this._numBins = null, this._numMarks = null, this._avgMarksPerBin = null, this._coordinateAttributes = t.coordinateAttributes ?? ["x", "y"], this._transformCoordinates = t.transformCoordinates ?? !0, this._avgMarksPerBin = t.marksPerBin ?? null;
   }
@@ -3709,15 +3837,15 @@ class ma {
   }
   _forEachMark(t) {
     this.markCollections.forEach((e) => {
-      if (e instanceof hr)
+      if (e instanceof lr)
         e.forEach(t);
-      else if (e instanceof Le)
+      else if (e instanceof St)
         t(e);
       else if (typeof e.forEach == "function")
         e.forEach(t);
       else if (typeof e == "function") {
         let i = e();
-        i instanceof Le ? t(i) : i.forEach(t);
+        i instanceof St ? t(i) : i.forEach(t);
       } else
         console.error(
           "Unrecognized mark collection type in position map:",
@@ -3752,65 +3880,136 @@ class ma {
     if (this._positionMap || this.compute(), this._numMarks == 0)
       return [];
     let a = this._recursiveBinWalk(t, e);
-    return i ? a.map((s) => {
+    return i ? a.map((n) => {
       let o = this._coordinateAttributes.map(
-        (l) => s.attr(l, this._transformCoordinates)
+        (h) => n.attr(h, this._transformCoordinates)
       );
       return [
-        s,
+        n,
         Math.sqrt(
           o.reduce(
-            (l, h, u) => l + (h - t[u]) * (h - t[u]),
+            (h, l, u) => h + (l - t[u]) * (l - t[u]),
             0
           )
         )
       ];
-    }).filter(([s, o]) => o <= e).sort((s, o) => s[1] - o[1]).map(([s, o]) => s) : a;
+    }).filter(([n, o]) => o <= e).sort((n, o) => n[1] - o[1]).map(([n, o]) => n) : a;
   }
   _recursiveBinWalk(t, e, i = []) {
     let a = i.length;
     if (a == t.length)
       return this._positionMap.get(this._getPositionID(i)) ?? [];
-    let n = Math.ceil(e / this._binSizes[a]), s = new Array(n * 2 + 1).fill(0).map(
-      (l, h) => (h - n) * this._binSizes[a] + t[a]
+    let s = Math.ceil(e / this._binSizes[a]), n = new Array(s * 2 + 1).fill(0).map(
+      (h, l) => (l - s) * this._binSizes[a] + t[a]
     ), o = [];
-    return s.forEach((l) => {
+    return n.forEach((h) => {
       o = [
         ...o,
         ...this._recursiveBinWalk(t, e, [
           ...i,
-          l
+          h
         ])
       ];
     }), o;
   }
 }
+var aa = /* @__PURE__ */ ((r) => (r.none = "no-preference", r.more = "more", r.less = "less", r))(aa || {}), sa = /* @__PURE__ */ ((r) => (r.light = "light", r.dark = "dark", r))(sa || {});
+class na {
+  constructor() {
+    this._hasChanged = !1;
+    let t = window.matchMedia("(prefers-reduced-motion: reduce)");
+    this._prefersReducedMotion = t.matches, t.addEventListener("change", (h) => this._handleMotion(h));
+    let e = window.matchMedia(
+      "(prefers-reduced-transparency: reduce)"
+    );
+    this._prefersReducedTransparency = e.matches, e.addEventListener(
+      "change",
+      (h) => this._handleTransparency(h)
+    );
+    let i = window.matchMedia("(prefers-contrast: none)");
+    this._contrastPreference = "no-preference", i.addEventListener("change", (h) => this._handleContrastNone(h));
+    let a = window.matchMedia("(prefers-contrast: more)");
+    a.matches && (this._contrastPreference = "more"), a.addEventListener("change", (h) => this._handleContrastMore(h));
+    let s = window.matchMedia("(prefers-contrast: less)");
+    a.matches && (this._contrastPreference = "less"), s.addEventListener("change", (h) => this._handleContrastLess(h));
+    let n = window.matchMedia("(prefers-color-scheme: light)");
+    this._colorSchemePreference = "light", n.addEventListener(
+      "change",
+      (h) => this._handleColorSchemeLight(h)
+    );
+    let o = window.matchMedia("(prefers-color-scheme: dark)");
+    o.matches && (this._colorSchemePreference = "dark"), o.addEventListener("change", (h) => this._handleColorSchemeDark(h));
+  }
+  _handleMotion(t) {
+    this._prefersReducedMotion = t.matches, this._hasChanged = !0;
+  }
+  _handleTransparency(t) {
+    this._prefersReducedTransparency = t.matches, this._hasChanged = !0;
+  }
+  _handleContrastMore(t) {
+    t.matches && (this._contrastPreference = "more"), this._hasChanged = !0;
+  }
+  _handleContrastLess(t) {
+    t.matches && (this._contrastPreference = "less"), this._hasChanged = !0;
+  }
+  _handleContrastNone(t) {
+    t.matches && (this._contrastPreference = "no-preference"), this._hasChanged = !0;
+  }
+  _handleColorSchemeLight(t) {
+    t.matches && (this._colorSchemePreference = "light"), this._hasChanged = !0;
+  }
+  _handleColorSchemeDark(t) {
+    t.matches && (this._colorSchemePreference = "dark"), this._hasChanged = !0;
+  }
+  get prefersReducedMotion() {
+    return this._prefersReducedMotion;
+  }
+  get prefersReducedTransparency() {
+    return this._prefersReducedTransparency;
+  }
+  get contrastPreference() {
+    return this._contrastPreference;
+  }
+  get colorSchemePreference() {
+    return this._colorSchemePreference;
+  }
+  advance(t) {
+    return this._hasChanged ? (this._hasChanged = !1, !0) : !1;
+  }
+}
+let Yt;
+function ya() {
+  return Yt || (Yt = new na()), Yt;
+}
 export {
-  B as Animator,
-  S as Attribute,
-  Ki as AttributeRecompute,
-  ha as LazyTicker,
-  Le as Mark,
+  z as Animator,
+  v as Attribute,
+  vr as AttributeRecompute,
+  sa as ColorSchemePreference,
+  aa as ContrastPreference,
+  fa as LazyTicker,
+  St as Mark,
   ur as MarkFollower,
-  hr as MarkRenderGroup,
-  ma as PositionMap,
-  qt as PreloadableAnimator,
-  ca as Scales,
-  ua as StageManager,
-  ra as StagingAction,
-  ea as StagingState,
-  la as Ticker,
+  lr as MarkRenderGroup,
+  _a as PositionMap,
+  na as RenderContext,
+  ma as Scales,
+  ra as StageManager,
+  ea as StagingAction,
+  ta as StagingState,
+  da as Ticker,
   Vt as autoMixingFunction,
-  sa as basicAnimationTo,
-  fa as centerOn,
-  Ni as colorMixingFunction,
-  oa as createRenderGroup,
+  ua as basicAnimationTo,
+  ga as centerOn,
+  Ji as colorMixingFunction,
+  ca as createRenderGroup,
   G as curveEaseInOut,
-  sr as curveLinear,
-  na as interpolateAlongPath,
+  or as curveLinear,
+  ya as getRenderContext,
+  la as interpolateAlongPath,
   Z as interpolateTo,
-  aa as interpolateToFunction,
-  da as markBox,
-  Vi as numericalArrayMixingFunction,
-  or as numericalMixingFunction
+  ha as interpolateToFunction,
+  pa as markBox,
+  Qi as numericalArrayMixingFunction,
+  hr as numericalMixingFunction
 };
