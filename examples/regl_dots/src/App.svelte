@@ -6,7 +6,7 @@
     createRenderGroup,
     curveEaseInOut,
     AttributeRecompute,
-  } from 'canvas-animation';
+  } from 'counterpoint-vis';
   import createREGL from 'regl';
   import { onDestroy } from 'svelte';
   import { getCoordinate } from './point_layouts';

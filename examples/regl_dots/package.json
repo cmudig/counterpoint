@@ -19,7 +19,7 @@
     "vite": "^4.4.5"
   },
   "dependencies": {
-    "canvas-animation": "file:../../canvas-animation",
+    "counterpoint-vis": "file:../../counterpoint",
     "regl": "^2.1.0"
   }
 }

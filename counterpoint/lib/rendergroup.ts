@@ -638,6 +638,16 @@ export class MarkRenderGroup<
   }
 
   /**
+   * Returns true if the render group has the given mark (and it is visible if
+   * using staging) or false otherwise.
+   *
+   * @param markID the mark ID to search for
+   */
+  has(markID: string): boolean {
+    return this.marksByID.has(markID);
+  }
+
+  /**
    * @returns the number of marks in the render group
    */
   count(): number {

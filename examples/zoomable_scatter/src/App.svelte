@@ -8,7 +8,7 @@
     Ticker,
     markBox,
     centerOn,
-  } from 'canvas-animation';
+  } from 'counterpoint-vis';
   import { onDestroy } from 'svelte';
   import * as d3 from 'd3';
 

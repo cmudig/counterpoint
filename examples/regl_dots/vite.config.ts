@@ -10,9 +10,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      'canvas-animation': path.resolve(
+      'counterpoint-vis': path.resolve(
         __dirname,
-        '../../canvas-animation/lib/main.ts'
+        '../../counterpoint/lib/main.ts'
       ),
     },
   },

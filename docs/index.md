@@ -72,7 +72,7 @@ them with functionality from D3.
   <p style="font-size: 0.8em;">Source: Free Data from World Bank via gapminder.org, CC-BY license</p>
 </div>
 <script type="module"> 
-  import { loadGapminderPlot } from "/canvas-animation/assets/gapminder.js";
+  import { loadGapminderPlot } from "/counterpoint/assets/gapminder.js";
   // load gapminder when the page changes if not already loaded
   let hasGapminder = false;
   new MutationObserver(() => {

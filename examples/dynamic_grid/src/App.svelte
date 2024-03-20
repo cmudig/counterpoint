@@ -6,7 +6,7 @@
     StageManager,
     Ticker,
     curveEaseInOut,
-  } from 'canvas-animation';
+  } from 'counterpoint-vis';
   import { onDestroy } from 'svelte';
 
   const cellWidth = 25;
@@ -17,25 +17,18 @@
     y: Attribute<number>;
     alpha: Attribute<number>;
     color: Attribute<string>;
-  }>().configure({
-    animationDuration: 500,
-    animationCurve: curveEaseInOut,
-  });
-  let stager = new StageManager({
-    create: (id, info) =>
-      new Mark(id, {
-        x: new Attribute(info.x as number),
-        y: new Attribute(info.y as number),
-        alpha: new Attribute(0.0),
-        color: new Attribute(
-          `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`
-        ),
-      }),
-    show: (mark) =>
-      mark.animateTo('alpha', 1.0, { duration: 500 }).wait('alpha'),
-    hide: (mark) =>
-      mark.animateTo('alpha', 0.0, { duration: 500 }).wait('alpha'),
-  }).attach(markSet);
+  }>()
+    .configure({
+      animationDuration: 500,
+      animationCurve: curveEaseInOut,
+    })
+    .configureStaging({
+      initialize: (element: Mark) => element.setAttr('alpha', 0.0),
+      enter: async (element: Mark) =>
+        element.animateTo('alpha', 1.0, { duration: 500 }).wait('alpha'),
+      exit: async (element: Mark) =>
+        element.animateTo('alpha', 0.0, { duration: 500 }).wait('alpha'),
+    });
 
   let ticker = new Ticker(markSet).onChange(draw);
 
@@ -53,7 +46,7 @@
         ctx.fillStyle = '#3388ff';
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1.0;
-        markSet.forEach((mark) => {
+        markSet.stage!.forEach((mark: Mark) => {
           let x = mark.attr('x');
           let y = mark.attr('y');
           let color = mark.attr('color');
@@ -89,8 +82,19 @@
     let cellID =
       (roundedLocation.x / cellWidth) * 500 + roundedLocation.y / cellWidth;
     // toggle visibility
-    if (stager.isVisible(cellID)) stager.hide(cellID);
-    else stager.show(cellID, roundedLocation);
+    if (markSet.has(cellID)) markSet.removeMark(markSet.getMarkByID(cellID));
+    else
+      markSet.addMark(
+        markSet.stage!.getMarkByID(cellID) ??
+          new Mark(cellID, {
+            x: new Attribute(roundedLocation.x as number),
+            y: new Attribute(roundedLocation.y as number),
+            alpha: new Attribute(0.0),
+            color: new Attribute(
+              `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`
+            ),
+          })
+      );
   }
 </script>
 

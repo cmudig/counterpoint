@@ -6,8 +6,8 @@ module.exports = defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, 'lib/main.ts'),
-      name: 'canvas-animation',
-      fileName: (format) => `canvas-animation.${format}.js`,
+      name: 'counterpoint-vis',
+      fileName: (format) => `counterpoint-vis.${format}.js`,
     },
   },
   plugins: [

@@ -6,7 +6,7 @@
     createRenderGroup,
     curveEaseInOut,
     PositionMap,
-  } from 'canvas-animation';
+  } from 'counterpoint-vis';
   import { onDestroy } from 'svelte';
 
   let canvas: HTMLCanvasElement;

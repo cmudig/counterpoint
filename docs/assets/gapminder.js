@@ -1,5 +1,5 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
-import * as CA from 'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/canvas-animation@main/canvas-animation/dist/canvas-animation.es.js';
+import * as CA from 'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js';
 
 // Declare the chart dimensions and margins.
 let width = 600;
@@ -262,7 +262,7 @@ function nearestBubbleContainingPos(positionMap, mousePos, maxDistance) {
 }
 
 export function loadGapminderPlot() {
-  d3.csv('/canvas-animation/assets/gapminder_full.csv').then((data) => {
+  d3.csv('/counterpoint/assets/gapminder_full.csv').then((data) => {
     let canvas = document.getElementById('gapminder-content');
     let slider = document.getElementById('year-slider');
     if (!canvas) return;

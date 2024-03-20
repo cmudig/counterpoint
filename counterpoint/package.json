@@ -1,18 +1,18 @@
 {
-  "name": "canvas-animation",
+  "name": "counterpoint-vis",
   "version": "1.0.0",
   "description": "",
   "license": "MIT",
   "files": [
     "dist"
   ],
-  "main": "./dist/canvas-animation.umd.js",
-  "types": "./dist/canvas-animation.es.d.ts",
-  "module": "./dist/canvas-animation.es.js",
+  "main": "./dist/counterpoint-vis.umd.js",
+  "types": "./dist/counterpoint-vis.es.d.ts",
+  "module": "./dist/counterpoint-vis.es.js",
   "exports": {
     ".": {
-      "import": "./dist/canvas-animation.es.js",
-      "require": "./dist/canvas-animation.umd.js"
+      "import": "./dist/counterpoint-vis.es.js",
+      "require": "./dist/counterpoint-vis.umd.js"
     }
   },
   "scripts": {

@@ -27,7 +27,7 @@
   "references": [{ "path": "./tsconfig.node.json" }],
   "baseUrl": ".",
   "paths": {
-    "canvas-animation": ["node_modules/canvas-animation/lib"],
-    "canvas-animation/*": ["node_modules/canvas-animation/lib/*"]
+    "counterpoint-vis": ["node_modules/counterpoint-vis/lib"],
+    "counterpoint-vis/*": ["node_modules/counterpoint-vis/lib/*"]
   }
 }
