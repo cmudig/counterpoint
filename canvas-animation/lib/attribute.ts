@@ -1,5 +1,4 @@
-import { Transform } from 'stream';
-import { Animator, PreloadableAnimator } from './animator';
+import { Animator } from './animator';
 import {
   Deferred,
   TimeProvider,
@@ -79,6 +78,28 @@ export type PreloadAttributeValue<T> = {
   endTime: number;
 };
 
+type AttributeAnimation<T> = {
+  animator: Animator<T>;
+  initial: T;
+  start: number;
+};
+
+type AttributeCopySpec<
+  TransformedValueType extends Exclude<any, Function>,
+  ValueType,
+  ComputeArgumentType
+> = {
+  [K in keyof AttributeDefinition<
+    TransformedValueType,
+    ValueType,
+    ComputeArgumentType
+  >]?: AttributeDefinition<
+    TransformedValueType,
+    ValueType,
+    ComputeArgumentType
+  >[K];
+};
+
 /**
  * An `Attribute` contains a value representing some aspect of state in a data
  * mark.
@@ -108,7 +129,7 @@ export class Attribute<
   public computeArg: ComputeArgumentType | undefined = undefined;
   public recompute: AttributeRecompute = AttributeRecompute.DEFAULT;
   private needsUpdate = false;
-  private animation = null;
+  private animation: AttributeAnimation<ValueType> | null = null;
   public label = null; // for debugging
   private _computedValue: ValueType = null; // this is always a stable value, i.e. non-animated
   private _lastTickValue: ValueType = undefined;
@@ -172,6 +193,27 @@ export class Attribute<
       this.computeArg = args.computeArg ?? null;
       this.recompute = args.recompute ?? AttributeRecompute.DEFAULT;
     }
+  }
+
+  /**
+   * Creates a new Attribute with identical options and values except for the
+   * parameters specified in the given options object.
+   *
+   * @param newOptions An object containing options to apply to the new attribute
+   * @returns the new copied attribute
+   */
+  copy(
+    newOptions: AttributeCopySpec<
+      TransformedValueType,
+      ValueType,
+      ComputeArgumentType
+    > = {}
+  ): Attribute<TransformedValueType, ValueType, ComputeArgumentType> {
+    let newDefinition = { ...this, ...newOptions };
+    // Make sure the new options control which of value/valueFn is populated
+    if (newOptions.value !== undefined) newDefinition.valueFn = undefined;
+    if (newOptions.valueFn !== undefined) newDefinition.value = undefined;
+    return new Attribute(newDefinition);
   }
 
   addListener(
@@ -270,7 +312,7 @@ export class Attribute<
     );
   }
 
-  _transform(value: ValueType): TransformedValueType {
+  _performTransform(value: ValueType): TransformedValueType {
     let transformedValue: TransformedValueType;
     if (!!this.transform) {
       let cached = this._cachedValue;
@@ -301,10 +343,12 @@ export class Attribute<
   }
 
   /**
-   * Retrieves the current (transformed) value.
+   * Retrieves the current (transformed) value. If a context is not provided,
+   * the value returned will be the final value of any active transitions being
+   * rendered.
    */
   get(): TransformedValueType {
-    return this._transform(this.getUntransformed());
+    return this._performTransform(this.getUntransformed());
   }
 
   /**
@@ -358,8 +402,8 @@ export class Attribute<
     }
     let untransformed = this.getPreloadUntransformed(currentTime);
     return {
-      start: this._transform(untransformed.start),
-      end: this._transform(untransformed.end),
+      start: this._performTransform(untransformed.start),
+      end: this._performTransform(untransformed.end),
       startTime: untransformed.startTime,
       endTime: untransformed.endTime,
     };
@@ -392,12 +436,6 @@ export class Attribute<
         endTime: currentTime || this.currentTime,
       };
     }
-    if (!(this.animation.animator instanceof PreloadableAnimator)) {
-      console.error(
-        'Calling getPreload for a non-preloadable animation is forbidden. If using MarkSet, make sure this attribute is registered as preloadable.'
-      );
-      return null;
-    }
 
     if (this._animationFinished()) {
       this._computeAnimation();
@@ -417,6 +455,11 @@ export class Attribute<
     } else rawValue = this.value;
 
     let finalValue = this.animation.animator.finalValue;
+    if (finalValue === undefined) {
+      console.error(
+        'Animations on preloadable attributes must have a final value'
+      );
+    }
 
     let timeDelta = (currentTime || this.currentTime) - this.currentTime;
     return {
@@ -520,6 +563,7 @@ export class Attribute<
    * method runs, until the time delta since the start of the animation exceeds
    * the duration of the animation.
    * @param animation an animation to run
+   * @param context the context in which the animation runs
    */
   animate(animation: Animator<ValueType>) {
     if (!!this._timeProvider) this.currentTime = this._timeProvider();

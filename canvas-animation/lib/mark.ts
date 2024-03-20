@@ -39,6 +39,35 @@ export interface MarkAttributes extends AttributeSetBase {
   alpha?: Attribute<number, number, any>;
 }
 
+type MarkAttributeCopySpec<AttributeSet extends AttributeSetBase> = {
+  [K in keyof AttributeSet]?:
+    | AttributeSet[K]['value']
+    | AttributeSet[K]['valueFn']
+    | AttributeSet[K];
+};
+
+export type MarkUpdateListener<
+  AttributeSet extends AttributeSetBase,
+  K extends keyof AttributeSet,
+  AttributeType extends AttributeSet[K]
+> = (
+  mark: Mark<AttributeSet>,
+  finalValue: AttributeType['value']
+) => Promise<void> | undefined;
+
+export type MarkEventListener<AttributeSet extends AttributeSetBase> = (
+  mark: Mark<AttributeSet>,
+  details: any,
+  eventName: string
+) => Promise<void> | undefined;
+
+export type MarkGraphListener<T extends AttributeSetBase> = (
+  mark: Mark<T>,
+  edge: string,
+  oldAdjacency: Mark<T>[],
+  newAdjacency: Mark<T>[]
+) => void;
+
 /**
  * An object representing something visually depicted, that is described by
  * one or more `Attribute`s.
@@ -50,9 +79,26 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   public id: any;
   public attributes: AttributeSet;
   private _listeners: MarkListener<AttributeSet>[] = [];
+  private _graphListeners: MarkGraphListener<AttributeSet>[] = [];
   private _defaultDuration: number = 1000;
   private _defaultCurve: AnimationCurve = curveEaseInOut;
   private _changedLastTick: boolean = false;
+
+  // named edges
+  private _adjacency: { [key: string]: Set<Mark<AttributeSet>> } = {};
+  // marks that have an edge to this mark
+  private _reverseAdjacency: Set<Mark<AttributeSet>> = new Set();
+
+  private _updateListeners: {
+    [key in keyof AttributeSet]?: MarkUpdateListener<
+      AttributeSet,
+      key,
+      AttributeSet[key]
+    >;
+  } = {};
+  private _eventListeners: {
+    [key: string]: MarkEventListener<AttributeSet>;
+  } = {};
 
   constructor(id: any, attributes: AttributeSet) {
     this.id = id;
@@ -97,6 +143,39 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     return this;
   }
 
+  onUpdate<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
+    attrName: K,
+    action: MarkUpdateListener<AttributeSet, K, AttributeType>
+  ): Mark<AttributeSet> {
+    this._updateListeners[attrName] = action;
+    return this;
+  }
+
+  onEvent(
+    eventName: string,
+    action: MarkEventListener<AttributeSet>
+  ): Mark<AttributeSet> {
+    this._eventListeners[eventName] = action;
+    return this;
+  }
+
+  /**
+   * Sends an event to the mark and runs its event listener if it has one.
+   *
+   * @param eventName The name of the event
+   * @param details A details object to pass to the event listener
+   * @returns a Promise if the event listener for this event name returns a Promise,
+   *  otherwise nothing
+   */
+  dispatch(
+    eventName: string,
+    details: any = undefined
+  ): Promise<void> | undefined {
+    if (!!this._eventListeners[eventName]) {
+      return this._eventListeners[eventName](this, details, eventName);
+    }
+  }
+
   addListener(listener: MarkListener<AttributeSet>): Mark<AttributeSet> {
     this._listeners.push(listener);
     return this;
@@ -108,9 +187,26 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     return this;
   }
 
+  addGraphListener(
+    listener: MarkGraphListener<AttributeSet>
+  ): Mark<AttributeSet> {
+    this._graphListeners.push(listener);
+    return this;
+  }
+
+  removeGraphListener(
+    listener: MarkGraphListener<AttributeSet>
+  ): Mark<AttributeSet> {
+    let idx = this._graphListeners.indexOf(listener);
+    if (idx >= 0) this._graphListeners = this._graphListeners.splice(idx, 1);
+    return this;
+  }
+
   private _attributesChanged(attrName: keyof AttributeSet, animated: boolean) {
     this._changedLastTick = true;
     this._listeners.forEach((l) => l(this, attrName, animated));
+    if (!!this._updateListeners[attrName])
+      this._updateListeners[attrName](this, this.attributes[attrName].future());
   }
 
   setTimeProvider(timeProvider: TimeProvider): Mark<AttributeSet> {
@@ -248,6 +344,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       console.error(`No attribute named '${String(attrName)}'`);
       return this;
     }
+
     if (typeof finalValue === 'function') {
       // set all the value functions and animate computed
       (this.attributes[attrName] as AttributeType).set(finalValue);
@@ -287,6 +384,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     }
 
     let animation: Animator<AttributeType['value']>;
+
     if (options instanceof Animator) {
       animation = options as Animator<AttributeType['value']>;
     } else if (options.interpolator !== undefined) {
@@ -304,12 +402,16 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
         !approxEquals(newValue, this.attributes[attrName].last()) ||
         !approxEquals(newValue, this.attributes[attrName].future())
       ) {
-        animation = new Animator(
-          interpolateTo(newValue),
+        let duration =
           options.duration !== undefined
             ? options.duration
-            : this._defaultDuration,
-          options.curve !== undefined ? options.curve : this._defaultCurve
+            : this._defaultDuration;
+        let curve =
+          options.curve !== undefined ? options.curve : this._defaultCurve;
+        animation = new Animator(
+          interpolateTo(newValue),
+          duration,
+          curve
         ).withDelay(options.delay || 0);
       } else return this;
     }
@@ -358,5 +460,95 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       );
 
     return this._changedLastTick && this.attributes[attrNames as K].changed();
+  }
+
+  /**
+   * Returns a copy of the mark with the given ID and new attribute values. The
+   * Mark's adjacency data is not copied.
+   *
+   * @param id the ID for the new mark
+   * @param newValues new values for the mark's attributes. Each entry in the
+   *  given object should be keyed by an attribute name, and its value should be
+   *  either a value of the same type as the attribute's value, a new value
+   *  function, or a new attribute of the same type.
+   * @returns a new `Mark` instance
+   */
+  copy(
+    id: any,
+    newValues: MarkAttributeCopySpec<AttributeSet> = {}
+  ): Mark<AttributeSet> {
+    return new Mark(id, {
+      ...this.attributes,
+      ...Object.fromEntries(
+        Object.entries(newValues).map(([attrName, newVal]) => {
+          if (newVal instanceof Attribute) return [attrName, newVal];
+          else if (typeof newVal === 'function')
+            return [
+              attrName,
+              this.attributes[attrName].copy({ valueFn: newVal }),
+            ];
+          return [attrName, this.attributes[attrName].copy({ value: newVal })];
+        })
+      ),
+    });
+  }
+
+  /**
+   * Gets the marks associated with following the given edge name from this mark.
+   * @param edge the name of the edge to follow
+   */
+  adj(edge: string): Mark<AttributeSet>[];
+  /**
+   * Sets the marks associated with the given edge name from this mark.
+   * @param edge the name of the edge to define or edit
+   * @param newMarks an array of marks to set at that edge, overwriting any
+   *  previous marks on that edge
+   */
+  adj(edge: string, newMarks: Mark<AttributeSet>[]): void;
+  adj(
+    edge: string,
+    newMarks: Mark<AttributeSet>[] | undefined = undefined
+  ): void | Mark<AttributeSet>[] {
+    if (newMarks !== undefined) {
+      // setting the adjacency
+      let oldAdj = this._adjacency[edge] ?? new Set();
+      this._graphListeners.forEach((l) =>
+        l(this, edge, Array.from(oldAdj), newMarks)
+      );
+      oldAdj.forEach((m) => m._removeEdgeFrom(this));
+      this._adjacency[edge] = new Set(newMarks);
+      newMarks.forEach((m) => m._addEdgeFrom(this));
+      return;
+    }
+
+    return Array.from(this._adjacency[edge] ?? new Set());
+  }
+
+  /**
+   * Returns the marks that have an edge to this mark.
+   */
+  sourceMarks(): Mark<AttributeSet>[] {
+    return Array.from(this._reverseAdjacency);
+  }
+
+  /**
+   * TODO make sure if you remove a source edge but another named edge to the
+   * same mark exists, it's not removed from _reverseAdjacency!!
+   *
+   * Tells the mark that it has an edge from the given mark.
+   * @param sourceMark the mark that has an edge to this mark
+   */
+  _addEdgeFrom(sourceMark: Mark<AttributeSet>): Mark<AttributeSet> {
+    this._reverseAdjacency.add(sourceMark);
+    return this;
+  }
+
+  /**
+   * Tells the mark that it no longer has an edge from the given mark.
+   * @param sourceMark the mark that has no longer has an edge to this mark
+   */
+  _removeEdgeFrom(sourceMark: Mark<AttributeSet>): Mark<AttributeSet> {
+    this._reverseAdjacency.delete(sourceMark);
+    return this;
   }
 }

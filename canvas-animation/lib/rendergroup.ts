@@ -4,19 +4,18 @@ import {
   Mark,
   MarkAttributes,
   SimpleAnimationOptions,
+  MarkUpdateListener,
+  MarkEventListener,
 } from './mark';
 import { TimeProvider, getAllMethodNames, makeTimeProvider } from './utils';
-import {
-  AnimationCurve,
-  Interpolator,
-  PreloadableAnimator,
-  curveEaseInOut,
-} from './animator';
+import { AnimationCurve, curveEaseInOut } from './animator';
 import { Advanceable } from './ticker';
+import { StageManager, StageManagerCallback } from './staging';
 
 type RenderGroupOptions = {
   timeProvider?: TimeProvider;
   lazyUpdates?: boolean;
+  useStaging?: boolean;
   animationDuration?: number;
   animationCurve?: AnimationCurve;
 };
@@ -86,6 +85,14 @@ export class MarkRenderGroup<
    */
   public lazyUpdates: boolean = true;
 
+  /**
+   * If `true`, use a stage manager to coordinate the entrance and exit of
+   * marks.
+   */
+  public useStaging: boolean = true;
+
+  public stage: StageManager<AttributeSet> | null = null;
+
   private marksByID: Map<any, Mark<AttributeSet>>;
 
   // Marks that have an active animation
@@ -102,6 +109,18 @@ export class MarkRenderGroup<
 
   private _defaultDuration: number;
   private _defaultCurve: AnimationCurve;
+
+  // Stored here in case we add new marks later that should have the same listeners
+  private _updateListeners: {
+    [key in keyof AttributeSet]?: MarkUpdateListener<
+      AttributeSet,
+      key,
+      AttributeSet[key]
+    >;
+  } = {};
+  private _eventListeners: {
+    [key: string]: MarkEventListener<AttributeSet>;
+  } = {};
 
   /**
    * @param marks The set of marks that this group should manage, all including
@@ -129,8 +148,9 @@ export class MarkRenderGroup<
         return;
       }
       this.marksByID.set(m.id, m);
-      this._configureMark(m);
+      this._setupMark(m);
     });
+    if (!!this.stage) this.stage.setVisibleMarks(this.marks);
   }
 
   /**
@@ -155,11 +175,60 @@ export class MarkRenderGroup<
     if (opts.animationCurve !== undefined)
       this._defaultCurve = opts.animationCurve;
     if (!!this.marks) this.getMarks().forEach((m) => this._configureMark(m));
+
+    this.useStaging = opts.useStaging ?? this.useStaging;
+    if (this.useStaging) {
+      this.stage = new StageManager<AttributeSet>();
+      if (!!this.marks) this.stage.setVisibleMarks(this.marks);
+    } else {
+      this.stage = null;
+    }
+
+    return this;
+  }
+
+  configureStaging(
+    callbacks: StageManagerCallback<Mark<AttributeSet>>,
+    opts: { defer?: boolean; saveExitedMarks?: boolean } = undefined
+  ): MarkRenderGroup<AttributeSet> {
+    if (!this.useStaging)
+      console.error(
+        "Can't configure staging without setting useStaging to true"
+      );
+    this.stage.onInitialize(callbacks.initialize);
+    this.stage.onEnter(callbacks.enter);
+    this.stage.onExit(callbacks.exit);
+    if (!!opts) this.stage.configure(opts);
     return this;
   }
 
   /**
-   * Configures a mark's callbacks and default properties.
+   * Sets up a mark for the first time.
+   */
+  _setupMark(m: Mark<AttributeSet>) {
+    this._configureMark(m);
+    m.addListener((mark, attrName, animated) => {
+      this.updatedMarks.add(mark);
+      if (!this.preloadableProperties.has(attrName) && animated)
+        this.animatingMarks.add(mark);
+      this._changedLastTick = true;
+    });
+    m.addGraphListener((mark, edge, oldNeighbors, newNeighbors) => {
+      oldNeighbors.forEach((neighbor) => {
+        if (
+          !newNeighbors.includes(neighbor) &&
+          neighbor.sourceMarks().length == 1
+        )
+          this.removeMark(neighbor);
+      });
+      newNeighbors.forEach((neighbor) => {
+        if (!oldNeighbors.includes(neighbor)) this.addMark(neighbor);
+      });
+    });
+  }
+
+  /**
+   * Configures a mark's default properties.
    * @param m the mark to configure
    */
   _configureMark(m: Mark<AttributeSet>) {
@@ -168,12 +237,53 @@ export class MarkRenderGroup<
       animationDuration: this._defaultDuration,
       animationCurve: this._defaultCurve,
     });
-    m.addListener((mark, attrName, animated) => {
-      this.updatedMarks.add(mark);
-      if (!this.preloadableProperties.has(attrName) && animated)
-        this.animatingMarks.add(mark);
-      this._changedLastTick = true;
-    });
+    Object.entries(this._updateListeners).forEach(([attrName, l]) =>
+      m.onUpdate(attrName, l)
+    );
+    Object.entries(this._eventListeners).forEach(([eventName, l]) =>
+      m.onEvent(eventName, l)
+    );
+  }
+
+  onUpdate<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
+    attrName: K,
+    action: MarkUpdateListener<AttributeSet, K, AttributeType>
+  ): MarkRenderGroup<AttributeSet> {
+    this._updateListeners[attrName] = action;
+    this.getMarks().forEach((m) => m.onUpdate(attrName, action));
+    return this;
+  }
+
+  onEvent(
+    eventName: string,
+    action: MarkEventListener<AttributeSet>
+  ): MarkRenderGroup<AttributeSet> {
+    this._eventListeners[eventName] = action;
+    this.getMarks().forEach((m) => m.onEvent(eventName, action));
+    return this;
+  }
+
+  /**
+   * Sends an event to the mark and runs its event listener if it has one.
+   *
+   * @param eventName The name of the event
+   * @param details A details object to pass to the event listener
+   * @returns a Promise if the event listener for this event name returns a Promise,
+   *  otherwise nothing
+   */
+  dispatch(
+    eventName: string,
+    details: any = undefined
+  ): Promise<void> | undefined {
+    let promises = this.getMarks()
+      .map((m) => m.dispatch(eventName, details))
+      .filter((r) => r instanceof Promise);
+    if (promises.length > 0)
+      return new Promise((resolve, reject) => {
+        Promise.all(promises)
+          .then(() => resolve())
+          .catch(reject);
+      });
   }
 
   /**
@@ -210,9 +320,6 @@ export class MarkRenderGroup<
    * only initial changes will be reflected in {@link marksChanged}. This permits
    * faster rendering by computing animations in shaders, and only computing
    * them on the CPU when explicitly requested through a call to {@link Attribute.get()}.
-   * Note that animations to these properties must be created through
-   * {@link animatePreload}, {@link animateComputed}, or {@link animateOne} with a
-   * {@link PreloadableAnimator}.
    *
    * @param attrName the attribute to register
    * @returns this render group
@@ -297,38 +404,15 @@ export class MarkRenderGroup<
             ) => AttributeType['value'])),
     options: GroupSimpleAnimationOptions<AttributeSet> = {}
   ): MarkRenderGroup<AttributeSet> {
-    let preloadable = this.preloadableProperties.has(attrName);
-    // this.updatedMarks = new Set(this.getMarks());
-
-    if (preloadable) {
-      this.forEach((mark, i) => {
-        let markOptions = _evaluateGroupOptions(options, mark, i);
-        let duration =
-          markOptions.duration === undefined
-            ? this._defaultDuration
-            : markOptions.duration;
-        mark.animate(
-          attrName,
-          new PreloadableAnimator(
-            typeof finalValueFn === 'function'
-              ? (finalValueFn as Function)(mark, i)
-              : finalValueFn,
-            duration
-          ).withDelay(markOptions.delay || 0)
-        );
-      });
-    } else {
-      // this.animatingMarks = new Set(this.getMarks());
-      this.forEach((mark, i) => {
-        mark.animateTo(
-          attrName,
-          typeof finalValueFn === 'function'
-            ? (finalValueFn as Function)(mark, i)
-            : finalValueFn,
-          _evaluateGroupOptions(options, mark, i)
-        );
-      });
-    }
+    this.forEach((mark, i) => {
+      mark.animateTo(
+        attrName,
+        typeof finalValueFn === 'function'
+          ? (finalValueFn as Function)(mark, i)
+          : finalValueFn,
+        _evaluateGroupOptions(options, mark, i)
+      );
+    });
 
     return this;
   }
@@ -360,21 +444,7 @@ export class MarkRenderGroup<
 
     this.forEach((mark, i) => {
       let markOptions = _evaluateGroupOptions(options, mark, i);
-      if (preloadable) {
-        let duration =
-          markOptions.duration === undefined
-            ? this._defaultDuration
-            : markOptions.duration;
-        let newValue = mark.data(attrName);
-        mark.animate(
-          attrName,
-          new PreloadableAnimator(newValue, duration).withDelay(
-            markOptions.delay || 0
-          )
-        );
-      } else {
-        mark.animate(attrName, markOptions);
-      }
+      mark.animate(attrName, markOptions);
     });
 
     return this;
@@ -504,9 +574,12 @@ export class MarkRenderGroup<
       } else {
         proxy[methodName] = (...args) => {
           let oldMarks = this.getMarks();
+          let oldMarksByID = this.marksByID;
           this.marks = newMarkSet;
+          this.marksByID = proxy.marksByID;
           let ret = this[methodName](...args);
           this.marks = oldMarks;
+          this.marksByID = oldMarksByID;
           if (ret === this) return proxy;
           return ret;
         };
@@ -541,8 +614,9 @@ export class MarkRenderGroup<
     }
     this.marks.push(mark);
     this.marksByID.set(mark.id, mark);
-    this._configureMark(mark);
+    this._setupMark(mark);
     this._markListChanged = true;
+    if (!!this.stage) this.stage.show(mark);
   }
 
   /**
@@ -560,6 +634,7 @@ export class MarkRenderGroup<
     this.marks.splice(idx, 1);
     this.marksByID.delete(mark.id);
     this._markListChanged = true;
+    if (!!this.stage) this.stage.hide(mark);
   }
 
   /**
