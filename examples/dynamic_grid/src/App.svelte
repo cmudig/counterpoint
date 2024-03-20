@@ -17,16 +17,25 @@
     y: Attribute<number>;
     alpha: Attribute<number>;
     color: Attribute<string>;
-  }>()
+  }>(
+    (id) =>
+      new Mark(id, {
+        x: new Attribute(0),
+        y: new Attribute(0),
+        alpha: new Attribute(0.0),
+        color: new Attribute(
+          `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`
+        ),
+      })
+  )
     .configure({
       animationDuration: 500,
       animationCurve: curveEaseInOut,
     })
     .configureStaging({
-      initialize: (element: Mark) => element.setAttr('alpha', 0.0),
-      enter: async (element: Mark) =>
+      enter: async (element) =>
         element.animateTo('alpha', 1.0, { duration: 500 }).wait('alpha'),
-      exit: async (element: Mark) =>
+      exit: async (element) =>
         element.animateTo('alpha', 0.0, { duration: 500 }).wait('alpha'),
     });
 
@@ -46,7 +55,7 @@
         ctx.fillStyle = '#3388ff';
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1.0;
-        markSet.stage!.forEach((mark: Mark) => {
+        markSet.stage!.forEach((mark) => {
           let x = mark.attr('x');
           let y = mark.attr('y');
           let color = mark.attr('color');
@@ -82,18 +91,10 @@
     let cellID =
       (roundedLocation.x / cellWidth) * 500 + roundedLocation.y / cellWidth;
     // toggle visibility
-    if (markSet.has(cellID)) markSet.removeMark(markSet.getMarkByID(cellID));
+    if (markSet.has(cellID)) markSet.hideID(cellID);
     else
-      markSet.addMark(
-        markSet.stage!.getMarkByID(cellID) ??
-          new Mark(cellID, {
-            x: new Attribute(roundedLocation.x as number),
-            y: new Attribute(roundedLocation.y as number),
-            alpha: new Attribute(0.0),
-            color: new Attribute(
-              `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`
-            ),
-          })
+      markSet.showID(cellID, (mark) =>
+        mark.setAttr('x', roundedLocation.x).setAttr('y', roundedLocation.y)
       );
   }
 </script>

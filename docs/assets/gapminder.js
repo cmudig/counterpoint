@@ -128,12 +128,12 @@ function drawCanvas(canvas, bubbleSet, lineSet) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
 
-  if (lineSet.count() > 0) {
+  if (lineSet.stage.count() > 0) {
     ctx.save();
     // draw a shadow of the bubble's position and size using a series of
     // rounded paths
     ctx.fillStyle = '#e0e0e0';
-    lineSet.forEach((mark) => {
+    lineSet.stage.forEach((mark) => {
       ctx.globalAlpha = mark.attr('alpha');
       let xCoords = mark.attr('x');
       let yCoords = mark.attr('y');
@@ -165,14 +165,10 @@ function drawCanvas(canvas, bubbleSet, lineSet) {
       ctx.lineWidth = 3.0;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      lineSet.forEach((mark) => {
-        let xCoords = mark.attr('x');
-        let yCoords = mark.attr('y');
-        ctx.moveTo(xCoords[0], yCoords[0]);
-        for (let i = 1; i < xCoords.length; i++) {
-          ctx.lineTo(xCoords[i], yCoords[i]);
-        }
-      });
+      ctx.moveTo(xCoords[0], yCoords[0]);
+      for (let i = 1; i < xCoords.length; i++) {
+        ctx.lineTo(xCoords[i], yCoords[i]);
+      }
       ctx.stroke();
     });
     ctx.restore();
@@ -394,13 +390,9 @@ export function loadGapminderPlot() {
     // create another render group for the line showing each country's trajectory
     // (these marks will only be added when the user hovers or selects, using the
     // stage manager)
-    let lineSet = new CA.MarkRenderGroup([]).configure({
-      animationDuration: 500,
-      animationCurve: CA.curveEaseInOut,
-    });
-    let lineStaging = new CA.StageManager({
-      create: (id) =>
-        new CA.Mark(`line-${id}`, {
+    let lineSet = new CA.MarkRenderGroup(
+      (id) =>
+        new CA.Mark(id, {
           country: new CA.Attribute(id),
           startYear: new CA.Attribute(currentYear.get()),
           endYear: new CA.Attribute(currentYear.get()),
@@ -429,21 +421,26 @@ export function loadGapminderPlot() {
             ).map(sizeScale)
           ),
           alpha: new CA.Attribute(0),
-        }),
-      show: async (mark) => {
-        return await mark
-          .animateTo('startYear', MinYear)
-          .animateTo('endYear', MaxYear)
-          .animateTo('alpha', 1.0, { duration: 200 })
-          .wait(['startYear', 'endYear']);
-      },
-      hide: async (mark) =>
-        await mark
-          .animateTo('startYear', currentYear.get())
-          .animateTo('endYear', currentYear.get())
-          .animateTo('alpha', 0.0, { duration: 200, delay: 300 })
-          .wait(['startYear', 'endYear']),
-    }).attach(lineSet);
+        })
+    )
+      .configure({
+        animationDuration: 500,
+        animationCurve: CA.curveEaseInOut,
+      })
+      .configureStaging({
+        enter: (mark) =>
+          mark
+            .animateTo('startYear', MinYear)
+            .animateTo('endYear', MaxYear)
+            .animateTo('alpha', 1.0, { duration: 200 })
+            .wait(['startYear', 'endYear']),
+        exit: (mark) =>
+          mark
+            .animateTo('startYear', currentYear.get())
+            .animateTo('endYear', currentYear.get())
+            .animateTo('alpha', 0.0, { duration: 200, delay: 300 })
+            .wait(['startYear', 'endYear']),
+      });
 
     let zoom = d3
       .zoom()
@@ -458,7 +455,7 @@ export function loadGapminderPlot() {
     // the ticker runs every frame and redraws only when needed
     let ticker = new CA.Ticker([
       currentYear,
-      bubbleSet,
+      // bubbleSet,
       lineSet,
       scales,
     ]).onChange(() => {
@@ -553,8 +550,8 @@ export function loadGapminderPlot() {
           bubbleSet.animate('alpha', { duration: 200 });
           bubbleSet.animate('labelSize', { duration: 200 });
           if (oldHover != null && oldHover !== selectedCountry)
-            lineStaging.hide(oldHover);
-          if (hoveredCountry != null) lineStaging.show(hoveredCountry);
+            lineSet.hideID(oldHover);
+          if (hoveredCountry != null) lineSet.showID(hoveredCountry);
         }
       }
     });
@@ -575,9 +572,9 @@ export function loadGapminderPlot() {
         bubbleSet.animate('alpha', { duration: 200 });
         bubbleSet.animate('strokeWidth', { duration: 200 });
         bubbleSet.animate('labelSize', { duration: 200 });
-        if (oldSelection != null) lineStaging.hide(oldSelection);
+        if (oldSelection != null) lineSet.hideID(oldSelection);
         if (selectedCountry != null) {
-          lineStaging.show(selectedCountry);
+          lineSet.showID(selectedCountry);
           zoomToCountry(selectedCountry);
         }
       }

@@ -72,6 +72,9 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
   private queuedAnimations: Map<Mark<AttributeSet>, StagingAction> = new Map();
   private _flushTimer: number | null = null;
 
+  // The set of marks that are currently being animated
+  public animatingMarks: Set<Mark<AttributeSet>> = new Set();
+
   /**
    * Whether or not to defer changes in presence/absence of marks to the
    * next frame. The default is `false`.
@@ -147,6 +150,7 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
       this.marksByID.set(element.id, element);
       let result = this._callbacks.enter(element);
       if (!!result && result instanceof Promise) {
+        this.animatingMarks.add(element);
         result.then(
           () => {
             if (
@@ -154,9 +158,12 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
               this.markStates.get(element) == StagingState.Entering
             ) {
               this.markStates.set(element, StagingState.Visible);
+              this.animatingMarks.delete(element);
             }
           },
-          () => {}
+          () => {
+            this.animatingMarks.delete(element);
+          }
         );
       } else {
         this.markStates.set(element, StagingState.Visible);
@@ -173,6 +180,7 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
       this.marksByID.set(element.id, element);
       let result = this._callbacks.exit(element);
       if (!!result && result instanceof Promise) {
+        this.animatingMarks.add(element);
         result.then(
           () => {
             // Resolve if it's still gone, otherwise reject
@@ -185,10 +193,13 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
               } else {
                 this.marksByID.delete(element.id);
                 this.markStates.delete(element);
+                this.animatingMarks.delete(element);
               }
             }
           },
-          () => {}
+          () => {
+            this.animatingMarks.delete(element);
+          }
         );
       } else {
         if (this.saveExitedMarks) {
@@ -322,6 +333,13 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
    */
   getMarks(): Mark<AttributeSet>[] {
     return Array.from(this.markStates.keys());
+  }
+
+  /**
+   * Returns the number of marks that this stage manager knows about.
+   */
+  count(): number {
+    return this.markStates.size;
   }
 
   /**

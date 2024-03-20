@@ -398,7 +398,7 @@ class wr {
     });
   }
 }
-const X = new wr();
+const I = new wr();
 var F = {
   gamut_mapping: "lch.c",
   precision: 5,
@@ -419,7 +419,7 @@ function bt(r, t, e, i = {}) {
   if (r === t)
     return e;
   let a = { W1: r, W2: t, XYZ: e, options: i };
-  if (X.run("chromatic-adaptation-start", a), a.M || (a.W1 === R.D65 && a.W2 === R.D50 ? a.M = [
+  if (I.run("chromatic-adaptation-start", a), a.M || (a.W1 === R.D65 && a.W2 === R.D50 ? a.M = [
     [1.0479298208405488, 0.022946793341019088, -0.05019222954313557],
     [0.029627815688159344, 0.990434484573249, -0.01707382502938514],
     [-0.009243058152591178, 0.015055144896577895, 0.7518742899580008]
@@ -427,7 +427,7 @@ function bt(r, t, e, i = {}) {
     [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
     [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
     [0.012314001688319899, -0.020507696433477912, 1.3303659366080753]
-  ])), X.run("chromatic-adaptation-end", a), a.M)
+  ])), I.run("chromatic-adaptation-end", a), a.M)
     return b(a.M, a.XYZ);
   throw new TypeError("Only Bradford CAT with white points D50 and D65 supported for now.");
 }
@@ -450,7 +450,7 @@ const xr = 75e-6, C = class C {
       writable: !1,
       enumerable: !0,
       configurable: !0
-    }), X.run("colorspace-init-end", this);
+    }), I.run("colorspace-init-end", this);
   }
   inGamut(t, { epsilon: e = xr } = {}) {
     if (this.isPolar)
@@ -648,7 +648,7 @@ class x extends f {
 function $e(r, { meta: t } = {}) {
   var i, a, s, n, o;
   let e = { str: (i = String(r)) == null ? void 0 : i.trim() };
-  if (X.run("parse-start", e), e.color)
+  if (I.run("parse-start", e), e.color)
     return e.color;
   if (e.parsed = Be(e.str), e.parsed) {
     let h = e.parsed.name;
@@ -721,11 +721,11 @@ function A(r, t) {
 function Oe(r, t, e) {
   return t = f.get(t), r.coords = t.to(r.space, e), r;
 }
-function I(r, t, e) {
+function X(r, t, e) {
   if (r = g(r), arguments.length === 2 && O(arguments[1]) === "object") {
     let i = arguments[1];
     for (let a in i)
-      I(r, a, i[a]);
+      X(r, a, i[a]);
   } else {
     typeof e == "function" && (e = e(A(r, t)));
     let { space: i, index: a } = f.resolveCoord(t, r.space), s = at(r, i);
@@ -890,7 +890,7 @@ function j(r, { method: t = F.gamut_mapping, space: e = r.space } = {}) {
       let s = f.resolveCoord(t), n = s.space, o = s.id, h = L(i, n), u = (s.range || s.refRange)[0], c = 0.01, d = u, m = A(h, o);
       for (; m - d > c; ) {
         let p = et(h);
-        p = j(p, { space: e, method: "clip" }), Ot(h, p) - 2 < c ? d = A(h, o) : m = A(h, o), I(h, o, (d + m) / 2);
+        p = j(p, { space: e, method: "clip" }), Ot(h, p) - 2 < c ? d = A(h, o) : m = A(h, o), X(h, o, (d + m) / 2);
       }
       i = L(h, e);
     } else
@@ -964,7 +964,7 @@ var Tt = new x({
   }
 });
 const ht = 1.09929682680944, se = 0.018053968510807;
-var Xe = new x({
+var Ie = new x({
   id: "rec2020",
   name: "REC.2020",
   base: Tt,
@@ -992,7 +992,7 @@ const Ar = [
   [-0.8294889695615747, 1.7626640603183463, 0.023624685841943577],
   [0.03584583024378447, -0.07617238926804182, 0.9568845240076872]
 ];
-var Ie = new x({
+var Xe = new x({
   id: "p3-linear",
   name: "Linear P3",
   white: "D65",
@@ -1241,7 +1241,7 @@ var rt = new x({
 }), qe = new x({
   id: "p3",
   name: "P3",
-  base: Ie,
+  base: Xe,
   // Gamma encoding/decoding is the same as sRGB
   fromBase: rt.fromBase,
   toBase: rt.toBase,
@@ -1253,7 +1253,7 @@ var rt = new x({
 });
 F.display_space = rt;
 if (typeof CSS < "u" && CSS.supports)
-  for (let r of [T, Xe, qe]) {
+  for (let r of [T, Ie, qe]) {
     let t = r.getMinCoords(), i = kt({ space: r, coords: t, alpha: 1 });
     if (CSS.supports("color", i)) {
       F.display_space = r;
@@ -1285,7 +1285,7 @@ function q(r) {
   return A(r, [E, "y"]);
 }
 function Ge(r, t) {
-  I(r, [E, "y"], t);
+  X(r, [E, "y"], t);
 }
 function Yr(r) {
   Object.defineProperty(r.prototype, "luminance", {
@@ -1308,7 +1308,7 @@ function Or(r, t) {
   let e = Math.max(q(r), 0), i = Math.max(q(t), 0);
   return i > e && ([e, i] = [i, e]), (e + 0.05) / (i + 0.05);
 }
-const Xr = 0.56, Ir = 0.57, jr = 0.62, qr = 0.65, le = 0.022, Ur = 1.414, Gr = 0.1, Zr = 5e-4, Hr = 1.14, ue = 0.027, Vr = 1.14;
+const Ir = 0.56, Xr = 0.57, jr = 0.62, qr = 0.65, le = 0.022, Ur = 1.414, Gr = 0.1, Zr = 5e-4, Hr = 1.14, ue = 0.027, Vr = 1.14;
 function ce(r) {
   return r >= le ? r : r + (le - r) ** Ur;
 }
@@ -1323,7 +1323,7 @@ function Nr(r, t) {
   let h = V(s) * 0.2126729 + V(n) * 0.7151522 + V(o) * 0.072175;
   r = L(r, "srgb"), [s, n, o] = r.coords;
   let l = V(s) * 0.2126729 + V(n) * 0.7151522 + V(o) * 0.072175, u = ce(h), c = ce(l), d = c > u;
-  return Math.abs(c - u) < Zr ? i = 0 : d ? (e = c ** Xr - u ** Ir, i = e * Hr) : (e = c ** qr - u ** jr, i = e * Vr), Math.abs(i) < Gr ? a = 0 : i > 0 ? a = i - ue : a = i + ue, a * 100;
+  return Math.abs(c - u) < Zr ? i = 0 : d ? (e = c ** Ir - u ** Xr, i = e * Hr) : (e = c ** qr - u ** jr, i = e * Vr), Math.abs(i) < Gr ? a = 0 : i > 0 ? a = i - ue : a = i + ue, a * 100;
 }
 function Wr(r, t) {
   r = g(r), t = g(t);
@@ -1345,7 +1345,7 @@ function Kr(r, t) {
 }
 const ti = 216 / 24389, de = 24 / 116, lt = 24389 / 27;
 let Pt = R.D65;
-var Xt = new f({
+var It = new f({
   id: "lab-d65",
   name: "Lab D65",
   coords: {
@@ -1397,7 +1397,7 @@ var Xt = new f({
 const Rt = Math.pow(5, 0.5) * 0.5 + 0.5;
 function ei(r, t) {
   r = g(r), t = g(t);
-  let e = A(r, [Xt, "l"]), i = A(t, [Xt, "l"]), a = Math.abs(Math.pow(e, Rt) - Math.pow(i, Rt)), s = Math.pow(a, 1 / Rt) * Math.SQRT2 - 40;
+  let e = A(r, [It, "l"]), i = A(t, [It, "l"]), a = Math.abs(Math.pow(e, Rt) - Math.pow(i, Rt)), s = Math.pow(a, 1 / Rt) * Math.SQRT2 - 40;
   return s < 7.5 ? 0 : s;
 }
 var _t = /* @__PURE__ */ Object.freeze({
@@ -1542,7 +1542,7 @@ var Ve = new f({
     // https://drafts.csswg.org/css-color-hdr/#Jzazbz
     color: {}
   }
-}), It = new f({
+}), Xt = new f({
   id: "jzczhz",
   name: "JzCzHz",
   coords: {
@@ -1588,7 +1588,7 @@ var Ve = new f({
   }
 });
 function mi(r, t) {
-  let [e, i, a] = It.from(r), [s, n, o] = It.from(t), h = e - s, l = i - n;
+  let [e, i, a] = Xt.from(r), [s, n, o] = Xt.from(t), h = e - s, l = i - n;
   Number.isNaN(a) && Number.isNaN(o) ? (a = 0, o = 0) : Number.isNaN(a) ? a = o : Number.isNaN(o) && (o = a);
   let u = a - o, c = 2 * Math.sqrt(i * n) * Math.sin(u / 2 * (Math.PI / 180));
   return Math.sqrt(h ** 2 + l ** 2 + c ** 2);
@@ -1740,11 +1740,11 @@ function Q(r, t, e = {}) {
 }
 function Li(r, t = 0.25) {
   let i = [f.get("oklch", "lch"), "l"];
-  return I(r, i, (a) => a * (1 + t));
+  return X(r, i, (a) => a * (1 + t));
 }
 function Ei(r, t = 0.25) {
   let i = [f.get("oklch", "lch"), "l"];
-  return I(r, i, (a) => a * (1 - t));
+  return X(r, i, (a) => a * (1 - t));
 }
 var Ai = /* @__PURE__ */ Object.freeze({
   __proto__: null,
@@ -1804,7 +1804,7 @@ function st(r, t, e = {}) {
   let o = { colors: [r, t], options: e };
   if (i ? i = f.get(i) : i = f.registry[F.interpolationSpace] || r.space, a = a ? f.get(a) : i, r = L(r, i), t = L(t, i), r = j(r), t = j(t), i.coords.h && i.coords.h.type === "angle") {
     let h = e.hue = e.hue || "shorter", l = [i, "h"], [u, c] = [A(r, l), A(t, l)];
-    [u, c] = Tr(h, [u, c]), I(r, l, u), I(t, l, c);
+    [u, c] = Tr(h, [u, c]), X(r, l, u), X(t, l, c);
   }
   return n && (r.coords = r.coords.map((h) => h * r.alpha), t.coords = t.coords.map((h) => h * t.alpha)), Object.assign((h) => {
     h = s ? s(h) : h;
@@ -2023,16 +2023,16 @@ var ir = new x({
   toXYZ_M: $i,
   fromXYZ_M: Oi
 });
-const Xi = 1 / 512, Ii = 16 / 512;
+const Ii = 1 / 512, Xi = 16 / 512;
 var ji = new x({
   id: "prophoto",
   name: "ProPhoto",
   base: ir,
   toBase(r) {
-    return r.map((t) => t < Ii ? t / 16 : t ** 1.8);
+    return r.map((t) => t < Xi ? t / 16 : t ** 1.8);
   },
   fromBase(r) {
-    return r.map((t) => t >= Xi ? t ** (1 / 1.8) : 16 * t);
+    return r.map((t) => t >= Ii ? t ** (1 / 1.8) : 16 * t);
   },
   formats: {
     color: {
@@ -2128,10 +2128,10 @@ var Hi = new x({
   }
 });
 const ar = {};
-X.add("chromatic-adaptation-start", (r) => {
+I.add("chromatic-adaptation-start", (r) => {
   r.options.method && (r.M = sr(r.W1, r.W2, r.options.method));
 });
-X.add("chromatic-adaptation-end", (r) => {
+I.add("chromatic-adaptation-end", (r) => {
   r.M || (r.M = sr(r.W1, r.W2, r.options.method));
 });
 function Dt({ id: r, toCone_M: t, fromCone_M: e }) {
@@ -2314,18 +2314,18 @@ var Wi = new x({
   HSV: er,
   HWB: Bi,
   ICTCP: jt,
-  JzCzHz: It,
+  JzCzHz: Xt,
   Jzazbz: Ve,
   LCH: tt,
   Lab: T,
-  Lab_D65: Xt,
+  Lab_D65: It,
   OKLCH: qi,
   OKLab: wt,
   P3: qe,
-  P3_Linear: Ie,
+  P3_Linear: Xe,
   ProPhoto: ji,
   ProPhoto_Linear: ir,
-  REC_2020: Xe,
+  REC_2020: Ie,
   REC_2020_Linear: Tt,
   REC_2100_HLG: Hi,
   REC_2100_PQ: Zi,
@@ -2422,7 +2422,7 @@ class _ {
 _.defineFunctions({
   get: A,
   getAll: at,
-  set: I,
+  set: X,
   setAll: Oe,
   to: L,
   equals: Fr,
@@ -2433,7 +2433,7 @@ _.defineFunctions({
 });
 Object.assign(_, {
   util: kr,
-  hooks: X,
+  hooks: I,
   WHITES: R,
   Space: f,
   spaces: f.registry,
@@ -2445,7 +2445,7 @@ for (let r of Object.keys(Ae))
   f.register(Ae[r]);
 for (let r in f.registry)
   qt(r, f.registry[r]);
-X.add("colorspace-init-end", (r) => {
+I.add("colorspace-init-end", (r) => {
   var t;
   qt(r.id, r), (t = r.aliases) == null || t.forEach((e) => {
     qt(e, r);
@@ -2613,7 +2613,7 @@ function ua(r, t = 1e3, e = or) {
 var ta = /* @__PURE__ */ ((r) => (r.Waiting = "waiting", r.Entering = "entering", r.Visible = "visible", r.Exiting = "exiting", r.Completed = "completed", r))(ta || {}), ea = /* @__PURE__ */ ((r) => (r.Show = "show", r.Hide = "hide", r))(ea || {});
 class ra {
   constructor(t = {}) {
-    this.markStates = /* @__PURE__ */ new Map(), this.marksByID = /* @__PURE__ */ new Map(), this.queuedAnimations = /* @__PURE__ */ new Map(), this._flushTimer = null, this.defer = !1, this.saveExitedMarks = !1, this._callbacks = {
+    this.markStates = /* @__PURE__ */ new Map(), this.marksByID = /* @__PURE__ */ new Map(), this.queuedAnimations = /* @__PURE__ */ new Map(), this._flushTimer = null, this.animatingMarks = /* @__PURE__ */ new Set(), this.defer = !1, this.saveExitedMarks = !1, this._callbacks = {
       initialize: t.initialize || (() => {
       }),
       enter: t.enter || (() => {
@@ -2675,17 +2675,18 @@ class ra {
           /* Entering */
         ), this.marksByID.set(t.id, t);
         let i = this._callbacks.enter(t);
-        i && i instanceof Promise ? i.then(
+        i && i instanceof Promise ? (this.animatingMarks.add(t), i.then(
           () => {
-            this.markStates.has(t) && this.markStates.get(t) == "entering" && this.markStates.set(
+            this.markStates.has(t) && this.markStates.get(t) == "entering" && (this.markStates.set(
               t,
               "visible"
               /* Visible */
-            );
+            ), this.animatingMarks.delete(t));
           },
           () => {
+            this.animatingMarks.delete(t);
           }
-        ) : this.markStates.set(
+        )) : this.markStates.set(
           t,
           "visible"
           /* Visible */
@@ -2700,17 +2701,18 @@ class ra {
           /* Exiting */
         ), this.marksByID.set(t.id, t);
         let a = this._callbacks.exit(t);
-        a && a instanceof Promise ? a.then(
+        a && a instanceof Promise ? (this.animatingMarks.add(t), a.then(
           () => {
             this.markStates.has(t) && this.markStates.get(t) == "exiting" && (this.saveExitedMarks ? this.markStates.set(
               t,
               "completed"
               /* Completed */
-            ) : (this.marksByID.delete(t.id), this.markStates.delete(t)));
+            ) : (this.marksByID.delete(t.id), this.markStates.delete(t), this.animatingMarks.delete(t)));
           },
           () => {
+            this.animatingMarks.delete(t);
           }
-        ) : this.saveExitedMarks ? this.markStates.set(
+        )) : this.saveExitedMarks ? this.markStates.set(
           t,
           "completed"
           /* Completed */
@@ -2822,6 +2824,12 @@ class ra {
     return Array.from(this.markStates.keys());
   }
   /**
+   * Returns the number of marks that this stage manager knows about.
+   */
+  count() {
+    return this.markStates.size;
+  }
+  /**
    * Returns all marks that are either waiting, entering, or visible.
    */
   getVisibleMarks() {
@@ -2853,7 +2861,7 @@ class lr {
     animationDuration: 1e3,
     animationCurve: G
   }) {
-    this.timeProvider = null, this.lazyUpdates = !0, this.useStaging = !0, this.stage = null, this.animatingMarks = /* @__PURE__ */ new Set(), this.updatedMarks = /* @__PURE__ */ new Set(), this.preloadableProperties = /* @__PURE__ */ new Set(), this._forceUpdate = !1, this._markListChanged = !1, this._changedLastTick = !1, this._updateListeners = {}, this._eventListeners = {}, this.timeProvider = Re(), this.lazyUpdates = !0, this._defaultDuration = 1e3, this._defaultCurve = G, this.configure(e), this.marks = t, this.marksByID = /* @__PURE__ */ new Map(), this.marks.forEach((i) => {
+    this.timeProvider = null, this.marks = [], this.factory = null, this.lazyUpdates = !0, this.useStaging = !0, this.stage = null, this.animatingMarks = /* @__PURE__ */ new Set(), this.updatedMarks = /* @__PURE__ */ new Set(), this.preloadableProperties = /* @__PURE__ */ new Set(), this._forceUpdate = !1, this._markListChanged = !1, this._changedLastTick = !1, this._updateListeners = {}, this._eventListeners = {}, this.timeProvider = Re(), this.lazyUpdates = !0, this._defaultDuration = 1e3, this._defaultCurve = G, this.configure(e), typeof t == "function" ? this.factory = t : this.marks = t, this.marksByID = /* @__PURE__ */ new Map(), this.marks.forEach((i) => {
       if (this.marksByID.has(i.id)) {
         console.error(`ID '${i.id}' is duplicated in mark render group`);
         return;
@@ -2980,7 +2988,11 @@ class lr {
    */
   advance(t) {
     this.timeProvider.advance(t);
-    let e = this.lazyUpdates ? [...this.animatingMarks, ...this.updatedMarks] : this.getMarks();
+    let e = this.lazyUpdates ? [
+      ...this.stage ? this.stage.animatingMarks : [],
+      ...this.animatingMarks,
+      ...this.updatedMarks
+    ] : this.stage ? this.stage.getMarks() : this.getMarks();
     if (this.updatedMarks = /* @__PURE__ */ new Set(), e.length == 0 && !this._forceUpdate && !this._markListChanged)
       return this._changedLastTick = !1, !1;
     for (let i of e)
@@ -3067,12 +3079,17 @@ class lr {
     );
   }
   /**
-   * Retrieves the mark with the given ID, or undefined if it does not exist.
+   * Retrieves the mark with the given ID, or undefined if it does not exist and
+   * either no factory was defined or existingOnly is true.
    * @param id the ID of the mark to search for
-   * @returns the `Mark` instance with the given ID or undefined if it doesn't
-   * exist
+   * @param existingOnly if true, do not use the factory if the mark does not exist
+   * @returns the `Mark` instance with the given ID or undefined
    */
-  getMarkByID(t) {
+  getMarkByID(t, e = !1) {
+    if (!this.marksByID.has(t) && !e) {
+      let i;
+      return this.useStaging && (i = this.stage.getMarkByID(t)), !i && this.factory && (i = this.factory(t)), i;
+    }
     return this.marksByID.get(t);
   }
   forEach(t) {
@@ -3136,6 +3153,22 @@ class lr {
     if (e < 0)
       return console.warn("Attempted to remove mark that does not exist"), this;
     this.marks.splice(e, 1), this.marksByID.delete(t.id), this._markListChanged = !0, this.stage && this.stage.hide(t);
+  }
+  /**
+   * Convenience function for showing a mark with a given ID, if a factory is defined.
+   * @param id the id to show
+   * @param prepareFn a function to call on the mark before showing it
+   */
+  showID(t, e = void 0) {
+    let i = this.getMarkByID(t);
+    return e && e(i), this.has(t) ? this.useStaging && this.stage.show(i) : this.addMark(i), this;
+  }
+  /**
+   * Convenience function for hiding a mark with a given ID.
+   * @param id the id to hide
+   */
+  hideID(t) {
+    return this.has(t) ? (this.removeMark(this.getMarkByID(t)), this) : this;
   }
   /**
    * Returns true if the render group has the given mark (and it is visible if

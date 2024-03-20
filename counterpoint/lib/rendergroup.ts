@@ -69,7 +69,12 @@ export class MarkRenderGroup<
    * The set of marks that this group contains. All marks have the same set
    * of attributes.
    */
-  private marks: Mark<AttributeSet>[];
+  private marks: Mark<AttributeSet>[] = [];
+
+  /**
+   * A function that generates a mark given an ID, if provided at instantiation.
+   */
+  private factory: ((id: any) => Mark<AttributeSet>) | null = null;
   /**
    * Controls whether the mark group iterates over the entire set of marks in
    * every call to `advance()`. If set to `true`, only the marks that have
@@ -128,7 +133,7 @@ export class MarkRenderGroup<
    * @param opts Options for the mark group (see {@link configure})
    */
   constructor(
-    marks: Mark<AttributeSet>[] = [],
+    marks: Mark<AttributeSet>[] | ((id: any) => Mark<AttributeSet>) = [],
     opts: RenderGroupOptions = {
       animationDuration: 1000,
       animationCurve: curveEaseInOut,
@@ -140,7 +145,9 @@ export class MarkRenderGroup<
     this._defaultCurve = curveEaseInOut;
     this.configure(opts);
 
-    this.marks = marks;
+    if (typeof marks === 'function') this.factory = marks;
+    else this.marks = marks;
+
     this.marksByID = new Map();
     this.marks.forEach((m) => {
       if (this.marksByID.has(m.id)) {
@@ -344,7 +351,13 @@ export class MarkRenderGroup<
     this.timeProvider.advance(dt);
 
     let marksToUpdate = this.lazyUpdates
-      ? [...this.animatingMarks, ...this.updatedMarks]
+      ? [
+          ...(!!this.stage ? this.stage.animatingMarks : []),
+          ...this.animatingMarks,
+          ...this.updatedMarks,
+        ]
+      : this.stage
+      ? this.stage.getMarks()
       : this.getMarks();
     this.updatedMarks = new Set();
     if (
@@ -509,12 +522,22 @@ export class MarkRenderGroup<
   }
 
   /**
-   * Retrieves the mark with the given ID, or undefined if it does not exist.
+   * Retrieves the mark with the given ID, or undefined if it does not exist and
+   * either no factory was defined or existingOnly is true.
    * @param id the ID of the mark to search for
-   * @returns the `Mark` instance with the given ID or undefined if it doesn't
-   * exist
+   * @param existingOnly if true, do not use the factory if the mark does not exist
+   * @returns the `Mark` instance with the given ID or undefined
    */
-  getMarkByID(id: any): Mark<AttributeSet> | undefined {
+  getMarkByID(
+    id: any,
+    existingOnly: boolean = false
+  ): Mark<AttributeSet> | undefined {
+    if (!this.marksByID.has(id) && !existingOnly) {
+      let mark: Mark<AttributeSet> | undefined;
+      if (this.useStaging) mark = this.stage!.getMarkByID(id);
+      if (!mark && !!this.factory) mark = this.factory(id);
+      return mark;
+    }
     return this.marksByID.get(id);
   }
 
@@ -638,12 +661,39 @@ export class MarkRenderGroup<
   }
 
   /**
+   * Convenience function for showing a mark with a given ID, if a factory is defined.
+   * @param id the id to show
+   * @param prepareFn a function to call on the mark before showing it
+   */
+  showID(
+    id: any,
+    prepareFn: ((mark: Mark<AttributeSet>) => void) | undefined = undefined
+  ): MarkRenderGroup<AttributeSet> {
+    let mark = this.getMarkByID(id);
+    if (!!prepareFn) prepareFn(mark);
+    if (this.has(id)) {
+      if (this.useStaging) this.stage!.show(mark);
+    } else this.addMark(mark);
+    return this;
+  }
+
+  /**
+   * Convenience function for hiding a mark with a given ID.
+   * @param id the id to hide
+   */
+  hideID(id: any): MarkRenderGroup<AttributeSet> {
+    if (!this.has(id)) return this;
+    this.removeMark(this.getMarkByID(id));
+    return this;
+  }
+
+  /**
    * Returns true if the render group has the given mark (and it is visible if
    * using staging) or false otherwise.
    *
    * @param markID the mark ID to search for
    */
-  has(markID: string): boolean {
+  has(markID: any): boolean {
     return this.marksByID.has(markID);
   }
 
