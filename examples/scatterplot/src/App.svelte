@@ -1,24 +1,27 @@
 <script lang="ts">
   import {
-    Attribute,
     ColorSchemePreference,
     Ticker,
-    Mark,
-    createRenderGroup,
     curveEaseInOut,
     getRenderContext,
+    MarkRenderGroup,
+    Mark,
+    AttributeRecompute,
   } from 'counterpoint-vis';
   import { onDestroy } from 'svelte';
 
   let canvas: HTMLCanvasElement;
-  let markSet = createRenderGroup(
+  let markSet = new MarkRenderGroup(
     new Array(100).fill(0).map(
       (_, i) =>
         new Mark(i, {
-          x: new Attribute(Math.random() * 500),
-          y: new Attribute(Math.random() * 500),
-          color: new Attribute<string>(getColor),
-          alpha: new Attribute(1),
+          x: Math.random() * 500,
+          y: Math.random() * 500,
+          color: {
+            valueFn: getColor,
+            recompute: AttributeRecompute.WHEN_UPDATED,
+          },
+          alpha: 1.0,
         })
     )
   )
@@ -91,17 +94,16 @@
   }
 
   function animatePoints() {
-    if (!!markSet.getMarkByID('temp_animation'))
-      markSet.removeMark(markSet.getMarkByID('temp_animation')!);
-    let testMark = markSet.getMarkByID(
-      Math.floor(Math.random() * markSet.count())
-    )!;
-    testMark.adj('temp', [
+    if (markSet.has('temp_animation'))
+      markSet.deleteMark(markSet.get('temp_animation')!);
+    let testMark = markSet.get(Math.floor(Math.random() * markSet.count()))!;
+    testMark.adj(
+      'temp',
       testMark.copy(`temp_animation`, {
         color: 'cyan',
         x: Math.random() * 500,
-      }),
-    ]);
+      })
+    );
 
     markSet
       .dispatch('click')!

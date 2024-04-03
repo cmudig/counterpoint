@@ -129,8 +129,8 @@ constructed with an ID (any identifier) and a dictionary of attributes:
 
 ```javascript
 let marks = [
-  new Mark(0, { x: new Attribute(50), y: new Attribute(50) }),
-  new Mark(1, { x: new Attribute(200), y: new Attribute(100) }),
+  new Mark(0, { x: 50, y: 50 }),
+  new Mark(1, { x: 200, y: 100 }),
 ];
 ```
 
@@ -144,8 +144,8 @@ function getColor(mark) {
 }
 
 let marks = [
-  new Mark(0, { x: new Attribute(50), y: new Attribute(50), color: new Attribute(getColor) },
-  new Mark(1, { x: new Attribute(200), y: new Attribute(100), color: new Attribute(getColor) }),
+  new Mark(0, { x: 50, y: 50, color: getColor }),
+  new Mark(1, { x: 200, y: 100, color: getColor }),
 ];
 ```
 
@@ -154,7 +154,7 @@ manage animations and updates over a potentially large set of marks. Let's use i
 to wrap our array of marks:
 
 ```javascript
-let renderGroup = createRenderGroup(marks);
+let renderGroup = new MarkRenderGroup(marks);
 ```
 
 Now that we've defined our marks and their attributes, we can use them to
@@ -186,7 +186,7 @@ function draw() {
 <div>
     <canvas id="example-canvas-2" style="width: 300px; height: 300px; border: 1px solid #999;"></canvas>
     <script>
-        import('https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js').then(({ Mark, Attribute, createRenderGroup }) => {
+        import('https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js').then(({ Mark, MarkRenderGroup }) => {
             const canvas = document.getElementById("example-canvas-2");
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
@@ -196,10 +196,10 @@ function draw() {
             }
 
             let marks = [
-                new Mark(0, { x: new Attribute(50), y: new Attribute(50), color: new Attribute(getColor) }),
-                new Mark(1, { x: new Attribute(200), y: new Attribute(100), color: new Attribute(getColor) }),
+              new Mark(0, { x: 50, y: 50, color: getColor }),
+              new Mark(1, { x: 200, y: 100, color: getColor }),
             ];
-            let renderGroup = createRenderGroup(marks);
+            let renderGroup = new MarkRenderGroup(marks);
 
             function draw() {
                 const ctx = canvas.getContext('2d');
@@ -278,7 +278,7 @@ Once completed, you should have something that looks like the following:
     <canvas id="example-canvas-3" style="width: 300px; height: 300px; border: 1px solid #999;"></canvas>
     <div><button style="margin-bottom: 32px;" id="animate-button-3">Animate</button></div>
     <script>
-        import('https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js').then(({ Mark, Attribute, Ticker, createRenderGroup }) => {
+        import('https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js').then(({ Mark, Ticker, MarkRenderGroup }) => {
             const canvas = document.getElementById("example-canvas-3");
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
@@ -288,10 +288,10 @@ Once completed, you should have something that looks like the following:
             }
 
             let marks = [
-                new Mark(0, { x: new Attribute(50), y: new Attribute(50), color: new Attribute(getColor) }),
-                new Mark(1, { x: new Attribute(200), y: new Attribute(100), color: new Attribute(getColor) }),
+              new Mark(0, { x: 50, y: 50, color: getColor }),
+              new Mark(1, { x: 200, y: 100, color: getColor }),
             ];
-            let renderGroup = createRenderGroup(marks);
+            let renderGroup = new MarkRenderGroup(marks);
 
             function draw() {
                 const ctx = canvas.getContext('2d');

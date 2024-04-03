@@ -1,13 +1,12 @@
 <script lang="ts">
   import {
-    Attribute,
     Mark,
-    createRenderGroup,
     curveEaseInOut,
     Scales,
     Ticker,
     markBox,
     centerOn,
+    MarkRenderGroup,
   } from 'counterpoint-vis';
   import { onDestroy } from 'svelte';
   import * as d3 from 'd3';
@@ -27,7 +26,7 @@
         sel.call(zoom.transform, new d3.ZoomTransform(t.k, t.x, t.y));
       }
 
-      // for demo purposes, animate the color to show that the following behavior changed
+      // for demo purposes, animate the color to show that the follow behavior changed
       if (!scales.controller && zoomedIdxs.length > 0) {
         markSet.wait('color').then(() => {
           zoomedIdxs = [];
@@ -36,22 +35,22 @@
       }
     });
 
-  let markSet = createRenderGroup(
+  let markSet = new MarkRenderGroup(
     new Array(100).fill(0).map(
       (_, i) =>
         new Mark(i, {
-          x: new Attribute({
+          x: {
             value: Math.random(),
             transform: scales.xScale,
-          }),
-          y: new Attribute({
+          },
+          y: {
             value: Math.random(),
             transform: scales.yScale,
-          }),
-          color: new Attribute({
+          },
+          color: {
             valueFn: (m) => (zoomedIdxs.includes(m.id) ? '#7dd3fc' : '#9f1239'),
             lazy: true,
-          }),
+          },
         })
     )
   ).configure({
@@ -114,8 +113,8 @@
 
   function animatePoints() {
     markSet
-      .animateTo('x', (_) => Math.random(), { duration: 5000 })
-      .animateTo('y', (_) => Math.random(), { duration: 5000 });
+      .animateTo('x', () => Math.random(), { duration: 5000 })
+      .animateTo('y', () => Math.random(), { duration: 5000 });
   }
 
   function resetZoom() {
@@ -131,7 +130,7 @@
       Math.round(Math.random() * markSet.count()),
     ];
     markSet.animate('color');
-    scales.zoomTo(markBox(zoomedIdxs.map((i) => markSet.getMarkByID(i)!)));
+    scales.zoomTo(markBox(zoomedIdxs.map((i) => markSet.get(i)!)));
   }
 
   function followPoints() {
@@ -141,13 +140,13 @@
       Math.round(Math.random() * markSet.count()),
     ];
     markSet.animate('color');
-    scales.follow(markBox(zoomedIdxs.map((i) => markSet.getMarkByID(i)!)));
+    scales.follow(markBox(zoomedIdxs.map((i) => markSet.get(i)!)));
   }
 
   function centerPoint() {
     zoomedIdxs = [Math.round(Math.random() * markSet.count())];
     markSet.animate('color');
-    scales.follow(centerOn(markSet.getMarkByID(zoomedIdxs[0])!));
+    scales.follow(centerOn(markSet.get(zoomedIdxs[0])!));
   }
 
   // This shows how basic zoom and pan can be implemented without d3 (only

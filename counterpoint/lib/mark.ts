@@ -5,7 +5,7 @@ import {
   curveEaseInOut,
   interpolateTo,
 } from './animator';
-import { Attribute, AttributeListener } from './attribute';
+import { Attribute, AttributeDefinition, AttributeListener } from './attribute';
 import { Advanceable } from './ticker';
 import { TimeProvider, approxEquals } from './utils';
 
@@ -39,13 +39,6 @@ export interface MarkAttributes extends AttributeSetBase {
   alpha?: Attribute<number, number, any>;
 }
 
-type MarkAttributeCopySpec<AttributeSet extends AttributeSetBase> = {
-  [K in keyof AttributeSet]?:
-    | AttributeSet[K]['value']
-    | AttributeSet[K]['valueFn']
-    | AttributeSet[K];
-};
-
 export type MarkUpdateListener<
   AttributeSet extends AttributeSetBase,
   K extends keyof AttributeSet,
@@ -69,6 +62,18 @@ export type MarkGraphListener<T extends AttributeSetBase> = (
 ) => void;
 
 /**
+ * Represents initialization for an attribute set where the values can be
+ * provided as Attributes, or simply as their values or value functions.
+ */
+export type ImplicitAttributeSet<AttributeSet extends AttributeSetBase> = {
+  [K in keyof AttributeSet]?:
+    | AttributeSet[K]['value']
+    | AttributeSet[K]['valueFn']
+    | AttributeDefinition<AttributeSet[K]['value']>
+    | AttributeSet[K];
+};
+
+/**
  * An object representing something visually depicted, that is described by
  * one or more `Attribute`s.
  */
@@ -89,6 +94,9 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   // marks that have an edge to this mark
   private _reverseAdjacency: Set<Mark<AttributeSet>> = new Set();
 
+  /** The object that this Mark represents. */
+  public represented: any | undefined = undefined;
+
   private _updateListeners: {
     [key in keyof AttributeSet]?: MarkUpdateListener<
       AttributeSet,
@@ -100,7 +108,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     [key: string]: MarkEventListener<AttributeSet>;
   } = {};
 
-  constructor(id: any, attributes: AttributeSet) {
+  constructor(id: any, attributes: ImplicitAttributeSet<AttributeSet>) {
     this.id = id;
     if (attributes === undefined)
       console.error(
@@ -110,9 +118,17 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     Object.keys(attributes).forEach(
       <K extends keyof AttributeSet>(attrName: K) => {
         let attrib = new Attribute(
-          Object.assign(Object.assign({}, attributes[attrName]), {
-            computeArg: this,
-          })
+          Object.assign(
+            Object.assign(
+              {},
+              attributes[attrName] instanceof Attribute
+                ? attributes[attrName]
+                : new Attribute(attributes[attrName])
+            ),
+            {
+              computeArg: this,
+            }
+          )
         );
         attrib.addListener((a, animated) =>
           this._attributesChanged(attrName, animated)
@@ -214,6 +230,18 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     Object.values(this.attributes).forEach((attr) =>
       attr.setTimeProvider(this._timeProvider)
     );
+    return this;
+  }
+
+  /**
+   * Modifies the mark to indicate that it represents the given object. The value
+   * will be stored in the `represented` property.
+   *
+   * @param rep The object that this mark represents
+   * @return this Mark
+   */
+  representing(rep: any): Mark<AttributeSet> {
+    this.represented = rep;
     return this;
   }
 
@@ -475,7 +503,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    */
   copy(
     id: any,
-    newValues: MarkAttributeCopySpec<AttributeSet> = {}
+    newValues: ImplicitAttributeSet<AttributeSet> = {}
   ): Mark<AttributeSet> {
     return new Mark(id, {
       ...this.attributes,
@@ -487,6 +515,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
               attrName,
               this.attributes[attrName].copy({ valueFn: newVal }),
             ];
+          else if (newVal.value !== undefined || newVal.valueFn !== undefined)
+            return [attrName, new Attribute(newVal)];
           return [attrName, this.attributes[attrName].copy({ value: newVal })];
         })
       ),
@@ -504,20 +534,21 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    * @param newMarks an array of marks to set at that edge, overwriting any
    *  previous marks on that edge
    */
-  adj(edge: string, newMarks: Mark<AttributeSet>[]): void;
+  adj(edge: string, newMarks: Mark<AttributeSet>[] | Mark<AttributeSet>): void;
   adj(
     edge: string,
-    newMarks: Mark<AttributeSet>[] | undefined = undefined
+    newMarks: Mark<AttributeSet>[] | Mark<AttributeSet> | undefined = undefined
   ): void | Mark<AttributeSet>[] {
     if (newMarks !== undefined) {
       // setting the adjacency
+      let markArray = Array.isArray(newMarks) ? newMarks : [newMarks];
       let oldAdj = this._adjacency[edge] ?? new Set();
       this._graphListeners.forEach((l) =>
-        l(this, edge, Array.from(oldAdj), newMarks)
+        l(this, edge, Array.from(oldAdj), markArray)
       );
       oldAdj.forEach((m) => m._removeEdgeFrom(this));
-      this._adjacency[edge] = new Set(newMarks);
-      newMarks.forEach((m) => m._addEdgeFrom(this));
+      this._adjacency[edge] = new Set(markArray);
+      markArray.forEach((m) => m._addEdgeFrom(this));
       return;
     }
 
@@ -551,4 +582,67 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     this._reverseAdjacency.delete(sourceMark);
     return this;
   }
+}
+
+type AttributeConstructorShorthand<
+  AttributeSet extends AttributeSetBase,
+  K extends keyof AttributeSet
+> =
+  | ((val: AttributeSet[K]['value']) => AttributeSet[K])
+  | ((val: AttributeSet[K]['valueFn']) => AttributeSet[K]);
+export type AttributeSetConstructor<AttributeSet extends AttributeSetBase> = {
+  [K in keyof AttributeSet]:
+    | AttributeSet[K]
+    | AttributeConstructorShorthand<AttributeSet, K>;
+};
+
+/**
+ * Defines a new type of mark with a shorthand constructor function.
+ *
+ * @param constructorFn A function that takes an ID
+ */
+export function defineMark<
+  AttributeSet extends AttributeSetBase = MarkAttributes
+>(
+  constructorFn:
+    | ((
+        id: any,
+        values?: ImplicitAttributeSet<AttributeSet>
+      ) => Mark<AttributeSet> | AttributeSet)
+    | AttributeSetConstructor<AttributeSet>
+) {
+  let initializer: (
+    id: any,
+    values?: ImplicitAttributeSet<AttributeSet>
+  ) => Mark<AttributeSet> | AttributeSet;
+  if (typeof initializer === 'function')
+    initializer = constructorFn as (
+      id: any,
+      values?: ImplicitAttributeSet<AttributeSet>
+    ) => Mark<AttributeSet> | AttributeSet;
+  else {
+    let initObj = constructorFn as AttributeSetConstructor<AttributeSet>;
+    initializer = (id: any, values?: ImplicitAttributeSet<AttributeSet>) =>
+      new Mark<AttributeSet>(
+        id,
+        Object.fromEntries(
+          Object.entries(initObj).map(([field, initFn]) => {
+            if (typeof initFn === 'function')
+              return [field, initFn(values[field])];
+            else if (!!values[field]) {
+              if (values[field] instanceof Attribute)
+                return [field, values[field]];
+              return [field, new Attribute(values[field])];
+            } else return [field, initFn.copy()];
+          })
+        ) as AttributeSet
+      );
+  }
+  return {
+    create: (id: any, values?: ImplicitAttributeSet<AttributeSet>) => {
+      let result = initializer(id, values);
+      if (result instanceof Mark) return result;
+      return new Mark(id, result);
+    },
+  };
 }

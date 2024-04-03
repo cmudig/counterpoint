@@ -12,22 +12,7 @@
   const cellWidth = 25;
 
   let canvas: HTMLCanvasElement;
-  let markSet = new MarkRenderGroup<{
-    x: Attribute<number>;
-    y: Attribute<number>;
-    alpha: Attribute<number>;
-    color: Attribute<string>;
-  }>(
-    (id) =>
-      new Mark(id, {
-        x: new Attribute(0),
-        y: new Attribute(0),
-        alpha: new Attribute(0.0),
-        color: new Attribute(
-          `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`
-        ),
-      })
-  )
+  let markSet = new MarkRenderGroup()
     .configure({
       animationDuration: 500,
       animationCurve: curveEaseInOut,
@@ -39,6 +24,14 @@
         element.animateTo('alpha', 0.0, { duration: 500 }).wait('alpha'),
     });
 
+  function createMark(id: any, location: { x: number; y: number }) {
+    return new Mark(id, {
+      x: location.x,
+      y: location.y,
+      alpha: 0,
+      color: `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`,
+    });
+  }
   let ticker = new Ticker(markSet).onChange(draw);
 
   function draw() {
@@ -91,10 +84,10 @@
     let cellID =
       (roundedLocation.x / cellWidth) * 500 + roundedLocation.y / cellWidth;
     // toggle visibility
-    if (markSet.has(cellID)) markSet.hideID(cellID);
+    if (markSet.has(cellID)) markSet.deleteMark(markSet.get(cellID)!);
     else
-      markSet.showID(cellID, (mark) =>
-        mark.setAttr('x', roundedLocation.x).setAttr('y', roundedLocation.y)
+      markSet.addMark(
+        markSet.stage?.get(cellID) ?? createMark(cellID, roundedLocation)
       );
   }
 </script>

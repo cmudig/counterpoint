@@ -1,11 +1,10 @@
 <script lang="ts">
   import {
-    Attribute,
     Ticker,
     Mark,
-    createRenderGroup,
     curveEaseInOut,
     PositionMap,
+    MarkRenderGroup,
   } from 'counterpoint-vis';
   import { onDestroy } from 'svelte';
 
@@ -14,14 +13,14 @@
   let draggingID: number | null = null;
   const itemWidth = 25;
 
-  let markSet = createRenderGroup(
+  let markSet = new MarkRenderGroup(
     new Array(50).fill(0).map(
       (_, i) =>
         new Mark(i, {
-          x: new Attribute(Math.random() * 500),
-          y: new Attribute(Math.random() * 500),
-          strokeWidth: new Attribute(() => (hoveredID === i ? 4 : 1)),
-          width: new Attribute(() => itemWidth * (draggingID === i ? 1.2 : 1)),
+          x: Math.random() * 500,
+          y: Math.random() * 500,
+          strokeWidth: () => (hoveredID === i ? 4 : 1),
+          width: () => itemWidth * (draggingID === i ? 1.2 : 1),
         })
     )
   ).configure({
@@ -92,7 +91,7 @@
       draggingID = nearest[0].id;
       // Freeze the mark's x and y attributes in case they are animating. This
       // allows us to click and drag even while the nodes are moving
-      let mark = markSet.getMarkByID(draggingID)!;
+      let mark = markSet.get(draggingID)!;
       mark.setAttr('x', mark.attr('x')).setAttr('y', mark.attr('y'));
     }
   }
@@ -105,7 +104,7 @@
     if (initialMousePos != null) {
       // clicking and dragging - update the dragging mark's location
       if (draggingID != null) {
-        let mark = markSet.getMarkByID(draggingID)!;
+        let mark = markSet.get(draggingID)!;
         mark
           .setAttr('x', mark.attr('x') + mousePos[0] - initialMousePos[0])
           .setAttr('y', mark.attr('y') + mousePos[1] - initialMousePos[1]);

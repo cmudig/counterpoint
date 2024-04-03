@@ -110,7 +110,7 @@ renderGroup.filter((mark) => mark.id % 2 == 0).animate('color');
 ```
 
 You can dynamically add and remove marks from a render group using the `addMark`
-and `removeMark` methods. However, using these methods directly typically only
+and `deleteMark` methods. However, using these methods directly typically only
 works well when there is no risk of overwriting marks with the same ID. For use
 cases in which the same mark might need to be reused (e.g. animating connection
 lines between points when hovering), it's best to use a `StageManager` (see

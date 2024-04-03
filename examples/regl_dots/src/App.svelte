@@ -1,11 +1,10 @@
 <script lang="ts">
   import {
-    Attribute,
     Ticker,
     Mark,
-    createRenderGroup,
     curveEaseInOut,
     AttributeRecompute,
+    MarkRenderGroup,
   } from 'counterpoint-vis';
   import createREGL from 'regl';
   import { onDestroy } from 'svelte';
@@ -14,18 +13,18 @@
   let pointLayout: 'random' | 'gaussian' | 'gradient' = 'random';
 
   let canvas: HTMLCanvasElement;
-  let markSet = createRenderGroup(
+  let markSet = new MarkRenderGroup(
     new Array(100000).fill(0).map(
       (_, i) =>
         new Mark(i, {
-          x: new Attribute({
+          x: {
             valueFn: (m) => getCoordinate(pointLayout, 'x'),
             recompute: AttributeRecompute.WHEN_UPDATED, // this ensures that we don't recompute coordinates every frame, since our coordinates are random
-          }),
-          y: new Attribute({
+          },
+          y: {
             valueFn: (m) => getCoordinate(pointLayout, 'y'),
             recompute: AttributeRecompute.WHEN_UPDATED,
-          }),
+          },
         })
     )
   )

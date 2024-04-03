@@ -299,10 +299,7 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
    *  to be visible. Otherwise, return any mark in the pool (including exiting).
    * @returns the mark with the given ID or undefined
    */
-  getMarkByID(
-    id: any,
-    visibleOnly: boolean = false
-  ): Mark<AttributeSet> | undefined {
+  get(id: any, visibleOnly: boolean = false): Mark<AttributeSet> | undefined {
     let mark = this.marksByID.get(id);
     if (!!mark && visibleOnly) {
       let state = this.markStates.get(mark);

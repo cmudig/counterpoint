@@ -72,10 +72,6 @@ export class MarkRenderGroup<
   private marks: Mark<AttributeSet>[] = [];
 
   /**
-   * A function that generates a mark given an ID, if provided at instantiation.
-   */
-  private factory: ((id: any) => Mark<AttributeSet>) | null = null;
-  /**
    * Controls whether the mark group iterates over the entire set of marks in
    * every call to `advance()`. If set to `true`, only the marks that have
    * been explicitly changed through a call to `set...` or `animate...` will
@@ -133,7 +129,7 @@ export class MarkRenderGroup<
    * @param opts Options for the mark group (see {@link configure})
    */
   constructor(
-    marks: Mark<AttributeSet>[] | ((id: any) => Mark<AttributeSet>) = [],
+    marks: Mark<AttributeSet>[] = [],
     opts: RenderGroupOptions = {
       animationDuration: 1000,
       animationCurve: curveEaseInOut,
@@ -145,13 +141,12 @@ export class MarkRenderGroup<
     this._defaultCurve = curveEaseInOut;
     this.configure(opts);
 
-    if (typeof marks === 'function') this.factory = marks;
-    else this.marks = marks;
+    this.marks = marks;
 
     this.marksByID = new Map();
     this.marks.forEach((m) => {
       if (this.marksByID.has(m.id)) {
-        console.error(`ID '${m.id}' is duplicated in mark render group`);
+        console.warn(`ID '${m.id}' is duplicated in mark render group`);
         return;
       }
       this.marksByID.set(m.id, m);
@@ -226,7 +221,7 @@ export class MarkRenderGroup<
           !newNeighbors.includes(neighbor) &&
           neighbor.sourceMarks().length == 1
         )
-          this.removeMark(neighbor);
+          this.deleteMark(neighbor);
       });
       newNeighbors.forEach((neighbor) => {
         if (!oldNeighbors.includes(neighbor)) this.addMark(neighbor);
@@ -522,22 +517,14 @@ export class MarkRenderGroup<
   }
 
   /**
-   * Retrieves the mark with the given ID, or undefined if it does not exist and
-   * either no factory was defined or existingOnly is true.
+   * Retrieves the mark with the given ID, or undefined if it does not exist.
+   * NOTE: Use of this method assumes there is only one mark ever added with the
+   * given ID.
+   *
    * @param id the ID of the mark to search for
-   * @param existingOnly if true, do not use the factory if the mark does not exist
    * @returns the `Mark` instance with the given ID or undefined
    */
-  getMarkByID(
-    id: any,
-    existingOnly: boolean = false
-  ): Mark<AttributeSet> | undefined {
-    if (!this.marksByID.has(id) && !existingOnly) {
-      let mark: Mark<AttributeSet> | undefined;
-      if (this.useStaging) mark = this.stage!.getMarkByID(id);
-      if (!mark && !!this.factory) mark = this.factory(id);
-      return mark;
-    }
+  get(id: any): Mark<AttributeSet> | undefined {
     return this.marksByID.get(id);
   }
 
@@ -631,15 +618,13 @@ export class MarkRenderGroup<
    * @returns this render group
    */
   addMark(mark: Mark<AttributeSet>): MarkRenderGroup<AttributeSet> {
-    if (this.marksByID.has(mark.id)) {
-      console.error('Attempted to add mark with ID that exists:', mark.id);
-      return this;
-    }
+    if (this.marks.includes(mark)) return this;
     this.marks.push(mark);
     this.marksByID.set(mark.id, mark);
     this._setupMark(mark);
     this._markListChanged = true;
     if (!!this.stage) this.stage.show(mark);
+    return this;
   }
 
   /**
@@ -648,43 +633,26 @@ export class MarkRenderGroup<
    * @param mark the mark to remove
    * @returns this render group
    */
-  removeMark(mark: Mark<AttributeSet>): MarkRenderGroup<AttributeSet> {
+  deleteMark(mark: Mark<AttributeSet>): MarkRenderGroup<AttributeSet> {
     let idx = this.marks.indexOf(mark);
-    if (idx < 0) {
-      console.warn('Attempted to remove mark that does not exist');
-      return this;
-    }
+    if (idx < 0) return this;
     this.marks.splice(idx, 1);
     this.marksByID.delete(mark.id);
     this._markListChanged = true;
     if (!!this.stage) this.stage.hide(mark);
-  }
-
-  /**
-   * Convenience function for showing a mark with a given ID, if a factory is defined.
-   * @param id the id to show
-   * @param prepareFn a function to call on the mark before showing it
-   */
-  showID(
-    id: any,
-    prepareFn: ((mark: Mark<AttributeSet>) => void) | undefined = undefined
-  ): MarkRenderGroup<AttributeSet> {
-    let mark = this.getMarkByID(id);
-    if (!!prepareFn) prepareFn(mark);
-    if (this.has(id)) {
-      if (this.useStaging) this.stage!.show(mark);
-    } else this.addMark(mark);
     return this;
   }
 
   /**
-   * Convenience function for hiding a mark with a given ID.
-   * @param id the id to hide
+   * Removes a mark with the given ID from the render group, or does nothing if
+   * it does not exist.
+   *
+   * @param mark the mark to remove
+   * @returns this render group
    */
-  hideID(id: any): MarkRenderGroup<AttributeSet> {
+  delete(id: any): MarkRenderGroup<AttributeSet> {
     if (!this.has(id)) return this;
-    this.removeMark(this.getMarkByID(id));
-    return this;
+    return this.deleteMark(this.get(id)!);
   }
 
   /**
@@ -719,10 +687,4 @@ export class MarkRenderGroup<
       this._changedLastTick && this.getMarks().some((m) => m.changed(attrNames))
     );
   }
-}
-
-export function createRenderGroup<AttributeSet extends AttributeSetBase>(
-  marks: Mark<AttributeSet>[] = []
-): MarkRenderGroup<AttributeSet> {
-  return new MarkRenderGroup(marks);
 }
