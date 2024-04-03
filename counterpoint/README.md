@@ -17,26 +17,3 @@ import { Mark, MarkRenderGroup } from 'https://cdn.jsdelivr.net/npm/counterpoint
 ```
 
 See the [documentation](https://venkatesh-sivaraman.github.io/counterpoint/) for examples and API reference. 
-
-## Dev Installation
-
-Clone the repository, then from within the repo directory run:
-
-```bash
-cd counterpoint
-npm install
-npm run dev
-```
-
-This watches the library contents and rebuilds automatically to the `counterpoint/dist` directory.
-
-You can run the examples by going into their respective directories, running `npm install`, then `npm run dev`.
-
-## Documentation Build
-
-If not installed, install [Ruby and Jekyll](https://jekyllrb.com/docs/installation/). Then `cd` into the `docs` directory and run:
-
-```bash
-bundle install
-bundle exec jekyll serve
-```

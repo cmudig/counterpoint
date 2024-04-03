@@ -1,6 +1,6 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
-import * as CP from './counterpoint-vis.es.js';
-// import * as CP from 'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js';
+// import * as CP from './counterpoint-vis.es.js';
+import * as CP from 'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js';
 
 // Declare the chart dimensions and margins.
 let width = 600;
