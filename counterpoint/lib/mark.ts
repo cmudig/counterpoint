@@ -505,7 +505,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     id: any,
     newValues: ImplicitAttributeSet<AttributeSet> = {}
   ): Mark<AttributeSet> {
-    return new Mark(id, {
+    return new Mark<AttributeSet>(id, {
       ...this.attributes,
       ...Object.fromEntries(
         Object.entries(newValues).map(([attrName, newVal]) => {
