@@ -57,6 +57,8 @@ syntax_highlighter_style: base16
 
 extra_css:
   - assets/custom_styles.css
+extra_header_js:
+  - assets/page_refresh.js
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to

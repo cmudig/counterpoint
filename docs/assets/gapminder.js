@@ -382,19 +382,7 @@ export function loadGapminderPlot() {
                 : 0.0,
           })
       )
-    ).configureStaging({
-      initialize: (mark) => mark.setAttr('alpha', 0.0),
-      enter: (mark) =>
-        mark
-          .animateTo('alpha', () =>
-            selectedCountry == country ||
-            (selectedCountry === null &&
-              (hoveredCountry == country || hoveredCountry == null))
-              ? 1.0
-              : 0.3
-          )
-          .wait('alpha'),
-    });
+    );
 
     // create another render group for the line showing each country's trajectory
     // (these marks will only be added when the user hovers or selects, using the
