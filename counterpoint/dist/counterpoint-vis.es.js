@@ -263,11 +263,11 @@ class b {
    * @param context the context in which the animation runs
    */
   animate(t) {
-    this._timeProvider && (this.currentTime = this._timeProvider()), this.animation && (this.valueFn ? this._computedValue = this._animatedValue : this.value = this._animatedValue, this._cleanUpAnimation(!0)), this.animation = {
+    return this._timeProvider && (this.currentTime = this._timeProvider()), this.animation && (this.valueFn ? this._computedValue = this._animatedValue : this.value = this._animatedValue, this._cleanUpAnimation(!0)), this.animation = {
       animator: t,
       initial: this.last(),
       start: this.currentTime
-    }, this._computeAnimation(), this._listeners.forEach((e) => e(this, !0));
+    }, this._computeAnimation(), this._listeners.forEach((e) => e(this, !0)), this;
   }
   /**
    * Wait until the attribute's current animation has finished.
@@ -3878,7 +3878,7 @@ class _a {
    * @returns this `PositionMap` instance
    */
   compute() {
-    return console.log("computing interaction map"), this._extents = new Array(this._coordinateAttributes.length).fill([
+    return this._extents = new Array(this._coordinateAttributes.length).fill([
       1e12,
       -1e12
     ]), this._numMarks = 0, this._forEachMark((t) => {

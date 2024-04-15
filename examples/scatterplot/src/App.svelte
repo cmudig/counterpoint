@@ -33,15 +33,6 @@
       initialize: (element) => element.setAttr('alpha', 0.0),
       enter: async (element) => element.animateTo('alpha', 1.0).wait('alpha'),
       exit: async (element) => element.animateTo('alpha', 0.0).wait('alpha'),
-    })
-    .onEvent('click', (m) => {
-      if (m.id % 2 == 0) {
-        return m
-          .animateTo('x', (m.attr('x') + 100) % 500, {
-            delay: m.id * 10,
-          })
-          .wait('x');
-      }
     });
   let ticker = new Ticker([markSet, getRenderContext()]).onChange(draw);
 
@@ -97,8 +88,7 @@
     if (markSet.has('temp_animation'))
       markSet.deleteMark(markSet.get('temp_animation')!);
     let testMark = markSet.get(Math.floor(Math.random() * markSet.count()))!;
-    testMark.adj(
-      'temp',
+    markSet.addMark(
       testMark.copy(`temp_animation`, {
         color: 'cyan',
         x: Math.random() * 500,
@@ -106,7 +96,11 @@
     );
 
     markSet
-      .dispatch('click')!
+      .filter((m) => m.id % 2 == 0)
+      .animateTo('x', (m: Mark) => (m.attr('x') + 100) % 500, {
+        delay: (m) => m.id * 10,
+      })
+      .wait('x')
       .then(() => {
         colorIdx++;
         markSet.animate('color');

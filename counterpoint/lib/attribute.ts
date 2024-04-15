@@ -565,7 +565,9 @@ export class Attribute<
    * @param animation an animation to run
    * @param context the context in which the animation runs
    */
-  animate(animation: Animator<ValueType>) {
+  animate(
+    animation: Animator<ValueType>
+  ): Attribute<TransformedValueType, ValueType, ComputeArgumentType> {
     if (!!this._timeProvider) this.currentTime = this._timeProvider();
 
     if (!!this.animation) {
@@ -585,6 +587,7 @@ export class Attribute<
     };
     this._computeAnimation();
     this._listeners.forEach((l) => l(this, true));
+    return this;
   }
 
   /**

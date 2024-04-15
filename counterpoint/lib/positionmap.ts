@@ -109,7 +109,6 @@ export class PositionMap {
    */
   compute(): PositionMap {
     // First traverse the marks and get the extents
-    console.log('computing interaction map');
     this._extents = new Array(this._coordinateAttributes.length).fill([
       1e12, -1e12,
     ]);
