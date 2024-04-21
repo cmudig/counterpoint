@@ -23,11 +23,24 @@
           width: () => itemWidth * (draggingID === i ? 1.2 : 1),
         })
     )
-  ).configure({
-    animationDuration: 200,
-    animationCurve: curveEaseInOut,
-  });
-  let positionMap = new PositionMap().add(markSet);
+  )
+    .configure({
+      animationDuration: 200,
+      animationCurve: curveEaseInOut,
+      hitTest: (mark, location) => {
+        let x = mark.attr('x'),
+          y = mark.attr('y');
+        return (
+          Math.abs(location[0] - x) <= itemWidth * 0.5 &&
+          Math.abs(location[1] - y) <= itemWidth * 0.5
+        );
+      },
+    })
+    .onEvent('mouseover', (mark) => (hoveredID = mark.id));
+
+  let positionMap = new PositionMap({ maximumHitTestDistance: itemWidth }).add(
+    markSet
+  );
   let ticker = new Ticker(markSet).onChange(draw).onChange(() => {
     // We only want to update the position map when the coordinates change.
     if (markSet.changed(['x', 'y'])) {
@@ -86,9 +99,9 @@
       e.clientX - canvas.getBoundingClientRect().left,
       e.clientY - canvas.getBoundingClientRect().top,
     ];
-    let nearest = positionMap.marksNear(initialMousePos, itemWidth * 0.5);
-    if (nearest.length > 0) {
-      draggingID = nearest[0].id;
+    let nearest = positionMap.hitTest(initialMousePos);
+    if (!!nearest) {
+      draggingID = nearest.id;
       // Freeze the mark's x and y attributes in case they are animating. This
       // allows us to click and drag even while the nodes are moving
       let mark = markSet.get(draggingID)!;
@@ -114,9 +127,7 @@
       // just hovering - this may potentially regenerate the position map every
       // frame if the marks are animating, so to save time we could disable
       // hover interactions when markSet.marksAnimating() is true
-      let nearest = positionMap.marksNear(mousePos, itemWidth * 0.5);
-      if (nearest.length == 0) hoveredID = null;
-      else hoveredID = nearest[0].id;
+      if (!positionMap.dispatchAt(mousePos, 'mouseover')) hoveredID = null;
     }
   }
 

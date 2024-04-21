@@ -483,12 +483,10 @@ export class Attribute<
       this.valueFn = newValue as (computeArg: ComputeArgumentType) => ValueType;
       this.value = undefined;
       this._animatedValue = null;
-      this._lastTickValue = undefined;
     } else {
       this.value = newValue;
       this.valueFn = null;
       this._animatedValue = null;
-      this._lastTickValue = newValue;
     }
     this.needsUpdate = true;
     if (this.animation) this._cleanUpAnimation(true);

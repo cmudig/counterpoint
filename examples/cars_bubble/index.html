@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Counterpoint Cars Example</title>
+  </head>
+  <body style="font-family: sans-serif">
+    <div
+      id="chart-container"
+      style="position: relative; flex-shrink: 0; width: 600px; height: 600px"
+    >
+      <svg
+        width="600"
+        height="600"
+        id="axes"
+        style="position: absolute; top: 0; left: 0"
+        overflow="visible"
+      ></svg>
+      <canvas
+        id="content"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%"
+      ></canvas>
+    </div>
+    <div id="controls">
+      <p>
+        <label for="year-slider">Year: <span id="year-text">1970</span></label>
+        <input
+          type="range"
+          value="1970"
+          min="1970"
+          max="1982"
+          id="year-slider"
+        />
+      </p>
+    </div>
+    <script defer src="./index.js" type="module"></script>
+  </body>
+</html>
