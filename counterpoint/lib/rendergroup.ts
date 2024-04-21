@@ -6,18 +6,20 @@ import {
   SimpleAnimationOptions,
   MarkUpdateListener,
   MarkEventListener,
+  MarkHitTest,
 } from './mark';
 import { TimeProvider, getAllMethodNames, makeTimeProvider } from './utils';
 import { AnimationCurve, curveEaseInOut } from './animator';
 import { Advanceable } from './ticker';
 import { StageManager, StageManagerCallback } from './staging';
 
-type RenderGroupOptions = {
+type RenderGroupOptions<T extends AttributeSetBase> = {
   timeProvider?: TimeProvider;
   lazyUpdates?: boolean;
   useStaging?: boolean;
   animationDuration?: number;
   animationCurve?: AnimationCurve;
+  hitTest?: MarkHitTest<T>;
 };
 
 type GroupOptions<T, AttributeSet extends AttributeSetBase> = {
@@ -110,6 +112,7 @@ export class MarkRenderGroup<
 
   private _defaultDuration: number;
   private _defaultCurve: AnimationCurve;
+  private _hitTest: MarkHitTest<AttributeSet> | undefined;
 
   // Stored here in case we add new marks later that should have the same listeners
   private _updateListeners: {
@@ -130,7 +133,7 @@ export class MarkRenderGroup<
    */
   constructor(
     marks: Mark<AttributeSet>[] = [],
-    opts: RenderGroupOptions = {
+    opts: RenderGroupOptions<AttributeSet> = {
       animationDuration: 1000,
       animationCurve: curveEaseInOut,
     }
@@ -167,15 +170,21 @@ export class MarkRenderGroup<
    *  - `animationDuration`: the default animation duration in milliseconds
    *    (default 1000)
    *  - `animationCurve`: the default animation curve to use (default ease-in-out)
+   *  - `hitTest`: a function to run when the Mark's hitTest method is called,
+   *    that takes the Mark and a coordinate array and returns true if the
+   *    coordinates intersect with the mark.
    * @returns this render group
    */
-  configure(opts: RenderGroupOptions): MarkRenderGroup<AttributeSet> {
+  configure(
+    opts: RenderGroupOptions<AttributeSet>
+  ): MarkRenderGroup<AttributeSet> {
     if (opts.timeProvider !== undefined) this.timeProvider = opts.timeProvider;
     if (opts.lazyUpdates !== undefined) this.lazyUpdates = opts.lazyUpdates;
     if (opts.animationDuration !== undefined)
       this._defaultDuration = opts.animationDuration;
     if (opts.animationCurve !== undefined)
       this._defaultCurve = opts.animationCurve;
+    if (opts.hitTest !== undefined) this._hitTest = opts.hitTest;
     if (!!this.marks) this.getMarks().forEach((m) => this._configureMark(m));
 
     this.useStaging = opts.useStaging ?? this.useStaging;
@@ -238,6 +247,7 @@ export class MarkRenderGroup<
     m.configure({
       animationDuration: this._defaultDuration,
       animationCurve: this._defaultCurve,
+      ...(this._hitTest !== undefined ? { hitTest: this._hitTest } : {}),
     });
     Object.entries(this._updateListeners).forEach(([attrName, l]) =>
       m.onUpdate(attrName, l)

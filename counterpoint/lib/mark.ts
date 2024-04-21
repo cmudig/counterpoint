@@ -46,13 +46,13 @@ export type MarkUpdateListener<
 > = (
   mark: Mark<AttributeSet>,
   finalValue: AttributeType['value']
-) => Promise<void> | undefined;
+) => Promise<void> | void;
 
 export type MarkEventListener<AttributeSet extends AttributeSetBase> = (
   mark: Mark<AttributeSet>,
   details: any,
   eventName: string
-) => Promise<void> | undefined;
+) => Promise<void> | void;
 
 export type MarkGraphListener<T extends AttributeSetBase> = (
   mark: Mark<T>,
@@ -60,6 +60,11 @@ export type MarkGraphListener<T extends AttributeSetBase> = (
   oldAdjacency: Mark<T>[],
   newAdjacency: Mark<T>[]
 ) => void;
+
+export type MarkHitTest<T extends AttributeSetBase> = (
+  mark: Mark<T>,
+  location: number[]
+) => boolean;
 
 /**
  * Represents initialization for an attribute set where the values can be
@@ -88,6 +93,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   private _defaultDuration: number = 1000;
   private _defaultCurve: AnimationCurve = curveEaseInOut;
   private _changedLastTick: boolean = false;
+
+  private _hitTest: MarkHitTest<AttributeSet> | null = null;
 
   // named edges
   private _adjacency: { [key: string]: Set<Mark<AttributeSet>> } = {};
@@ -146,16 +153,21 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    *  - `animationDuration`: the default animation duration in milliseconds
    *    (default 1000)
    *  - `animationCurve`: the default animation curve to use (default ease-in-out)
-   * @returns this render group
+   *  - `hitTest`: a function to run when the Mark's hitTest method is called,
+   *    that takes the Mark and a coordinate array and returns true if the
+   *    coordinates intersect with the mark.
+   * @returns this Mark
    */
   configure(opts: {
     animationDuration?: number;
     animationCurve?: AnimationCurve;
+    hitTest?: MarkHitTest<AttributeSet>;
   }): Mark<AttributeSet> {
     if (opts.animationDuration !== undefined)
       this._defaultDuration = opts.animationDuration;
     if (opts.animationCurve !== undefined)
       this._defaultCurve = opts.animationCurve;
+    if (opts.hitTest !== undefined) this._hitTest = opts.hitTest;
     return this;
   }
 
@@ -223,6 +235,19 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     this._listeners.forEach((l) => l(this, attrName, animated));
     if (!!this._updateListeners[attrName])
       this._updateListeners[attrName](this, this.attributes[attrName].future());
+  }
+
+  /**
+   * Tests whether a given coordinate array intersects with the Mark. If no
+   * hit test function has been configured for the Mark through the `configure`
+   * method, this method returns true for any location.
+   *
+   * @param location an array of numerical coordinates to test
+   * @returns true if the coordinates intersect with the mark, otherwise false
+   */
+  hitTest(location: number[]): boolean {
+    if (!this._hitTest) return true;
+    return this._hitTest(this, location);
   }
 
   setTimeProvider(timeProvider: TimeProvider): Mark<AttributeSet> {

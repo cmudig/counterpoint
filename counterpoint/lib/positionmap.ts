@@ -24,6 +24,12 @@ export type PositionMapOptions = {
    * function performs pan/zoom scaling.
    */
   transformCoordinates?: boolean;
+  /**
+   * The default maximum distance to search when hit-testing. Set this to the
+   * largest distance from mark coordinates that would be expected to result in
+   * a match.
+   */
+  maximumHitTestDistance?: number;
 };
 
 /**
@@ -43,6 +49,7 @@ export class PositionMap {
   private _numBins: number | null = null;
   private _numMarks: number | null = null;
   private _transformCoordinates: boolean;
+  private _maximumHitTestDistance: number;
 
   private _avgMarksPerBin: number | null = null;
 
@@ -50,6 +57,7 @@ export class PositionMap {
     this._coordinateAttributes = opts.coordinateAttributes ?? ['x', 'y'];
     this._transformCoordinates = opts.transformCoordinates ?? true;
     this._avgMarksPerBin = opts.marksPerBin ?? null;
+    this._maximumHitTestDistance = opts.maximumHitTestDistance ?? 1e12;
   }
 
   /**
@@ -233,30 +241,125 @@ export class PositionMap {
   _recursiveBinWalk(
     location: number[],
     distance: number,
-    coordSubset: number[] = []
+    coordSubset: number[] = [],
+    options: {
+      outerOnly?: boolean;
+      distanceInBins?: boolean;
+    } = {}
   ): Mark<any>[] {
     let coordIdx = coordSubset.length;
     if (coordIdx == location.length) {
       return this._positionMap.get(this._getPositionID(coordSubset)) ?? [];
     }
-    let numBinsEachDirection = Math.ceil(distance / this._binSizes[coordIdx]);
-    let binsToWalk = new Array(numBinsEachDirection * 2 + 1)
-      .fill(0)
-      .map(
-        (_, i) =>
-          (i - numBinsEachDirection) * this._binSizes[coordIdx] +
-          location[coordIdx]
+    let numBinsEachDirection = options.distanceInBins
+      ? distance
+      : Math.ceil(distance / this._binSizes[coordIdx]);
+    let binsToWalk = (
+      options.outerOnly && coordSubset.length == this._binSizes.length - 1
+        ? [-numBinsEachDirection, numBinsEachDirection]
+        : new Array(numBinsEachDirection * 2 + 1)
+            .fill(0)
+            .map((_, i) => i - numBinsEachDirection)
+    )
+      .map((pos) => pos * this._binSizes[coordIdx] + location[coordIdx])
+      .filter(
+        (loc) =>
+          loc >= this._extents[coordIdx][0] && loc <= this._extents[coordIdx][1]
       );
+
     let result: Mark<any>[] = [];
-    binsToWalk.forEach((binLocation) => {
+    binsToWalk.forEach((binLocation, i) => {
       result = [
         ...result,
-        ...this._recursiveBinWalk(location, distance, [
-          ...coordSubset,
-          binLocation,
-        ]),
+        ...this._recursiveBinWalk(
+          location,
+          distance,
+          [...coordSubset, binLocation],
+          {
+            ...options,
+            outerOnly: options.outerOnly && i > 0 && i < binsToWalk.length - 1,
+          }
+        ),
       ];
     });
     return result;
+  }
+
+  /**
+   * Performs a hit-test near the given coordinates and returns the first mark
+   * that returns true according to the mark's `hitTest` function.
+   *
+   * @param location the coordinates to perform a hit-test near
+   * @param maximumDistance the maximum distance to search within before stopping
+   *
+   * @returns the first Mark whose hit-test returns true for the given location,
+   *  or null if none do.
+   */
+  hitTest(
+    location: number[],
+    maximumDistance: number | null = null
+  ): Mark<any> | null {
+    if (!this._positionMap) this.compute();
+    if (maximumDistance == null) maximumDistance = this._maximumHitTestDistance;
+
+    let maxBins =
+      this._binSizes.reduce(
+        (prev, curr) =>
+          Math.min(
+            this._numBins,
+            Math.floor(Math.max(prev, maximumDistance / curr))
+          ),
+        0
+      ) + 1;
+    for (let i = 0; i < maxBins; i++) {
+      let candidates = this._recursiveBinWalk(location, i, [], {
+        outerOnly: true,
+        distanceInBins: true,
+      });
+      if (candidates.length == 0) continue;
+
+      let withDistances = candidates.map((mark) => {
+        let markCoord = this._coordinateAttributes.map((c) =>
+          mark.attr(c, this._transformCoordinates)
+        );
+        return [
+          mark,
+          Math.sqrt(
+            markCoord.reduce(
+              (prev, curr, i) =>
+                prev + (curr - location[i]) * (curr - location[i]),
+              0
+            )
+          ),
+        ] as [Mark<any>, number];
+      });
+      let matchingMarks = withDistances
+        .filter(([_, dist]) => dist <= maximumDistance)
+        .sort((a, b) => a[1] - b[1])
+        .map(([mark, _]) => mark);
+      for (let mark of matchingMarks) {
+        if (mark.hitTest(location)) return mark;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Performs a hit-test at the given location and dispatches an event to the mark
+   * closest to it, if it exists.
+   *
+   * @param location the location at which to fire the event
+   * @param eventName the event type to dispatch
+   * @param details an optional object representing information about the event
+   * @returns the mark that received the event, or null if no mark was found
+   */
+  dispatchAt(
+    location: number[],
+    eventName: string,
+    details: any | undefined = undefined
+  ): Mark<any> | null {
+    let mark = this.hitTest(location);
+    if (!!mark) mark.dispatch(eventName, details);
+    return mark;
   }
 }
