@@ -97,6 +97,8 @@ export class MarkRenderGroup<
   public stage: StageManager<AttributeSet> | null = null;
 
   private marksByID: Map<any, Mark<AttributeSet>>;
+  private markSet: Set<Mark<AttributeSet>>;
+  private markArrayDirty: boolean = false;
 
   // Marks that have an active animation
   private animatingMarks: Set<Mark<AttributeSet>> = new Set();
@@ -147,12 +149,14 @@ export class MarkRenderGroup<
     this.marks = marks;
 
     this.marksByID = new Map();
-    this.marks.forEach((m) => {
+    this.markSet = new Set();
+    this.marks.forEach((m, i) => {
       if (this.marksByID.has(m.id)) {
         console.warn(`ID '${m.id}' is duplicated in mark render group`);
         return;
       }
       this.marksByID.set(m.id, m);
+      this.markSet.add(m);
       this._setupMark(m);
     });
     if (!!this.stage) this.stage.setVisibleMarks(this.marks);
@@ -190,7 +194,7 @@ export class MarkRenderGroup<
     this.useStaging = opts.useStaging ?? this.useStaging;
     if (this.useStaging) {
       this.stage = new StageManager<AttributeSet>();
-      if (!!this.marks) this.stage.setVisibleMarks(this.marks);
+      if (!!this.marks) this.stage.setVisibleMarks(this.getMarks());
     } else {
       this.stage = null;
     }
@@ -254,6 +258,9 @@ export class MarkRenderGroup<
     );
     Object.entries(this._eventListeners).forEach(([eventName, l]) =>
       m.onEvent(eventName, l)
+    );
+    this.preloadableProperties.forEach((attr) =>
+      m.attributes[attr].registerPreloadable()
     );
   }
 
@@ -323,6 +330,8 @@ export class MarkRenderGroup<
    * @returns The set of marks that this render group knows about
    */
   getMarks(): Mark<AttributeSet>[] {
+    if (this.markArrayDirty) this.marks = Array.from(this.markSet);
+    this.markArrayDirty = false;
     return this.marks;
   }
 
@@ -340,6 +349,9 @@ export class MarkRenderGroup<
     attrName: keyof AttributeSet
   ): MarkRenderGroup<AttributeSet> {
     this.preloadableProperties.add(attrName);
+    this.getMarks().forEach((m) =>
+      m.attributes[attrName].registerPreloadable()
+    );
     return this;
   }
 
@@ -356,16 +368,13 @@ export class MarkRenderGroup<
     this.timeProvider.advance(dt);
 
     let marksToUpdate = this.lazyUpdates
-      ? [
-          ...(!!this.stage ? this.stage.animatingMarks : []),
-          ...this.animatingMarks,
-          ...this.updatedMarks,
-        ]
+      ? [...this.animatingMarks, ...this.updatedMarks]
       : this.stage
       ? this.stage.getMarks()
       : this.getMarks();
     this.updatedMarks = new Set();
     if (
+      !(this.stage?.advance(dt) ?? false) &&
       marksToUpdate.length == 0 &&
       !this._forceUpdate &&
       !this._markListChanged
@@ -374,10 +383,13 @@ export class MarkRenderGroup<
       return false;
     }
 
+    let alreadyUpdated: Set<Mark<AttributeSet>> = new Set();
     for (let mark of marksToUpdate) {
+      if (alreadyUpdated.has(mark)) continue;
       if (!mark.advance()) {
         this.animatingMarks.delete(mark);
       }
+      alreadyUpdated.add(mark);
     }
 
     this._forceUpdate = false;
@@ -582,8 +594,10 @@ export class MarkRenderGroup<
     });
     proxy.marks = newMarkSet;
     proxy.marksByID = new Map();
+    proxy.markSet = new Set();
     newMarkSet.forEach((m) => {
       proxy.marksByID.set(m.id, m);
+      proxy.markSet.add(m);
     });
 
     getAllMethodNames(this).forEach((methodName) => {
@@ -595,11 +609,14 @@ export class MarkRenderGroup<
         proxy[methodName] = (...args) => {
           let oldMarks = this.getMarks();
           let oldMarksByID = this.marksByID;
+          let oldMarkSet = this.markSet;
           this.marks = newMarkSet;
           this.marksByID = proxy.marksByID;
+          this.markSet = proxy.markSet;
           let ret = this[methodName](...args);
           this.marks = oldMarks;
           this.marksByID = oldMarksByID;
+          this.markSet = oldMarkSet;
           if (ret === this) return proxy;
           return ret;
         };
@@ -628,9 +645,10 @@ export class MarkRenderGroup<
    * @returns this render group
    */
   addMark(mark: Mark<AttributeSet>): MarkRenderGroup<AttributeSet> {
-    if (this.marks.includes(mark)) return this;
+    if (this.markSet.has(mark)) return this;
     this.marks.push(mark);
     this.marksByID.set(mark.id, mark);
+    this.markSet.add(mark);
     this._setupMark(mark);
     this._markListChanged = true;
     if (!!this.stage) this.stage.show(mark);
@@ -644,10 +662,10 @@ export class MarkRenderGroup<
    * @returns this render group
    */
   deleteMark(mark: Mark<AttributeSet>): MarkRenderGroup<AttributeSet> {
-    let idx = this.marks.indexOf(mark);
-    if (idx < 0) return this;
-    this.marks.splice(idx, 1);
+    if (!this.markSet.has(mark)) return this;
     this.marksByID.delete(mark.id);
+    this.markSet.delete(mark);
+    this.markArrayDirty = true; // need to regenerate the array representation
     this._markListChanged = true;
     if (!!this.stage) this.stage.hide(mark);
     return this;
@@ -679,7 +697,7 @@ export class MarkRenderGroup<
    * @returns the number of marks in the render group
    */
   count(): number {
-    return this.getMarks().length;
+    return this.markSet.size;
   }
 
   /**

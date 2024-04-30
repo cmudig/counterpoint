@@ -259,7 +259,7 @@ function nearestBubbleContainingPos(positionMap, mousePos, maxDistance) {
 }
 
 export function loadGapminderPlot() {
-  d3.csv('/counterpoint/assets/gapminder_full.csv').then((data) => {
+  d3.csv('/counterpoint/assets/gapminder/gapminder_full.csv').then((data) => {
     let canvas = document.getElementById('gapminder-content');
     let slider = document.getElementById('year-slider');
     if (!canvas) return;

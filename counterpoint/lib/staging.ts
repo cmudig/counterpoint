@@ -1,4 +1,5 @@
 import { AttributeSetBase, Mark } from './mark';
+import { Advanceable } from './ticker';
 
 export type StageManagerCallback<MarkType> = {
   /**
@@ -60,8 +61,11 @@ export enum StagingAction {
  * calls can be configured to execute on the next run loop using the {@link defer}
  * property, so a call to `show` can be canceled by an equivalent call to `hide`.
  */
-export class StageManager<AttributeSet extends AttributeSetBase> {
+export class StageManager<AttributeSet extends AttributeSetBase>
+  implements Advanceable
+{
   private _callbacks: Required<StageManagerCallback<Mark<AttributeSet>>>;
+
   // States are keyed by the mark objects themselves, meaning that if the user
   // chooses, they can have multiple marks with the same ID (i.e. exiting one
   // version and entering another version).
@@ -74,6 +78,9 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
 
   // The set of marks that are currently being animated
   public animatingMarks: Set<Mark<AttributeSet>> = new Set();
+
+  // Keeps track of whether any mark states have changed.
+  private _updated: boolean = false;
 
   /**
    * Whether or not to defer changes in presence/absence of marks to the
@@ -137,6 +144,14 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
     this._callbacks.exit = cb || (() => {});
   }
 
+  advance(dt: number): boolean {
+    if (this._updated) {
+      this._updated = false;
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Performs the action for the mark with the given ID, and calls the
    * appropriate callbacks.
@@ -159,6 +174,7 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
             ) {
               this.markStates.set(element, StagingState.Visible);
               this.animatingMarks.delete(element);
+              this._updated = true;
             }
           },
           () => {
@@ -195,6 +211,7 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
                 this.markStates.delete(element);
                 this.animatingMarks.delete(element);
               }
+              this._updated = true;
             }
           },
           () => {
@@ -210,6 +227,7 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
         }
       }
     }
+    this._updated = true;
   }
 
   /**
@@ -333,21 +351,27 @@ export class StageManager<AttributeSet extends AttributeSetBase> {
   }
 
   /**
-   * Returns the number of marks that this stage manager knows about.
+   * Returns the number of marks that are entering, visible, or exiting.
    */
   count(): number {
-    return this.markStates.size;
+    return Array.from(this.markStates.keys()).filter((m) =>
+      [
+        StagingState.Entering,
+        StagingState.Visible,
+        StagingState.Exiting,
+      ].includes(this.markStates.get(m)!)
+    ).length;
   }
 
   /**
-   * Returns all marks that are either waiting, entering, or visible.
+   * Returns all marks that are either entering, visible, or exiting.
    */
   getVisibleMarks(): Mark<AttributeSet>[] {
     return Array.from(this.markStates.keys()).filter((m) =>
       [
-        StagingState.Waiting,
         StagingState.Entering,
         StagingState.Visible,
+        StagingState.Exiting,
       ].includes(this.markStates.get(m)!)
     );
   }

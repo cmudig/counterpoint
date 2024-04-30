@@ -33,24 +33,3 @@
 .color-theme-2 .highlight .nx {
   color: inherit !important;
 }
-
-#gapminder-controls {
-  flex: 1 1 auto;
-  width: 160px;
-  padding-left: 20px;
-}
-
-#gapminder-chart-container {
-  width: 600px;
-  height: 600px;
-}
-
-@media screen and (max-width: 900px) {
-  #gapminder-controls {
-    width: 100%;
-  }
-
-  #gapminder-chart-container {
-    width: 100%;
-  }
-}

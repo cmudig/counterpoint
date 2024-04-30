@@ -69,6 +69,12 @@ export interface AttributeDefinition<
    * or `animate()` is called.
    */
   recompute?: AttributeRecompute;
+  /**
+   * If set to true, animations will be run without affecting the result of
+   * the `advance()` method. This assumes that you will be responsible for
+   * running the animation by calling `getPreload()`.
+   */
+  preload?: boolean;
 }
 
 export type PreloadAttributeValue<T> = {
@@ -138,6 +144,7 @@ export class Attribute<
   private _timeProvider: TimeProvider = null; // REQUIRED for animation
   private currentTime = 0;
   private _changedLastTick = false;
+  private _preload: boolean = false; // if only preload gets are allowed
 
   private _listeners: AttributeListener<
     TransformedValueType,
@@ -148,6 +155,7 @@ export class Attribute<
   private _animationCompleteCallbacks: Deferred<
     Attribute<TransformedValueType, ValueType, ComputeArgumentType>
   >[] = [];
+  private _animationCompleteTimeout: NodeJS.Timeout | null = null;
 
   /**
    *
@@ -192,7 +200,20 @@ export class Attribute<
       this._cachedValue = null;
       this.computeArg = args.computeArg ?? null;
       this.recompute = args.recompute ?? AttributeRecompute.DEFAULT;
+      this._preload = args.preload ?? false;
     }
+  }
+
+  /**
+   * Registers this attribute as preloadable.
+   */
+  registerPreloadable(): Attribute<
+    TransformedValueType,
+    ValueType,
+    ComputeArgumentType
+  > {
+    this._preload = true;
+    return this;
   }
 
   /**
@@ -272,6 +293,7 @@ export class Attribute<
       this._cleanUpAnimation(true);
     }
 
+    this._lastTickValue = undefined;
     this._lastTickValue = this.getUntransformed();
     if (this.animation != null || this.needsUpdate) {
       this.needsUpdate = false;
@@ -334,12 +356,27 @@ export class Attribute<
   }
 
   _cleanUpAnimation(canceled = false) {
+    if (this._preload && !!this.animation && !canceled) {
+      // set the value to the final value of the animation
+      if (!this.valueFn) {
+        this.value = this.animation.animator.finalValue;
+        this._lastTickValue = this.value;
+      } else {
+        this.compute();
+        this._lastTickValue = this._computedValue;
+      }
+    }
     this.animation = null;
+    this._animatedValue = null;
     this._animationCompleteCallbacks.forEach((cb) => {
       if (!canceled || !cb.info.rejectOnCancel) cb.resolve(this);
       else cb.reject({ newValue: this.last() });
     });
     this._animationCompleteCallbacks = [];
+    if (!!this._animationCompleteTimeout) {
+      clearTimeout(this._animationCompleteTimeout);
+      this._animationCompleteTimeout = null;
+    }
   }
 
   /**
@@ -355,6 +392,15 @@ export class Attribute<
    * Retrieves the current un-transformed value.
    */
   getUntransformed(): ValueType {
+    if (
+      this._lastTickValue !== undefined &&
+      !this.needsUpdate &&
+      this._timeProvider !== null &&
+      this.currentTime == this._timeProvider()
+    ) {
+      return this._lastTickValue;
+    }
+
     this._computeAnimation();
 
     let value: ValueType;
@@ -369,7 +415,7 @@ export class Attribute<
       }
       value = this._computedValue;
     } else value = this.value;
-    if (this._lastTickValue === undefined) this._lastTickValue = value;
+    this._lastTickValue = value;
     return value;
   }
 
@@ -389,6 +435,8 @@ export class Attribute<
   getPreload(
     currentTime: number | null = null
   ): PreloadAttributeValue<TransformedValueType> {
+    if (!this._preload)
+      console.error('Cannot call getPreload on a non-preloadable attribute.');
     if (!!this._timeProvider) this.currentTime = this._timeProvider();
 
     if (!this.animation) {
@@ -489,6 +537,7 @@ export class Attribute<
       this._animatedValue = null;
     }
     this.needsUpdate = true;
+    this._lastTickValue = undefined;
     if (this.animation) this._cleanUpAnimation(true);
     this._listeners.forEach((l) => l(this, false));
   }
@@ -570,11 +619,13 @@ export class Attribute<
 
     if (!!this.animation) {
       // Set the current value of the property to wherever it is now
+      this._computeAnimation();
       if (!this.valueFn) {
         this.value = this._animatedValue;
       } else {
         this._computedValue = this._animatedValue;
       }
+      this._lastTickValue = this._animatedValue;
       this._cleanUpAnimation(true);
     }
 
@@ -609,7 +660,29 @@ export class Attribute<
       Attribute<TransformedValueType, ValueType, ComputeArgumentType>
     >({ rejectOnCancel });
     this._animationCompleteCallbacks.push(cb);
+    if (this._preload) {
+      // the advance method will not notify that this animation is finished, so
+      // create a timeout to call the callbacks
+      let { endTime } = this.getPreloadUntransformed();
+      let currentTime = this._timeProvider();
+      if (!this._animationCompleteTimeout)
+        this._animationCompleteTimeout = setTimeout(() => {
+          this._cleanUpAnimation();
+        }, endTime - currentTime);
+    }
     return cb.promise;
+  }
+
+  /**
+   * "Freezes" this attribute by setting it to its last value. This removes any
+   * value functions and animations and replaces them with static values. The
+   * value function will not be re-run.
+   */
+  freeze(): Attribute<TransformedValueType, ValueType, ComputeArgumentType> {
+    if (this.animation) this._cleanUpAnimation(true);
+    this.value = this.last();
+    this.valueFn = undefined;
+    return this;
   }
 
   /**

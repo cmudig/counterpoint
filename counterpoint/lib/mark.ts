@@ -72,9 +72,12 @@ export type MarkHitTest<T extends AttributeSetBase> = (
  */
 export type ImplicitAttributeSet<AttributeSet extends AttributeSetBase> = {
   [K in keyof AttributeSet]?:
-    | AttributeSet[K]['value']
+    | ReturnType<AttributeSet[K]['get']>
     | AttributeSet[K]['valueFn']
-    | AttributeDefinition<AttributeSet[K]['value']>
+    | AttributeDefinition<
+        ReturnType<AttributeSet[K]['get']>,
+        ReturnType<AttributeSet[K]['getUntransformed']>
+      >
     | AttributeSet[K];
 };
 
@@ -88,11 +91,13 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   private _timeProvider: TimeProvider = null;
   public id: any;
   public attributes: AttributeSet;
+  private _attrNames: string[] = [];
   private _listeners: MarkListener<AttributeSet>[] = [];
   private _graphListeners: MarkGraphListener<AttributeSet>[] = [];
   private _defaultDuration: number = 1000;
   private _defaultCurve: AnimationCurve = curveEaseInOut;
   private _changedLastTick: boolean = false;
+  private _changedAttributes: { [key: string]: boolean } = {};
 
   private _hitTest: MarkHitTest<AttributeSet> | null = null;
 
@@ -144,6 +149,10 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       }
     );
     this.attributes = attribs;
+    this._attrNames = Object.keys(attribs);
+    this._changedAttributes = Object.fromEntries(
+      this._attrNames.map((a) => [a, true])
+    );
   }
 
   /**
@@ -200,7 +209,9 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     details: any = undefined
   ): Promise<void> | undefined {
     if (!!this._eventListeners[eventName]) {
-      return this._eventListeners[eventName](this, details, eventName);
+      return this._eventListeners[eventName](this, details, eventName) as
+        | Promise<void>
+        | undefined;
     }
   }
 
@@ -232,6 +243,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
 
   private _attributesChanged(attrName: keyof AttributeSet, animated: boolean) {
     this._changedLastTick = true;
+    this._changedAttributes[attrName as string] = true;
     this._listeners.forEach((l) => l(this, attrName, animated));
     if (!!this._updateListeners[attrName])
       this._updateListeners[attrName](this, this.attributes[attrName].future());
@@ -285,9 +297,14 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    */
   advance(dt: number | undefined = undefined): boolean {
     let updated = false;
-    Object.values(this.attributes).forEach((attr) => {
-      if (attr.advance(dt)) updated = true;
-    });
+    for (let attrName of this._attrNames) {
+      if (!this._changedAttributes[attrName]) {
+        continue;
+      }
+      let advanced = this.attributes[attrName].advance(dt);
+      if (advanced) updated = true;
+      else this._changedAttributes[attrName] = false;
+    }
     if (updated) {
       this.framesWithUpdate += 1;
       if (this.framesWithUpdate > ExcessiveUpdateThreshold) {
@@ -311,7 +328,10 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    */
   setAttr<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K,
-    newValue: AttributeType['value'] | undefined = undefined
+    newValue:
+      | AttributeType['value']
+      | AttributeType['valueFn']
+      | undefined = undefined
   ): Mark<AttributeSet> {
     let attr = this.attributes[attrName] as AttributeType;
     if (attr === undefined)
@@ -348,6 +368,38 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     }
     if (transformed) return (this.attributes[attrName] as AttributeType).get();
     else return (this.attributes[attrName] as AttributeType).getUntransformed();
+  }
+
+  /**
+   * Returns a plain JS object containing all attribute values at the given
+   * instance. Useful for destructuring object attributes, for instance:
+   *
+   * let { x, y, alpha } = mark.get();
+   *
+   * **NOTE:** This method may return incorrect values for preloadable attributes
+   * since these are not updated at every frame.
+   *
+   * @param transformed whether or not to apply transforms to the attributes. Can
+   *  be a boolean value or an object keyed by attribute names where the values
+   *  are booleans. The default is true for all attributes.
+   */
+  get(
+    transformed: boolean | { [key in keyof AttributeSet]?: boolean } = true
+  ): { [key in keyof AttributeSet]: ReturnType<AttributeSet[key]['get']> } {
+    let perElementTransform = Object.entries(transformed).length > 0;
+    return Object.fromEntries(
+      this._attrNames.map((attrName) => {
+        let transform = perElementTransform
+          ? transformed[attrName] ?? true
+          : transformed;
+        return [
+          attrName,
+          transform
+            ? this.attributes[attrName].get()
+            : this.attributes[attrName].getUntransformed(),
+        ];
+      })
+    ) as { [key in keyof AttributeSet]: AttributeSet[key]['value'] };
   }
 
   /**
@@ -406,6 +458,11 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
         curve: options.curve,
       });
       return this;
+    } else if (!!this.attributes[attrName].valueFn) {
+      // animating to a static value from a function
+      (this.attributes[attrName] as AttributeType).set(
+        this.attributes[attrName].last()
+      );
     }
 
     let duration =
@@ -493,6 +550,20 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     return Promise.all(
       names.map((name) => this.attributes[name].wait(rejectOnCancel))
     );
+  }
+
+  /**
+   * "Freezes" the given attributes by setting them to their last values. This
+   * removes any reactive value functions and replaces them with static values.
+   * The value functions will not be re-run.
+   *
+   * @param attrNames An attribute name or array of names to freeze
+   * @returns this mark
+   */
+  freeze<K extends keyof AttributeSet>(attrNames: K | K[]): Mark<AttributeSet> {
+    let names: K[] = Array.isArray(attrNames) ? attrNames : [attrNames];
+    names.forEach((n) => this.attributes[n].freeze());
+    return this;
   }
 
   /**
