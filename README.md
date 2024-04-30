@@ -1,6 +1,6 @@
 # Counterpoint: Canvas Animation Library
 
-This is a library to help people develop beautiful large-scale animated data visualizations using HTML5 Canvas and WebGL.
+This is a library to help people develop beautiful large-scale animated data visualizations using HTML5 Canvas and WebGL. [See the docs >](https://dig.cmu.edu/counterpoint)
 
 ## Installation and Usage
 
@@ -15,8 +15,6 @@ You can use a static ESM version of the library in vanilla JS like so:
 ```javascript
 import { Mark, MarkRenderGroup } from 'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js';
 ```
-
-See the [documentation](https://venkatesh-sivaraman.github.io/counterpoint/) for examples and API reference. 
 
 ## Dev Installation
 

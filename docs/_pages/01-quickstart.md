@@ -22,14 +22,14 @@ To import Counterpoint in vanilla JavaScript, you can use similar syntax but
 refer to the full library URL:
 
 ```javascript
-import { Mark, Attribute } from 'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js';
+import { Mark, Attribute } from 'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js';
 ```
 
 or use [dynamic import syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#):
 
 ```javascript
 import(
-  'https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js'
+  'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js'
 ).then((Counterpoint) => {
   // use Counterpoint as a module
 });
@@ -186,7 +186,7 @@ function draw() {
 <div>
     <canvas id="example-canvas-2" style="width: 300px; height: 300px; border: 1px solid #999;"></canvas>
     <script>
-        import('https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js').then(({ Mark, MarkRenderGroup }) => {
+        import('https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js').then(({ Mark, MarkRenderGroup }) => {
             const canvas = document.getElementById("example-canvas-2");
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
@@ -278,7 +278,7 @@ Once completed, you should have something that looks like the following:
     <canvas id="example-canvas-3" style="width: 300px; height: 300px; border: 1px solid #999;"></canvas>
     <div><button style="margin-bottom: 32px;" id="animate-button-3">Animate</button></div>
     <script>
-        import('https://cdn.jsdelivr.net/gh/venkatesh-sivaraman/counterpoint@main/counterpoint/dist/counterpoint-vis.es.js').then(({ Mark, Ticker, MarkRenderGroup }) => {
+        import('https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js').then(({ Mark, Ticker, MarkRenderGroup }) => {
             const canvas = document.getElementById("example-canvas-3");
             canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
