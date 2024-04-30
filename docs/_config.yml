@@ -23,9 +23,9 @@ description: >- # this means to ignore newlines until "baseurl:"
   Counterpoint is a JavaScript/TypeScript library to help people develop beautiful 
   large-scale animated data visualizations using HTML5 Canvas and WebGL.
 baseurl: '/counterpoint' # the subpath of your site, e.g. /blog
-url: 'https://venkatesh-sivaraman.github.io' # the base hostname & protocol for your site, e.g. http://example.com
+url: 'https://dig.cmu.edu' # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: venkats_14
-github_username: venkatesh-sivaraman/counterpoint
+github_username: cmudig/counterpoint
 
 # Build settings
 remote_theme: sighingnow/jekyll-gitbook

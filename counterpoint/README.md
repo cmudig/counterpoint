@@ -16,4 +16,4 @@ You can use a static ESM version of the library in vanilla JS like so:
 import { Mark, MarkRenderGroup } from 'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js';
 ```
 
-See the [documentation](https://venkatesh-sivaraman.github.io/counterpoint/) for examples and API reference. 
+See the [documentation](https://dig.cmu.edu/counterpoint/) for examples and API reference. 
