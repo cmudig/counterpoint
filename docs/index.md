@@ -2,8 +2,8 @@
 layout: home
 ---
 
-Counterpoint is a **library of animation data structures** designed to help
-create beautifully smooth data-driven interactive graphics. It's ideal for developers who are used to 
+Counterpoint is a **state management library for animated data visualization**, designed to help
+you create beautifully smooth data-driven interactive graphics. It's ideal for developers who are used to 
 working with [D3.js](http://d3js.org/) or other customizable graphics libraries, but 
 need more control and design options for animations.
 
@@ -37,9 +37,8 @@ Ready to get started? Head over to the [quickstart]({% link _pages/01-quickstart
 to install and learn the basics.
 
 Or, check out this demo chart showing worldwide GDP, life expectancy, and population
-trends from [Gapminder](https://gapminder.org). The code for this example (link TODO) is
-around 600 lines and showcases several Counterpoint features along with how to combine
-them with functionality from D3.
+trends from [Gapminder](https://gapminder.org). The [code for this example](https://github.com/cmudig/counterpoint/blob/main/docs/assets/gapminder/gapminder.js) is
+around 600 lines and showcases Counterpoint's ability to manage multiple animations at once as well as animating elements in and out.
 
 <div style="display: flex; max-width: 100%; flex-wrap: wrap;">
   <div id="gapminder-chart-container" style="position: relative; flex-shrink: 0;">
