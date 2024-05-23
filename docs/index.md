@@ -33,7 +33,7 @@ Counterpoint **is not**:
   modules from D3 such as `d3-zoom`, `d3-axis`, and others in combination with
   Counterpoint's data structures.
 
-Ready to get started? Head over to the [quickstart]({% link _pages/01-quickstart.md %}) 
+Ready to get started? Head over to the [quickstart]({{ site.baseurl }}/pages/01-quickstart) 
 to install and learn the basics.
 
 Or, check out this demo chart showing worldwide GDP, life expectancy, and population

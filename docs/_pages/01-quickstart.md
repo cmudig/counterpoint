@@ -10,22 +10,26 @@ D3.js users looking for additional flexibility and simpler canvas support.
 
 ## Installation
 
-TBD update directions and urls
+To install Counterpoint using NPM:
 
-Importing Counterpoint in ES6 JavaScript is simple:
+```bash
+npm install -S counterpoint-vis
+```
+
+Then import in your code:
 
 ```javascript
 import { Mark, Attribute, ... } from 'counterpoint-vis';
 ```
 
-To import Counterpoint in vanilla JavaScript, you can use similar syntax but
+To import Counterpoint in a JavaScript module, you can use similar syntax but
 refer to the full library URL:
 
 ```javascript
 import { Mark, Attribute } from 'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js';
 ```
 
-or use [dynamic import syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#):
+or use [dynamic import syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import#) in vanilla JS:
 
 ```javascript
 import(
@@ -336,4 +340,8 @@ From here, you can check out further documentation to learn about [how to use at
 [add and remove marks dynamically]({{ site.baseurl }}/pages/04-staging),
 [make your canvases non-visually accessible]({{ site.baseurl }}/pages/06-accessible-navigation), and more.
 
-We've also provided some more complete examples (TODO).
+We've also provided some more complete examples:
+
+* An [animated scatter plot of the Cars dataset]({{ site.baseurl }}/2024/04/30/cars) showing cars over time
+* A [network/embedding visualization of VIS paper citations]({{ site.baseurl }}/2024/04/30/citations)
+* A [keyboard-navigable version of the Gapminder chart]({{ site.baseurl }}/2024/04/30/gapminder-accessible)
