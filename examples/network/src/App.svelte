@@ -103,11 +103,6 @@
           mark.adj('neighbors').forEach((neighbor) => {
             let nx = neighbor.attr('x');
             let ny = neighbor.attr('y');
-            if (
-              Math.max(Math.abs(nx - x), Math.abs(ny - y)) >
-              simulationHeight * 0.5
-            )
-              return;
             ctx?.moveTo(x, y);
             ctx?.lineTo(nx, ny);
           });
@@ -120,14 +115,11 @@
         // Draw node circles
         markSet.stage!.forEach((mark) => {
           ctx?.save();
-          let x = mark.attr('x');
-          let y = mark.attr('y');
-          let r = mark.attr('radius');
-          let color = mark.attr('color');
-          ctx!.globalAlpha = mark.attr('alpha');
+          let { x, y, radius, color, alpha } = mark.get();
+          ctx!.globalAlpha = alpha;
           ctx!.fillStyle = color;
           ctx?.beginPath();
-          ctx?.ellipse(x, y, r, r, 0, 0, 2 * Math.PI, false);
+          ctx?.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI, false);
           ctx?.fill();
           ctx?.stroke();
           ctx?.closePath();
@@ -179,16 +171,11 @@
             .animateTo('y', (_, i) => nodes[i].y);
       });
 
-    // handle view resizing
-    new ResizeObserver(() => {
-      if (!canvas) return;
-      console.log('resizing', canvas.offsetWidth);
-      width = canvas.offsetWidth;
-      height = canvas.offsetHeight;
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      draw();
-    }).observe(canvas);
+    width = canvas.offsetWidth;
+    height = canvas.offsetHeight;
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    draw();
   });
 
   // clean up when the view is deleted

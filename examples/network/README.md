@@ -1,11 +1,13 @@
-# Scatterplot Example
+# Network Example
 
-This example demonstrates using basic animations for marks with `x`, `y`, and `color` properties.
+This example demonstrates a simple example of creating a network visualization using `d3-force` to optimize the layout. You can extend this example by adding zoom/pan (see `examples/zoomable_scatter`), click and drag (see `examples/interactive_boxes`), or more complex hover interactions (see `examples/citations`).
 
 ## Setup
 
+To run this example locally:
+
 ```bash
-cd tests/scatterplot
+cd examples/network
 npm install
 npm run dev
 ```
