@@ -4,8 +4,16 @@ This example demonstrates adding zoom and pan functionalities to a scatterplot u
 
 ## Setup
 
+To run this example locally, first install the local Counterpoint version:
+
 ```bash
-cd tests/zoomable_scatter
+cd counterpoint && npm install && cd ..
+```
+
+Then install example dependencies and start the dev server:
+
+```bash
+cd examples/zoomable_scatter
 npm install
 npm run dev
 ```

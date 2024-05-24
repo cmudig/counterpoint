@@ -4,7 +4,13 @@ This example demonstrates a simple example of creating a network visualization u
 
 ## Setup
 
-To run this example locally:
+To run this example locally, first install the local Counterpoint version:
+
+```bash
+cd counterpoint && npm install && cd ..
+```
+
+Then install example dependencies and start the dev server:
 
 ```bash
 cd examples/network

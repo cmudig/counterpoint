@@ -4,8 +4,16 @@ This example demonstrates how to use REGL to create an accelerated scatter plot 
 
 ## Setup
 
+To run this example locally, first install the local Counterpoint version:
+
 ```bash
-cd tests/regl_dots
+cd counterpoint && npm install && cd ..
+```
+
+Then install example dependencies and start the dev server:
+
+```bash
+cd examples/regl_dots
 npm install
 npm run dev
 ```

@@ -4,8 +4,16 @@ This example demonstrates how to use the `StageManager` class to orchestrate mar
 
 ## Setup
 
+To run this example locally, first install the local Counterpoint version:
+
 ```bash
-cd tests/dynamic_grid
+cd counterpoint && npm install && cd ..
+```
+
+Then install example dependencies and start the dev server:
+
+```bash
+cd examples/dynamic_grid
 npm install
 npm run dev
 ```
