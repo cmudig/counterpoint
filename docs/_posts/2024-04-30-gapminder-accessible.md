@@ -5,6 +5,8 @@ title: 'Example: Accessible Gapminder Chart'
 
 Below is a responsive, screen-reader-navigable version of the chart shown on the [homepage]({{ site.baseurl }}/). Press Navigate to enter keyboard navigation. Or, change your "prefers reduced motion" system setting to see fade animations instead of motion.
 
+<script type="text/javascript" src="http://hammerjs.github.io/dist/hammer.min.js"></script>
+
 <div style="display: flex; max-width: 100%; flex-wrap: wrap">
   <div style="flex-shrink: 0">
   <button id="navigation-entry" tabindex="0">Navigate</button>
@@ -86,18 +88,19 @@ Below is a responsive, screen-reader-navigable version of the chart shown on the
 <link href="/counterpoint/assets/gapminder/gapminder.css" rel="stylesheet"/>
 <script type="text/javascript"> 
         console.log('loading');
+    var hasGapminder = false;
   import("/counterpoint/assets/gapminder/gapminder_accessible.js").then(({ loadGapminderPlot }) => {
     // load gapminder when the page changes if not already loaded
-    let hasGapminder = false;
     new MutationObserver(() => {
-      if (!!document.getElementById('gapminder-chart-container')) {
-        loadGapminderPlot();
+      if (!!document.getElementById('gapminder-chart-container') && !hasGapminder) {
         hasGapminder = true;
+        loadGapminderPlot();
       } else {
         hasGapminder = false;
       }
     })
     .observe(document.body, { childList: true })
+    hasGapminder = true;
     loadGapminderPlot();
   });
 </script>

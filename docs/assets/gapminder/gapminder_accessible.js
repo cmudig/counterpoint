@@ -260,6 +260,20 @@ function nearestBubbleContainingPos(positionMap, mousePos, maxDistance) {
   }
 }
 
+function isTouchDevice() {
+  return (
+    'ontouchstart' in window ||
+    navigator.maxTouchPoints > 0 ||
+    navigator.msMaxTouchPoints > 0
+  );
+}
+
+const leftRightWords = () =>
+  isTouchDevice() ? 'swipe left/right' : 'left/right arrow';
+const upDownWords = () => (isTouchDevice() ? 'swipe up/down' : 'up/down arrow');
+const childWords = () => (isTouchDevice() ? 'tap' : 'space');
+const parentWords = () => (isTouchDevice() ? 'double-tap' : 'backspace');
+
 function makeNavigation(
   perCountryData,
   xEncoding,
@@ -275,7 +289,7 @@ function makeNavigation(
       id: 'chart',
       edges: ['any-return', 'chart-x'],
       semantics: {
-        label: 'Gapminder Chart. Press space to navigate, Escape to exit.',
+        label: `Gapminder Chart. ${childWords()} to navigate.`,
       },
     },
     x_axis: {
@@ -285,7 +299,9 @@ function makeNavigation(
       id: 'x_axis',
       edges: ['any-return', 'chart-x', 'x-y', 'y-x', 'x-data'],
       semantics: {
-        label: `X axis: ${AxisLabels[xEncoding]}. Press space to browse data sorted by ${AxisLabels[xEncoding]}.`,
+        label: `X axis: ${
+          AxisLabels[xEncoding]
+        }. ${childWords()} to browse data sorted by ${AxisLabels[xEncoding]}.`,
       },
     },
     y_axis: {
@@ -295,7 +311,9 @@ function makeNavigation(
       id: 'y_axis',
       edges: ['any-return', 'chart-y', 'x-y', 'y-x', 'y-data'],
       semantics: {
-        label: `Y axis: ${AxisLabels[yEncoding]}. Press space to browse data sorted by ${AxisLabels[yEncoding]}.`,
+        label: `Y axis: ${
+          AxisLabels[yEncoding]
+        }. ${childWords()} to browse data sorted by ${AxisLabels[yEncoding]}.`,
       },
     },
   };
@@ -308,10 +326,16 @@ function makeNavigation(
         'any-parent',
         'any-x',
         'any-y',
+        'country-summary',
         'next-country',
         'prev-country',
       ],
       semantics: { country: key },
+    };
+    nodes[`summary-${key}`] = {
+      id: `summary-${key}`,
+      edges: ['summary-country', 'next-country', 'prev-country'],
+      semantics: { country: key, summary: true },
     };
   });
 
@@ -333,11 +357,15 @@ function makeNavigation(
         ]
     );
     if (increment === undefined) return sortedCountries[0];
-    let idx = sortedCountries.indexOf(state.current);
+    let currentState = nodes[state.current];
+    let idx = sortedCountries.indexOf(currentState.semantics.country);
     console.log(sortedCountries, state.parent, state.current, idx);
     let countryIndex =
       (idx + increment + sortedCountries.length) % sortedCountries.length;
-    return sortedCountries[countryIndex];
+    return (
+      (currentState.semantics.summary ? 'summary-' : '') +
+      sortedCountries[countryIndex]
+    );
   }
 
   let edges = {
@@ -396,6 +424,16 @@ function makeNavigation(
       source: () => state.current,
       target: () => state.previous,
       navigationRules: ['undo'],
+    },
+    'country-summary': {
+      source: () => state.current,
+      target: () => 'summary-' + state.current,
+      navigationRules: ['child'],
+    },
+    'summary-country': {
+      source: () => state.current.replace('summary-', ''),
+      target: () => state.current,
+      navigationRules: ['parent'],
     },
     'next-country': {
       source: () => state.current,
@@ -460,6 +498,23 @@ function makeNavigation(
   };
 }
 
+function setVoiceOverFocus(element) {
+  var focusInterval = 10; // ms, time between function calls
+  var focusTotalRepetitions = 10; // number of repetitions
+
+  element.setAttribute('tabindex', '0');
+  element.blur();
+
+  var focusRepetitions = 0;
+  var interval = window.setInterval(function () {
+    element.focus();
+    focusRepetitions++;
+    if (focusRepetitions >= focusTotalRepetitions) {
+      window.clearInterval(interval);
+    }
+  }, focusInterval);
+}
+
 export function loadGapminderPlot() {
   d3.csv('/counterpoint/assets/gapminder/gapminder_full.csv').then((data) => {
     let canvas = document.getElementById('gapminder-content');
@@ -501,10 +556,25 @@ export function loadGapminderPlot() {
 
     let hoveredCountry = null;
     let selectedCountry = null;
+    let showingSummary = new CP.Attribute(false);
 
     let tooltipContainer = document.getElementById('navigation-tooltip');
     let navigating = false;
     let navigationFocused = false;
+    // gesture support
+    let mc = new Hammer.Manager(canvas);
+    mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
+    mc.add(new Hammer.Tap({ event: 'tap' }));
+    mc.add(
+      new Hammer.Swipe({ event: 'swipe', direction: Hammer.DIRECTION_ALL })
+    );
+    mc.get('doubletap').recognizeWith('tap');
+    mc.get('tap').requireFailure('doubletap');
+
+    canvas.addEventListener('mousedown', (e) => e.preventDefault());
+    canvas.addEventListener('mousemove', (e) => e.preventDefault());
+    canvas.addEventListener('mouseup', (e) => e.preventDefault());
+
     let {
       structure: navigatorStructure,
       input: navigatorInput,
@@ -540,6 +610,44 @@ export function loadGapminderPlot() {
     };
     let descFormat = d3.format(',.3~r');
     let changeFormat = d3.format('.1~%');
+    function makeOverallDescription(country) {
+      let firstDatum = perCountryData.get(country).get(MinYear);
+      let lastDatum = perCountryData.get(country).get(MaxYear);
+      let xChange =
+        (invertLogs(lastDatum, xEncoding) - invertLogs(firstDatum, xEncoding)) /
+        invertLogs(firstDatum, xEncoding);
+      let yChange =
+        (invertLogs(lastDatum, yEncoding) - invertLogs(firstDatum, yEncoding)) /
+        invertLogs(firstDatum, yEncoding);
+      let sizeChange =
+        (invertLogs(lastDatum, sizeEncoding) -
+          invertLogs(firstDatum, sizeEncoding)) /
+        invertLogs(firstDatum, sizeEncoding);
+      return (
+        `${country}: ${AxisLabels[xEncoding]} is ${descFormat(
+          invertLogs(firstDatum, xEncoding)
+        )} in ${MinYear} and ${
+          xChange > 0 ? 'increases' : 'decreases'
+        } by ${changeFormat(Math.abs(xChange))} to ${descFormat(
+          invertLogs(lastDatum, xEncoding)
+        )} in ${MaxYear}. ` +
+        `${AxisLabels[yEncoding]} is ${descFormat(
+          invertLogs(firstDatum, yEncoding)
+        )} in ${MinYear} and ${
+          yChange > 0 ? 'increases' : 'decreases'
+        } by ${changeFormat(Math.abs(yChange))} to ${descFormat(
+          invertLogs(lastDatum, yEncoding)
+        )} in ${MaxYear}. ` +
+        `${AxisLabels[sizeEncoding]} is ${descFormat(
+          invertLogs(firstDatum, sizeEncoding)
+        )} in ${MinYear} and ${
+          sizeChange > 0 ? 'increases' : 'decreases'
+        } by ${changeFormat(Math.abs(sizeChange))} to ${descFormat(
+          invertLogs(lastDatum, sizeEncoding)
+        )} in ${MaxYear}. ` +
+        `${leftRightWords()} to change country, ${upDownWords()} to change year, ${parentWords()} to return.`
+      );
+    }
     function makeDescription(country) {
       let currentDatum = perCountryData.get(country).get(currentYear.get());
       let nextDatum = perCountryData.get(country).get(currentYear.get() + 5);
@@ -572,7 +680,7 @@ export function loadGapminderPlot() {
           invertLogs(currentDatum, sizeEncoding)
         )}. ` +
         nextDatumString +
-        'Press left/right to change country, up/down to change year, Backspace to return.'
+        `${leftRightWords()} to change country, ${upDownWords()} to change year, ${childWords()} to summarize trend, ${parentWords()} to return.`
       );
     }
     function focusNode(dataNode) {
@@ -584,8 +692,10 @@ export function loadGapminderPlot() {
       tooltipContainer.appendChild(navTooltip);
       navTooltip.addEventListener('keydown', (e) => {
         console.log(e);
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         e.stopPropagation();
+
         if (e.key === 'Escape') {
           exit();
           return;
@@ -598,9 +708,22 @@ export function loadGapminderPlot() {
         }
 
         const direction = navigatorInput.keydownValidator(e);
-        if (direction) {
-          move(direction);
-        }
+        if (direction) move(direction);
+      });
+      mc.off('swipe');
+      mc.off('tap');
+      mc.off('doubletap');
+      mc.on('swipe', (e) => {
+        if (e.direction == Hammer.DIRECTION_UP) move('up');
+        else if (e.direction == Hammer.DIRECTION_DOWN) move('down');
+        else if (e.direction == Hammer.DIRECTION_LEFT) move('left');
+        else if (e.direction == Hammer.DIRECTION_RIGHT) move('right');
+        else console.log('unknown direction', e);
+      });
+      mc.on('tap', () => move('child'));
+      mc.on('doubletap', () => {
+        console.log('double tap');
+        move('parent');
       });
       navTooltip.addEventListener('blur', () => {
         console.log('blurring');
@@ -610,28 +733,35 @@ export function loadGapminderPlot() {
           document.getElementById('navigation-exit').style.display = 'none';
         }, 100);
       });
-      navigatorInput.focus(renderId);
+      setVoiceOverFocus(navTooltip);
       navigationFocused = true;
       document.getElementById('navigation-entry').style.display = 'none';
       document.getElementById('navigation-exit').style.display = 'block';
       navigatorState.previous = navigatorState.current;
       navigatorState.current = dataNode.id;
+      if (!!dataNode.semantics.summary != showingSummary.get())
+        showingSummary.set(!!dataNode.semantics.summary);
       if (!!dataNode.semantics.label) {
         navTooltip.innerText = dataNode.semantics.label;
         selectCountry(null);
       } else if (!!dataNode.semantics.country) {
-        navTooltip.innerText = makeDescription(dataNode.semantics.country);
+        navTooltip.innerText = dataNode.semantics.summary
+          ? makeOverallDescription(dataNode.semantics.country)
+          : makeDescription(dataNode.semantics.country);
         selectCountry(dataNode.semantics.country);
       }
     }
+
     console.log(navigatorInput, navigatorState);
     document
       .getElementById('navigation-entry')
       .addEventListener('click', () => {
         navigating = true;
+
         focusNode(
-          navigatorStructure.nodes[navigatorState.current] ??
-            navigatorStructure.nodes.chart
+          !!selectedCountry
+            ? navigatorStructure.nodes[selectedCountry]
+            : navigatorStructure.nodes.chart
         );
       });
     document.getElementById('navigation-exit').addEventListener('click', () => {
@@ -720,8 +850,9 @@ export function loadGapminderPlot() {
               (selectedCountry == country ? 2.0 : 0) +
               (hoveredCountry == country ? 3.0 : 1.0),
             alpha: getAlpha,
-            labelSize: () =>
-              selectedCountry == country || hoveredCountry == country
+            labelSize: (mark) =>
+              (selectedCountry == country || hoveredCountry == country) &&
+              !mark.id.startsWith('summary-')
                 ? 12.0
                 : 0.0,
           })
@@ -751,6 +882,26 @@ export function loadGapminderPlot() {
           mark.animate('year');
         }
       });
+
+    function toggleSummaries() {
+      console.log(
+        bubbleSet.filter((mark) => mark.id.startsWith('summary-')).getMarks()
+      );
+      bubbleSet
+        .filter((mark) => mark.id.startsWith('summary-'))
+        .forEach((mark) => bubbleSet.deleteMark(mark));
+      if (showingSummary.get() && selectedCountry != null) {
+        let selectedMark = bubbleSet.get(selectedCountry);
+        let clones = Array.from(
+          perCountryData.get(selectedCountry).entries()
+        ).map(([year, d]) =>
+          selectedMark.copy(`summary-${selectedCountry}-${year}`, {
+            year,
+          })
+        );
+        selectedMark.adj('summary', clones);
+      }
+    }
 
     // create another render group for the line showing each country's trajectory
     // (these marks will only be added when the user hovers or selects, using the
@@ -820,6 +971,9 @@ export function loadGapminderPlot() {
 
     let zoom = d3
       .zoom()
+      .filter(
+        (e) => (!e.ctrlKey || e.type === 'wheel') && !e.button && !navigating
+      )
       .scaleExtent([0.1, 10])
       .on('zoom', (e) => {
         // important to make sure the source event exists, filtering out our
@@ -831,6 +985,7 @@ export function loadGapminderPlot() {
     // the ticker runs every frame and redraws only when needed
     let ticker = new CP.Ticker([
       currentYear,
+      showingSummary,
       bubbleSet,
       lineSet,
       scales,
@@ -839,8 +994,11 @@ export function loadGapminderPlot() {
       drawCanvas(canvas, bubbleSet, lineSet);
       if (currentYear.changed() && navigating) {
         // redraw navigation
-        focusNode(navigatorStructure.nodes[navigatorState.current]);
+        setTimeout(() =>
+          focusNode(navigatorStructure.nodes[navigatorState.current])
+        );
       }
+      if (showingSummary.changed()) toggleSummaries();
       slider.value = Math.round(currentYear.get());
       let yearLabel = document.getElementById('year-text');
       if (!!yearLabel) yearLabel.innerText = slider.value;
@@ -968,9 +1126,14 @@ export function loadGapminderPlot() {
         focusNode(navigatorStructure.nodes['x_axis']);
         focusNode(navigatorStructure.nodes[country]);
       }
+      toggleSummaries();
     }
     canvas.addEventListener('mouseup', () => (mouseDown = false));
     canvas.addEventListener('click', (e) => {
+      if (navigating) {
+        e.preventDefault();
+        return;
+      }
       let mousePos = [
         e.clientX - canvas.getBoundingClientRect().left,
         e.clientY - canvas.getBoundingClientRect().top,
