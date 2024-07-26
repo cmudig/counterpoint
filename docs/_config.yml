@@ -59,7 +59,7 @@ extra_css:
   - assets/custom_styles.css
 extra_header_js:
   - assets/page_refresh.js
-  - http://hammerjs.github.io/dist/hammer.min.js
+  - https://hammerjs.github.io/dist/hammer.min.js
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to
