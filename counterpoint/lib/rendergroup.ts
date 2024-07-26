@@ -159,7 +159,7 @@ export class MarkRenderGroup<
       this.markSet.add(m);
       this._setupMark(m);
     });
-    if (!!this.stage) this.stage.setVisibleMarks(this.marks);
+    this._setupStage();
   }
 
   /**
@@ -192,12 +192,7 @@ export class MarkRenderGroup<
     if (!!this.marks) this.getMarks().forEach((m) => this._configureMark(m));
 
     this.useStaging = opts.useStaging ?? this.useStaging;
-    if (this.useStaging) {
-      this.stage = new StageManager<AttributeSet>();
-      if (!!this.marks) this.stage.setVisibleMarks(this.getMarks());
-    } else {
-      this.stage = null;
-    }
+    this._setupStage();
 
     return this;
   }
@@ -215,6 +210,20 @@ export class MarkRenderGroup<
     this.stage.onExit(callbacks.exit);
     if (!!opts) this.stage.configure(opts);
     return this;
+  }
+
+  /**
+   * Sets up the stage manager if it has not already been set up.
+   */
+  _setupStage() {
+    if (this.useStaging) {
+      if (!this.stage) {
+        this.stage = new StageManager<AttributeSet>();
+      }
+      if (!!this.marks) this.stage.setVisibleMarks(this.getMarks());
+    } else {
+      this.stage = null;
+    }
   }
 
   /**

@@ -1,4 +1,9 @@
-import { Animator, curveEaseInOut, interpolateTo } from './animator';
+import {
+  Animator,
+  curveEaseInOut,
+  interpolateTo,
+  interpolateToFunction,
+} from './animator';
 import { Attribute } from './attribute';
 import { Mark, MarkAttributes } from './mark';
 import { TimeProvider, boundingBox, makeTimeProvider } from './utils';
@@ -473,16 +478,16 @@ export class Scales {
       return this._calculateControllerTransform().y;
     });
     if (animated) {
-      let animator = (val: number) =>
+      let animator = (attr: Attribute<number>) =>
         new Animator(
-          interpolateTo(val),
+          interpolateToFunction(() => attr.data()),
           this.animationDuration,
           curveEaseInOut
         );
-      this._xScaleFactor.animate(animator(this._xScaleFactor.data()));
-      this._yScaleFactor.animate(animator(this._yScaleFactor.data()));
-      this._translateX.animate(animator(this._translateX.data()));
-      this._translateY.animate(animator(this._translateY.data()));
+      this._xScaleFactor.animate(animator(this._xScaleFactor));
+      this._yScaleFactor.animate(animator(this._yScaleFactor));
+      this._translateX.animate(animator(this._translateX));
+      this._translateY.animate(animator(this._translateY));
     }
 
     return this;
