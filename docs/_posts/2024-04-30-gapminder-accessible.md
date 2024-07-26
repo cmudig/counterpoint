@@ -7,8 +7,8 @@ Below is a responsive, screen-reader-navigable version of the chart shown on the
 
 <script type="text/javascript" src="http://hammerjs.github.io/dist/hammer.min.js"></script>
 
-<div style="display: flex; max-width: 100%; flex-wrap: wrap">
-  <div style="flex-shrink: 0">
+<div style="display: flex; max-width: 100%; flex-wrap: wrap; justify-content: stretch;">
+  <div style="flex: 1 0 auto;">
   <button id="navigation-entry" tabindex="0">Navigate</button>
   <button id="navigation-exit" tabindex="0" style="display: none">
       Exit Chart
