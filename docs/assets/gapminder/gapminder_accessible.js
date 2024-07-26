@@ -347,6 +347,16 @@ function makeNavigation(
 
   function getCountryOrder(increment = undefined) {
     let year = yearAttr.get();
+    if (!Array.from(perCountryData.values())[0].has(year)) {
+      // round the year
+      yearAttr.set(
+        Array.from(Array.from(perCountryData.values())[0].keys()).reduce(
+          (prev, y) => (Math.abs(y - year) < Math.abs(prev - year) ? y : prev),
+          MinYear
+        )
+      );
+      year = yearAttr.get();
+    }
     let sortedCountries = Array.from(perCountryData.keys()).sort(
       (a, b) =>
         perCountryData.get(a).get(year)[
@@ -588,7 +598,7 @@ export function loadGapminderPlot() {
     );
     const move = (direction) => {
       const nextNode = navigatorInput.move(navigatorState.current, direction);
-      console.log('next node:', nextNode);
+      console.log('next node:', direction, nextNode);
       if (nextNode) {
         focusNode(nextNode);
       }
@@ -714,8 +724,8 @@ export function loadGapminderPlot() {
       mc.off('tap');
       mc.off('doubletap');
       mc.on('swipe', (e) => {
-        if (e.direction == Hammer.DIRECTION_UP) move('up');
-        else if (e.direction == Hammer.DIRECTION_DOWN) move('down');
+        if (e.direction == Hammer.DIRECTION_UP) incrementYear(5);
+        else if (e.direction == Hammer.DIRECTION_DOWN) incrementYear(-5);
         else if (e.direction == Hammer.DIRECTION_LEFT) move('left');
         else if (e.direction == Hammer.DIRECTION_RIGHT) move('right');
         else console.log('unknown direction', e);
@@ -762,6 +772,9 @@ export function loadGapminderPlot() {
           !!selectedCountry
             ? navigatorStructure.nodes[selectedCountry]
             : navigatorStructure.nodes.chart
+        );
+        setTimeout(() =>
+          document.getElementById('navigation-exit').scrollIntoView()
         );
       });
     document.getElementById('navigation-exit').addEventListener('click', () => {
@@ -1081,6 +1094,10 @@ export function loadGapminderPlot() {
     let mouseDown = false;
     canvas.addEventListener('mousedown', () => (mouseDown = true));
     canvas.addEventListener('mousemove', (e) => {
+      if (navigating) {
+        e.preventDefault();
+        return;
+      }
       let mousePos = [
         e.clientX - canvas.getBoundingClientRect().left,
         e.clientY - canvas.getBoundingClientRect().top,

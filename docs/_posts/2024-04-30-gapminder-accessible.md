@@ -5,10 +5,8 @@ title: 'Example: Accessible Gapminder Chart'
 
 Below is a responsive, screen-reader-navigable version of the chart shown on the [homepage]({{ site.baseurl }}/). Press Navigate to enter keyboard navigation. Or, change your "prefers reduced motion" system setting to see fade animations instead of motion.
 
-<script type="text/javascript" src="http://hammerjs.github.io/dist/hammer.min.js"></script>
-
-<div style="display: flex; max-width: 100%; flex-wrap: wrap; justify-content: stretch;">
-  <div style="flex: 1 0 auto;">
+<div style="display: flex; width: 100%; flex-wrap: wrap; overflow: visible;">
+  <div style="flex: 1 0 auto; max-width: 100%;">
   <button id="navigation-entry" tabindex="0">Navigate</button>
   <button id="navigation-exit" tabindex="0" style="display: none">
       Exit Chart
@@ -17,7 +15,7 @@ Below is a responsive, screen-reader-navigable version of the chart shown on the
   <div
       id="gapminder-chart-container"
       tabindex="0"
-      style="position: relative"
+      style="position: relative; max-height: 50vh;"
       role="figure"
   >
       <svg
@@ -38,7 +36,7 @@ Below is a responsive, screen-reader-navigable version of the chart shown on the
       "
       ></canvas>
   </div>
-  <div style="max-width: 400px">
+  <div style="max-width: 400px; width: 100%;">
       <div
       id="navigation-tooltip"
       style="font-size: 12pt"
