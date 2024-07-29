@@ -1,11 +1,11 @@
-import { Animator } from './animator';
+import { Animator } from "./animator";
 import {
   Deferred,
   TimeProvider,
   approxEquals,
   makeTimeProvider,
-} from './utils';
-import { Advanceable } from './ticker';
+} from "./utils";
+import { Advanceable } from "./ticker";
 
 export type AttributeListener<T, U, V> = (
   attribute: Attribute<T, U, V>,
@@ -175,9 +175,9 @@ export class Attribute<
     if (
       info == undefined ||
       info == null ||
-      !(info.hasOwnProperty('value') || info.hasOwnProperty('valueFn'))
+      !(info.hasOwnProperty("value") || info.hasOwnProperty("valueFn"))
     ) {
-      if (typeof info === 'function')
+      if (typeof info === "function")
         this.valueFn = info as (computeArg: ComputeArgumentType) => ValueType;
       else this.value = info as ValueType;
     } else {
@@ -192,7 +192,7 @@ export class Attribute<
         this.value = args.value;
       } else {
         console.error(
-          'One of `value` or `valueFn` must be defined to create an Attribute'
+          "One of `value` or `valueFn` must be defined to create an Attribute"
         );
       }
       this.transform = args.transform ?? null;
@@ -288,7 +288,7 @@ export class Attribute<
     if (this.animation == null && this._animationCompleteCallbacks.length > 0) {
       // Clean up animation callbacks for animations that were somehow removed
       console.warn(
-        'Found animation-complete callbacks for a non-existent animation'
+        "Found animation-complete callbacks for a non-existent animation"
       );
       this._cleanUpAnimation(true);
     }
@@ -436,7 +436,7 @@ export class Attribute<
     currentTime: number | null = null
   ): PreloadAttributeValue<TransformedValueType> {
     if (!this._preload)
-      console.error('Cannot call getPreload on a non-preloadable attribute.');
+      console.error("Cannot call getPreload on a non-preloadable attribute.");
     if (!!this._timeProvider) this.currentTime = this._timeProvider();
 
     if (!this.animation) {
@@ -505,7 +505,7 @@ export class Attribute<
     let finalValue = this.animation.animator.finalValue;
     if (finalValue === undefined) {
       console.error(
-        'Animations on preloadable attributes must have a final value'
+        "Animations on preloadable attributes must have a final value"
       );
     }
 
@@ -526,7 +526,7 @@ export class Attribute<
    * @param newValue The new value or value function.
    */
   set(newValue: ValueType | ((computeArg: ComputeArgumentType) => ValueType)) {
-    if (typeof newValue == 'function') {
+    if (typeof newValue == "function") {
       if (this.value != null) this._computedValue = this.value;
       this.valueFn = newValue as (computeArg: ComputeArgumentType) => ValueType;
       this.value = undefined;
@@ -690,8 +690,19 @@ export class Attribute<
    * @param attrToModify attribute to modify
    * @param newFunc new function to set transform to
    */
-  setTransform(attrToModify: Attribute<TransformedValueType, ValueType, ComputeArgumentType> = this, newFunc : (raw : ValueType, computeArg : ComputeArgumentType) => TransformedValueType) : void {
+  setTransform(
+    attrToModify: Attribute<
+      TransformedValueType,
+      ValueType,
+      ComputeArgumentType
+    > = this,
+    newFunc: (
+      raw: ValueType,
+      computeArg: ComputeArgumentType
+    ) => TransformedValueType
+  ): void {
     attrToModify.transform = newFunc;
+    attrToModify.updateTransform();
   }
   /**
    * @returns whether or not this attribute changed value (due to animation or

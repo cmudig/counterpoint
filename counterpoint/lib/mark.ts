@@ -4,10 +4,10 @@ import {
   Interpolator,
   curveEaseInOut,
   interpolateTo,
-} from './animator';
-import { Attribute, AttributeDefinition, AttributeListener } from './attribute';
-import { Advanceable } from './ticker';
-import { TimeProvider, approxEquals } from './utils';
+} from "./animator";
+import { Attribute, AttributeDefinition, AttributeListener } from "./attribute";
+import { Advanceable } from "./ticker";
+import { TimeProvider, approxEquals } from "./utils";
 
 const ExcessiveUpdateThreshold = 5000;
 
@@ -45,7 +45,7 @@ export type MarkUpdateListener<
   AttributeType extends AttributeSet[K]
 > = (
   mark: Mark<AttributeSet>,
-  finalValue: AttributeType['value']
+  finalValue: AttributeType["value"]
 ) => Promise<void> | void;
 
 export type MarkEventListener<AttributeSet extends AttributeSetBase> = (
@@ -72,11 +72,11 @@ export type MarkHitTest<T extends AttributeSetBase> = (
  */
 export type ImplicitAttributeSet<AttributeSet extends AttributeSetBase> = {
   [K in keyof AttributeSet]?:
-    | ReturnType<AttributeSet[K]['get']>
-    | AttributeSet[K]['valueFn']
+    | ReturnType<AttributeSet[K]["get"]>
+    | AttributeSet[K]["valueFn"]
     | AttributeDefinition<
-        ReturnType<AttributeSet[K]['get']>,
-        ReturnType<AttributeSet[K]['getUntransformed']>
+        ReturnType<AttributeSet[K]["get"]>,
+        ReturnType<AttributeSet[K]["getUntransformed"]>
       >
     | AttributeSet[K];
 };
@@ -308,7 +308,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     if (updated) {
       this.framesWithUpdate += 1;
       if (this.framesWithUpdate > ExcessiveUpdateThreshold) {
-        console.warn('Marks are being updated excessively!');
+        console.warn("Marks are being updated excessively!");
       }
       this._changedLastTick = true;
       return true;
@@ -329,8 +329,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   setAttr<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K,
     newValue:
-      | AttributeType['value']
-      | AttributeType['valueFn']
+      | AttributeType["value"]
+      | AttributeType["valueFn"]
       | undefined = undefined
   ): Mark<AttributeSet> {
     let attr = this.attributes[attrName] as AttributeType;
@@ -361,8 +361,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     attrName: K,
     transformed: T = true as T
   ): T extends true
-    ? ReturnType<AttributeType['get']>
-    : ReturnType<AttributeType['getUntransformed']> {
+    ? ReturnType<AttributeType["get"]>
+    : ReturnType<AttributeType["getUntransformed"]> {
     if (!this.attributes[attrName]) {
       console.error(`No attribute named '${String(attrName)}'`);
     }
@@ -385,7 +385,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    */
   get(
     transformed: boolean | { [key in keyof AttributeSet]?: boolean } = true
-  ): { [key in keyof AttributeSet]: ReturnType<AttributeSet[key]['get']> } {
+  ): { [key in keyof AttributeSet]: ReturnType<AttributeSet[key]["get"]> } {
     let perElementTransform = Object.entries(transformed).length > 0;
     return Object.fromEntries(
       this._attrNames.map((attrName) => {
@@ -399,7 +399,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
             : this.attributes[attrName].getUntransformed(),
         ];
       })
-    ) as { [key in keyof AttributeSet]: AttributeSet[key]['value'] };
+    ) as { [key in keyof AttributeSet]: AttributeSet[key]["value"] };
   }
 
   /**
@@ -412,7 +412,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    */
   data<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K
-  ): AttributeType['value'] {
+  ): AttributeType["value"] {
     if (this.attributes[attrName] === undefined)
       console.error(`No attribute named '${String(attrName)}'`);
     return (this.attributes[attrName] as AttributeType).data();
@@ -441,8 +441,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   >(
     attrName: K,
     finalValue:
-      | AttributeType['value']
-      | ((computeArg: AttributeType['computeArg']) => AttributeType['value']),
+      | AttributeType["value"]
+      | ((computeArg: AttributeType["computeArg"]) => AttributeType["value"]),
     options: SimpleAnimationOptions = {}
   ): Mark<AttributeSet> {
     if (!this.attributes.hasOwnProperty(attrName)) {
@@ -450,7 +450,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       return this;
     }
 
-    if (typeof finalValue === 'function') {
+    if (typeof finalValue === "function") {
       // set all the value functions and animate computed
       (this.attributes[attrName] as AttributeType).set(finalValue);
       this.animate(attrName, {
@@ -483,8 +483,8 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   animate<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K,
     options:
-      | AnimationOptions<AttributeType['value']>
-      | Animator<AttributeType['value']> = {}
+      | AnimationOptions<AttributeType["value"]>
+      | Animator<AttributeType["value"]> = {}
   ): Mark<AttributeSet> {
     if (!this.attributes.hasOwnProperty(attrName)) {
       console.error(
@@ -493,10 +493,10 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       return this;
     }
 
-    let animation: Animator<AttributeType['value']>;
+    let animation: Animator<AttributeType["value"]>;
 
     if (options instanceof Animator) {
-      animation = options as Animator<AttributeType['value']>;
+      animation = options as Animator<AttributeType["value"]>;
     } else if (options.interpolator !== undefined) {
       let interpolator = options.interpolator;
       animation = new Animator(
@@ -606,7 +606,7 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       ...Object.fromEntries(
         Object.entries(newValues).map(([attrName, newVal]) => {
           if (newVal instanceof Attribute) return [attrName, newVal];
-          else if (typeof newVal === 'function')
+          else if (typeof newVal === "function")
             return [
               attrName,
               this.attributes[attrName].copy({ valueFn: newVal }),
@@ -683,8 +683,15 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
    * @param attrToModify attribute to modify
    * @param newFunc new function to set transform to
    */
-  setTransform(attrToModify: string, newFunc : (raw: any, computeArg : any) => any) : void {
-    this.attributes[attrToModify].transform = newFunc;
+  setTransform(
+    attrToModify: string,
+    newFunc: (raw: any, computeArg: any) => any
+  ): void {
+    this.attributes[attrToModify].setTransform(
+      this.attributes[attrToModify],
+      newFunc
+    );
+    this.updateTransform(attrToModify);
   }
 }
 
@@ -692,8 +699,8 @@ type AttributeConstructorShorthand<
   AttributeSet extends AttributeSetBase,
   K extends keyof AttributeSet
 > =
-  | ((val: AttributeSet[K]['value']) => AttributeSet[K])
-  | ((val: AttributeSet[K]['valueFn']) => AttributeSet[K]);
+  | ((val: AttributeSet[K]["value"]) => AttributeSet[K])
+  | ((val: AttributeSet[K]["valueFn"]) => AttributeSet[K]);
 export type AttributeSetConstructor<AttributeSet extends AttributeSetBase> = {
   [K in keyof AttributeSet]:
     | AttributeSet[K]
@@ -719,7 +726,7 @@ export function defineMark<
     id: any,
     values?: ImplicitAttributeSet<AttributeSet>
   ) => Mark<AttributeSet> | AttributeSet;
-  if (typeof initializer === 'function')
+  if (typeof initializer === "function")
     initializer = constructorFn as (
       id: any,
       values?: ImplicitAttributeSet<AttributeSet>
@@ -731,7 +738,7 @@ export function defineMark<
         id,
         Object.fromEntries(
           Object.entries(initObj).map(([field, initFn]) => {
-            if (typeof initFn === 'function')
+            if (typeof initFn === "function")
               return [field, initFn(values[field])];
             else if (!!values[field]) {
               if (values[field] instanceof Attribute)

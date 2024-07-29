@@ -7,11 +7,11 @@ import {
   MarkUpdateListener,
   MarkEventListener,
   MarkHitTest,
-} from './mark';
-import { TimeProvider, getAllMethodNames, makeTimeProvider } from './utils';
-import { AnimationCurve, curveEaseInOut } from './animator';
-import { Advanceable } from './ticker';
-import { StageManager, StageManagerCallback } from './staging';
+} from "./mark";
+import { TimeProvider, getAllMethodNames, makeTimeProvider } from "./utils";
+import { AnimationCurve, curveEaseInOut } from "./animator";
+import { Advanceable } from "./ticker";
+import { StageManager, StageManagerCallback } from "./staging";
 
 type RenderGroupOptions<T extends AttributeSetBase> = {
   timeProvider?: TimeProvider;
@@ -51,7 +51,7 @@ function _evaluateGroupOptions<T, AttributeSet extends AttributeSetBase>(
   return Object.fromEntries(
     Object.entries(options).map(([key, val]) => [
       key,
-      typeof val === 'function' ? val(mark, i) : val,
+      typeof val === "function" ? val(mark, i) : val,
     ])
   ) as T;
 }
@@ -423,21 +423,21 @@ export class MarkRenderGroup<
   >(
     attrName: K,
     finalValueFn:
-      | AttributeType['value']
+      | AttributeType["value"]
       | ((
           mark: Mark<AttributeSet>,
           i: number
         ) =>
-          | AttributeType['value']
+          | AttributeType["value"]
           | ((
-              computeArg: AttributeType['computeArg']
-            ) => AttributeType['value'])),
+              computeArg: AttributeType["computeArg"]
+            ) => AttributeType["value"])),
     options: GroupSimpleAnimationOptions<AttributeSet> = {}
   ): MarkRenderGroup<AttributeSet> {
     this.forEach((mark, i) => {
       mark.animateTo(
         attrName,
-        typeof finalValueFn === 'function'
+        typeof finalValueFn === "function"
           ? (finalValueFn as Function)(mark, i)
           : finalValueFn,
         _evaluateGroupOptions(options, mark, i)
@@ -459,7 +459,7 @@ export class MarkRenderGroup<
    */
   animate<
     K extends keyof AttributeSet,
-    ValueType extends AttributeSet[K]['value']
+    ValueType extends AttributeSet[K]["value"]
   >(
     attrName: K,
     options: GroupAnimationOptions<AttributeSet, ValueType> = {}
@@ -467,7 +467,7 @@ export class MarkRenderGroup<
     let preloadable = this.preloadableProperties.has(attrName);
     if (preloadable && !!options.interpolator) {
       console.error(
-        'Cannot apply custom interpolator function on preloadable property.'
+        "Cannot apply custom interpolator function on preloadable property."
       );
       return this;
     }
@@ -493,15 +493,15 @@ export class MarkRenderGroup<
   update<K extends keyof AttributeSet, AttributeType extends AttributeSet[K]>(
     attrName: K,
     newValueFn:
-      | AttributeType['value']
+      | AttributeType["value"]
       | ((
           mark: Mark<AttributeSet>,
           i: number
         ) =>
-          | AttributeType['value']
+          | AttributeType["value"]
           | ((
-              computeArg: AttributeType['computeArg']
-            ) => AttributeType['value']))
+              computeArg: AttributeType["computeArg"]
+            ) => AttributeType["value"]))
       | undefined = undefined
   ): MarkRenderGroup<AttributeSet> {
     this.forEach((mark, i) => {
@@ -509,7 +509,7 @@ export class MarkRenderGroup<
         attrName,
         newValueFn === undefined
           ? undefined
-          : typeof newValueFn === 'function'
+          : typeof newValueFn === "function"
           ? (newValueFn as Function)(mark, i)
           : newValueFn
       );
@@ -601,7 +601,7 @@ export class MarkRenderGroup<
     });
 
     getAllMethodNames(this).forEach((methodName) => {
-      if (methodName == 'getMarks') {
+      if (methodName == "getMarks") {
         proxy[methodName] = () => {
           return newMarkSet;
         };
@@ -705,8 +705,18 @@ export class MarkRenderGroup<
    * @param attrToModify attribute to modify
    * @param newFunc new function to set transform to
    */
-  setTransform(attrToModify: string, newFunc : (raw: any, computeArg : any) => any) : void {
-    this.forEach(m => m.attributes[attrToModify].transform = newFunc);
+  setTransform(
+    attrToModify: string,
+    newFunc: (raw: any, computeArg: any) => any
+  ): void {
+    this.forEach((m) =>
+      m.attributes[attrToModify].setTransform(
+        m.attributes[attrToModify],
+        newFunc
+      )
+    );
+
+    this.updateTransform(attrToModify);
   }
   /**
    * @param attrNames the attributes to check for changes in (if none provided,
