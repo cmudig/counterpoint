@@ -691,7 +691,6 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       this.attributes[attrToModify],
       newFunc
     );
-    this.updateTransform(attrToModify);
   }
 }
 

@@ -715,8 +715,6 @@ export class MarkRenderGroup<
         newFunc
       )
     );
-
-    this.updateTransform(attrToModify);
   }
   /**
    * @param attrNames the attributes to check for changes in (if none provided,
