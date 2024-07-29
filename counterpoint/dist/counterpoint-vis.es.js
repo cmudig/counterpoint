@@ -314,6 +314,15 @@ class b {
   changed() {
     return this._changedLastTick;
   }
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(attrToModify, newFunc) {
+    this.transform = newFunc;
+  }
 }
 function v(i, t) {
   let e = i.length;
@@ -2863,6 +2872,15 @@ class ea {
     ).length;
   }
   /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(attrToModify, newFunc) {
+    this.forEach(m => m.attributes[attrToModify].transform = newFunc);
+  }
+  /**
    * Returns all marks that are either entering, visible, or exiting.
    */
   getVisibleMarks() {
@@ -3555,6 +3573,15 @@ class Z {
    */
   _removeEdgeFrom(t) {
     return this._reverseAdjacency.delete(t), this;
+  }
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(attrToModify, newFunc) {
+    this.attributes[attrToModify].transform = newFunc;
   }
 }
 function ca(i) {
