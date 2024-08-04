@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Counterpoint Performance Evaluation</title>
+  </head>
+  <body style="font-family: sans-serif">
+    <div
+      id="chart-container"
+      style="position: relative; flex-shrink: 0; width: 800px; height: 800px"
+    >
+      <canvas
+        id="content"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%"
+      ></canvas>
+    </div>
+    <button id="animate-button">Animate</button>
+    <div id="results"></div>
+    <script type="module">
+      import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
+
+      // Declare the chart dimensions and margins.
+      let width = 800;
+      let height = 800;
+      let canvas = document.getElementById('content');
+
+      const numPointArray = [100, 1000, 5000, 10000, 50000, 100000];
+      const urlParams = new URLSearchParams(window.location.search);
+      const numPoints = parseInt(urlParams.get('points'));
+      const numPointIndex = numPointArray.indexOf(numPoints);
+      const swapFraction = 0.25;
+      const maxDelta = 100;
+      const pointSize = 2;
+      const animDuration = 5000;
+      const ease = d3.easeCubic;
+      let numTrials = 0;
+
+      function randomID() {
+        return Math.random()
+          .toString(36)
+          .replace(/[^a-z]+/g, '')
+          .substr(2, 10);
+      }
+
+      let randomDelta = () => Math.random() * maxDelta - maxDelta * 0.5;
+
+      // initialize the render group with 100 marks
+      let marks = new Set(
+        Array(numPoints)
+          .fill(0)
+          .map((i) => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            alpha: 1.0,
+          }))
+      );
+      let allExitingMarks = [];
+      let motionTimer;
+      let needsDraw = false;
+
+      // drawing function that will get called by the Ticker every time a redraw is needed
+      function draw() {
+        if (!!canvas) {
+          let ctx = canvas.getContext('2d');
+
+          if (!!ctx) {
+            ctx.resetTransform();
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 1.0;
+            ctx.fillStyle = '#2563eb';
+            [...marks, ...allExitingMarks].forEach((mark) => {
+              ctx.globalAlpha = mark.alpha;
+              ctx?.beginPath();
+              ctx?.ellipse(
+                mark.x,
+                mark.y,
+                pointSize,
+                pointSize,
+                0,
+                0,
+                2 * Math.PI,
+                false
+              );
+              ctx?.fill();
+              // ctx?.stroke();
+              ctx?.closePath();
+            });
+          }
+        }
+      }
+
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+
+      function animate() {
+        // remove swapFraction elements at random
+        let numToSwap = Math.floor(numPoints * swapFraction);
+        let enteringMarks = [];
+        let exitingMarks = [];
+        let existingMarks = [...marks];
+
+        for (let i = 0; i < numToSwap; i++) {
+          let randomMark = Math.floor(Math.random() * existingMarks.length);
+          existingMarks[randomMark].sa = existingMarks[randomMark].alpha;
+          existingMarks[randomMark].ta = 0.0;
+          exitingMarks.push(existingMarks[randomMark]);
+          allExitingMarks.push(existingMarks[randomMark]);
+          existingMarks.splice(randomMark, 1);
+        }
+
+        // move existing marks
+        existingMarks.forEach((m) => {
+          m.sx = m.x;
+          m.sy = m.y;
+          m.tx = m.x + randomDelta();
+          m.ty = m.y + randomDelta();
+        });
+
+        // add swapFraction more
+        for (let i = 0; i < numToSwap; i++) {
+          let randomMark = {
+            x: Math.random() * width,
+            y: Math.random() * height,
+            alpha: 0.0,
+            sa: 0.0,
+            ta: 1.0,
+          };
+          enteringMarks.push(randomMark);
+          marks.add(randomMark);
+        }
+
+        let timer;
+        profile();
+        timer = d3.timer((elapsed) => {
+          // compute how far through the animation we are (0 to 1)
+          const t = Math.min(1, ease(elapsed / animDuration));
+
+          [...enteringMarks, ...exitingMarks].forEach((point) => {
+            point.alpha = point.sa * (1 - t) + point.ta * t;
+          });
+
+          // update what is drawn on screen
+          needsDraw = true;
+
+          // if this animation is over
+          if (t === 1) {
+            // stop this timer since we are done animating.
+            timer.stop();
+            allExitingMarks.forEach((m) => marks.delete(m));
+            stopProfile = true;
+            if (numTrials < 19) {
+              numTrials++;
+              setTimeout(animate, 5000);
+            } else {
+              setTimeout(() => {
+                let text = document.getElementById('results').innerText;
+                var element = document.createElement('a');
+                element.setAttribute(
+                  'href',
+                  'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+                );
+                element.setAttribute('download', `d3_canvas_${numPoints}.txt`);
+
+                element.style.display = 'none';
+                document.body.appendChild(element);
+
+                element.click();
+
+                document.body.removeChild(element);
+
+                if (numPointIndex < numPointArray.length - 1)
+                  setTimeout(() => {
+                    window.location.href =
+                      window.location.href.slice(
+                        0,
+                        window.location.href.length -
+                          window.location.search.length
+                      ) + `?points=${numPointArray[numPointIndex + 1]}`;
+                  }, 5000);
+              }, 1000);
+            }
+          }
+        });
+
+        if (!!motionTimer) motionTimer.stop();
+        motionTimer = d3.timer((elapsed) => {
+          // compute how far through the animation we are (0 to 1)
+          const t = Math.min(1, ease(elapsed / animDuration));
+
+          // update point positions (interpolate between source and target)
+          existingMarks.forEach((point) => {
+            point.x = point.sx * (1 - t) + point.tx * t;
+            point.y = point.sy * (1 - t) + point.ty * t;
+          });
+          // update what is drawn on screen
+          needsDraw = true;
+
+          if (t === 1) {
+            // stop this timer since we are done animating.
+            motionTimer.stop();
+            motionTimer = null;
+          }
+        });
+      }
+
+      // Animate button event handler
+      document
+        .getElementById('animate-button')
+        .addEventListener('click', animate);
+
+      draw();
+      let drawTimer = d3.timer((elapsed) => {
+        if (needsDraw) draw();
+        needsDraw = false;
+      });
+
+      window.onbeforeunload = () => {
+        if (!!drawTimer) drawTimer.stop();
+      };
+
+      let stopProfile = false;
+      function profile() {
+        stopProfile = false;
+        let currentTime = window.performance.now();
+        let totalFrameDurations = 0;
+        let totalFrames = 0;
+        function frame() {
+          totalFrameDurations += window.performance.now() - currentTime;
+          totalFrames++;
+          currentTime = window.performance.now();
+          if (!stopProfile) requestAnimationFrame(frame);
+          else {
+            document.getElementById(
+              'results'
+            ).innerHTML += `<p>d3_canvas,${numPoints},${totalFrames},${
+              totalFrameDurations / totalFrames
+            }</p>`;
+          }
+        }
+
+        requestAnimationFrame(frame);
+      }
+    </script>
+  </body>
+</html>
