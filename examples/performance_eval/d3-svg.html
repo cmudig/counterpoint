@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Counterpoint Performance Evaluation</title>
+  </head>
+  <body style="font-family: sans-serif">
+    <div
+      id="chart-container"
+      style="position: relative; flex-shrink: 0; width: 800px; height: 800px"
+    ></div>
+    <button id="animate-button">Animate</button>
+    <div id="results"></div>
+    <script type="module">
+      import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
+
+      // Declare the chart dimensions and margins.
+      let width = 800;
+      let height = 800;
+      let canvas = document.getElementById('content');
+
+      const numPointArray = [100, 1000, 5000, 10000, 50000, 100000];
+      const urlParams = new URLSearchParams(window.location.search);
+      const numPoints = parseInt(urlParams.get('points'));
+      const numPointIndex = numPointArray.indexOf(numPoints);
+      const swapFraction = 0.25;
+      const maxDelta = 100;
+      const pointSize = 2;
+      const animDuration = 5000;
+      let numTrials = 0;
+
+      function randomID() {
+        return Math.random()
+          .toString(36)
+          .replace(/[^a-z]+/g, '')
+          .substr(2, 10);
+      }
+
+      let randomDelta = () => Math.random() * maxDelta - maxDelta * 0.5;
+
+      let data = d3.range(numPoints).map(() => ({
+        id: randomID(),
+        x: Math.random() * width,
+        y: Math.random() * height,
+      }));
+
+      // append the svg object to the body of the page
+      var svg = d3
+        .select('#chart-container')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .append('g');
+
+      function update() {
+        // Add dots
+
+        svg
+          .selectAll('circle')
+          .data(data, (d) => d.id)
+          .join(
+            function (enter) {
+              return enter
+                .append('circle')
+                .attr('cx', function (d) {
+                  return d.x;
+                })
+                .attr('cy', function (d) {
+                  return d.y;
+                })
+                .style('opacity', 0.0)
+                .call((sel) =>
+                  sel.transition().duration(animDuration).style('opacity', 1.0)
+                );
+            },
+            function (update) {
+              return update.call((update) =>
+                update
+                  .transition()
+                  .duration(animDuration)
+                  .attr('cx', function (d) {
+                    return d.x;
+                  })
+                  .attr('cy', function (d) {
+                    return d.y;
+                  })
+                  .on('end', () => (stopProfile = true))
+              );
+            },
+            function (exit) {
+              return exit.call((sel) =>
+                sel
+                  .transition()
+                  .duration(animDuration)
+                  .style('opacity', 0.0)
+                  .remove()
+              );
+            }
+          )
+          .attr('r', pointSize)
+          .style('fill', '#2563eb');
+        // .style('stroke', '#2563eb');
+      }
+
+      function animate() {
+        // remove swapFraction elements at random
+        let numToSwap = Math.floor(numPoints * swapFraction);
+        for (let i = 0; i < numToSwap; i++) {
+          let randomMark = Math.floor(Math.random() * data.length);
+          data.splice(randomMark, 1);
+        }
+
+        // move existing marks
+        data.forEach((d) => {
+          d.x += randomDelta();
+          d.y += randomDelta();
+        });
+
+        // add swapFraction more
+        for (let i = 0; i < numToSwap; i++) {
+          data.push({
+            id: randomID(),
+            x: Math.random() * width,
+            y: Math.random() * height,
+          });
+        }
+
+        profile();
+        if (numTrials < 19) {
+          numTrials++;
+          setTimeout(animate, 15000);
+        } else {
+          setTimeout(() => {
+            let text = document.getElementById('results').innerText;
+            var element = document.createElement('a');
+            element.setAttribute(
+              'href',
+              'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+            );
+            element.setAttribute('download', `d3_svg_${numPoints}.txt`);
+
+            element.style.display = 'none';
+            document.body.appendChild(element);
+
+            element.click();
+
+            document.body.removeChild(element);
+
+            if (numPointIndex < numPointArray.length - 1)
+              setTimeout(() => {
+                window.location.href =
+                  window.location.href.slice(
+                    0,
+                    window.location.href.length - window.location.search.length
+                  ) + `?points=${numPointArray[numPointIndex + 1]}`;
+              }, 5000);
+          }, 1000);
+        }
+
+        update();
+      }
+
+      document
+        .getElementById('animate-button')
+        .addEventListener('click', animate);
+
+      update();
+
+      let stopProfile = false;
+      function profile() {
+        stopProfile = false;
+        let currentTime = window.performance.now();
+        let totalFrameDurations = 0;
+        let totalFrames = 0;
+        function frame() {
+          totalFrameDurations += window.performance.now() - currentTime;
+          totalFrames++;
+          currentTime = window.performance.now();
+          if (!stopProfile) requestAnimationFrame(frame);
+          else {
+            document.getElementById(
+              'results'
+            ).innerHTML += `<p>d3_svg,${numPoints},${totalFrames},${
+              totalFrameDurations / totalFrames
+            }</p>`;
+          }
+        }
+
+        requestAnimationFrame(frame);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>
