@@ -308,20 +308,20 @@ class b {
     return this.animation && this._cleanUpAnimation(!0), this.value = this.last(), this.valueFn = void 0, this;
   }
   /**
-   * @returns whether or not this attribute changed value (due to animation or
-   * other updates) on the last call to `advance`
-   */
-  changed() {
-    return this._changedLastTick;
-  }
-  /**
    * Sets transform of an attribute to a new function, can be applied to an Attribute,
    * a Mark, or a MarkRenderGroup
    * @param attrToModify attribute to modify
    * @param newFunc new function to set transform to
    */
-  setTransform(attrToModify, newFunc) {
-    this.transform = newFunc;
+  setTransform(t) {
+    this.transform = t, this.updateTransform();
+  }
+  /**
+   * @returns whether or not this attribute changed value (due to animation or
+   * other updates) on the last call to `advance`
+   */
+  changed() {
+    return this._changedLastTick;
   }
 }
 function v(i, t) {
@@ -2872,15 +2872,6 @@ class ea {
     ).length;
   }
   /**
-   * Sets transform of an attribute to a new function, can be applied to an Attribute,
-   * a Mark, or a MarkRenderGroup
-   * @param attrToModify attribute to modify
-   * @param newFunc new function to set transform to
-   */
-  setTransform(attrToModify, newFunc) {
-    this.forEach(m => m.attributes[attrToModify].transform = newFunc);
-  }
-  /**
    * Returns all marks that are either entering, visible, or exiting.
    */
   getVisibleMarks() {
@@ -3227,6 +3218,15 @@ class ia {
    */
   count() {
     return this.markSet.size;
+  }
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(t, e) {
+    this.forEach((r) => r.setTransform(t, e));
   }
   /**
    * @param attrNames the attributes to check for changes in (if none provided,
@@ -3580,8 +3580,8 @@ class Z {
    * @param attrToModify attribute to modify
    * @param newFunc new function to set transform to
    */
-  setTransform(attrToModify, newFunc) {
-    this.attributes[attrToModify].transform = newFunc;
+  setTransform(t, e) {
+    this.attributes[t].setTransform(e);
   }
 }
 function ca(i) {
