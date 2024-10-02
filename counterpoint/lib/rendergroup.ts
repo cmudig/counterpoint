@@ -74,6 +74,11 @@ export class MarkRenderGroup<
   private marks: Mark<AttributeSet>[] = [];
 
   /**
+   * A function that generates a mark given an ID, if provided at instantiation.
+   */
+  private factory: ((id: any) => Mark<AttributeSet>) | null = null;
+
+  /**
    * Controls whether the mark group iterates over the entire set of marks in
    * every call to `advance()`. If set to `true`, only the marks that have
    * been explicitly changed through a call to `set...` or `animate...` will
@@ -134,7 +139,7 @@ export class MarkRenderGroup<
    * @param opts Options for the mark group (see {@link configure})
    */
   constructor(
-    marks: Mark<AttributeSet>[] = [],
+    marks: Mark<AttributeSet>[] | ((id: any) => Mark<AttributeSet>) = [],
     opts: RenderGroupOptions<AttributeSet> = {
       animationDuration: 1000,
       animationCurve: curveEaseInOut,
@@ -146,7 +151,8 @@ export class MarkRenderGroup<
     this._defaultCurve = curveEaseInOut;
     this.configure(opts);
 
-    this.marks = marks;
+    if (typeof marks === 'function') this.factory = marks;
+    else this.marks = marks;
 
     this.marksByID = new Map();
     this.markSet = new Set();
@@ -678,6 +684,31 @@ export class MarkRenderGroup<
     this._markListChanged = true;
     if (!!this.stage) this.stage.hide(mark);
     return this;
+  }
+
+  /**
+   * Adds a mark to the render group with the given ID. Use of this method
+   * requires that the render group was instantiated with a factory function
+   * instead of a static list.
+   *
+   * If the mark already exists, this method does nothing. If an existing mark
+   * with the same ID is currently exiting the stage, that mark is reused.
+   *
+   * @param id the ID of the mark to create
+   * @returns this render group
+   */
+  add(id: any): MarkRenderGroup<AttributeSet> {
+    if (!this.factory) {
+      console.error(
+        'Cannot use the add method of MarkRenderGroup without defining a factory function at initialization'
+      );
+      return this;
+    }
+    if (this.has(id)) return this;
+    let mark: Mark<AttributeSet> | undefined;
+    if (this.useStaging) mark = this.stage!.get(id);
+    if (!mark) mark = this.factory(id);
+    return this.addMark(mark);
   }
 
   /**

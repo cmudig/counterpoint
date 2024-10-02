@@ -88,6 +88,9 @@ export class StageManager<AttributeSet extends AttributeSetBase>
    */
   public defer: boolean = false;
 
+  // show a warning when the enter/exit callbacks don't return a Promise
+  private _showedPromiseWarning = false;
+
   /**
    * Whether or not to save marks that have been removed. This may cause high
    * memory usage if marks are frequently added and removed.
@@ -182,6 +185,11 @@ export class StageManager<AttributeSet extends AttributeSetBase>
           }
         );
       } else {
+        if (!this._showedPromiseWarning)
+          console.warn(
+            'The enter function did not return a Promise, assuming the animation is synchronous.'
+          );
+        this._showedPromiseWarning = true;
         this.markStates.set(element, StagingState.Visible);
       }
     } else if (action == StagingAction.Hide) {
@@ -219,6 +227,11 @@ export class StageManager<AttributeSet extends AttributeSetBase>
           }
         );
       } else {
+        if (!this._showedPromiseWarning)
+          console.warn(
+            'The exit function did not return a Promise, assuming the animation is synchronous.'
+          );
+        this._showedPromiseWarning = true;
         if (this.saveExitedMarks) {
           this.markStates.set(element, StagingState.Completed);
         } else {
