@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Counterpoint Performance Evaluation</title>
+  </head>
+  <body style="font-family: sans-serif">
+    <div
+      id="chart-container"
+      style="position: relative; flex-shrink: 0; width: 800px; height: 800px"
+    >
+      <canvas
+        id="content"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%"
+      ></canvas>
+    </div>
+    <button id="animate-button">Animate</button>
+    <div id="results"></div>
+    <script type="module">
+      import * as counterpoint from 'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js';
+
+      // Declare the chart dimensions and margins.
+      let width = 800;
+      let height = 800;
+      let canvas = document.getElementById('content');
+
+      const numPointArray = [100, 1000, 5000, 10000, 50000, 100000];
+      const urlParams = new URLSearchParams(window.location.search);
+      const numPoints = parseInt(urlParams.get('points'));
+      const numPointIndex = numPointArray.indexOf(numPoints);
+      const swapFraction = 0.25;
+      const maxDelta = 100;
+      const pointSize = 2;
+      let numTrials = 0;
+
+      function randomID() {
+        var text = '';
+
+        var charset = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+        for (var i = 0; i < 20; i++)
+          text += charset.charAt(Math.floor(Math.random() * charset.length));
+
+        return text;
+      }
+
+      let randomDelta = () => Math.random() * maxDelta - maxDelta * 0.5;
+
+      // initialize the render group with 100 marks
+      let marks = new counterpoint.MarkRenderGroup(
+        new Array(numPoints).fill(0).map(
+          (i) =>
+            new counterpoint.Mark(randomID(), {
+              x: Math.random() * width,
+              y: Math.random() * height,
+              alpha: 1.0,
+            })
+        )
+      )
+        .configure({ animationDuration: 5000 })
+        .configureStaging({
+          initialize: (mark) => mark.setAttr('alpha', 0.0),
+          enter: (mark) => mark.animateTo('alpha', 1.0).wait('alpha'),
+          exit: (mark) => mark.animateTo('alpha', 0.0).wait('alpha'),
+        });
+
+      function animate() {
+        // remove swapFraction elements at random
+        let numToSwap = Math.floor(numPoints * swapFraction);
+        let ids = marks.getMarks().map((m) => m.id);
+        for (let i = 0; i < numToSwap; i++) {
+          let randomMark = Math.floor(Math.random() * ids.length);
+          marks.delete(ids[randomMark]);
+          ids.splice(randomMark, 1);
+        }
+
+        // move existing marks
+        marks.animateTo('x', (m) => m.attr('x') + randomDelta());
+        marks.animateTo('y', (m) => m.attr('y') + randomDelta());
+
+        // add swapFraction more
+        for (let i = 0; i < numToSwap; i++) {
+          let randomMark = new counterpoint.Mark(randomID(), {
+            x: Math.random() * width,
+            y: Math.random() * height,
+            alpha: 0.0,
+          });
+          marks.addMark(randomMark);
+        }
+
+        profile();
+        marks.wait(['x']).then(() => {
+          stopProfile = true;
+
+          if (numTrials < 19) {
+            numTrials++;
+            setTimeout(animate, 5000);
+          } else {
+            setTimeout(() => {
+              let text = document.getElementById('results').innerText;
+              var element = document.createElement('a');
+              element.setAttribute(
+                'href',
+                'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+              );
+              element.setAttribute('download', `cp_canvas_${numPoints}.txt`);
+
+              element.style.display = 'none';
+              document.body.appendChild(element);
+
+              element.click();
+
+              document.body.removeChild(element);
+
+              if (numPointIndex < numPointArray.length - 1)
+                setTimeout(() => {
+                  window.location.href =
+                    window.location.href.slice(
+                      0,
+                      window.location.href.length -
+                        window.location.search.length
+                    ) + `?points=${numPointArray[numPointIndex + 1]}`;
+                }, 5000);
+            }, 1000);
+          }
+        });
+      }
+
+      // Animate button event handler
+      document
+        .getElementById('animate-button')
+        .addEventListener('click', animate);
+
+      // drawing function that will get called by the Ticker every time a redraw is needed
+      function draw() {
+        if (!!canvas) {
+          let ctx = canvas.getContext('2d');
+
+          if (!!ctx) {
+            ctx.resetTransform();
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 1.0;
+            ctx.fillStyle = '#2563eb';
+            marks.stage.forEach((mark) => {
+              let x = mark.attr('x');
+              let y = mark.attr('y');
+              ctx.globalAlpha = mark.attr('alpha');
+              ctx?.beginPath();
+              ctx?.ellipse(
+                x,
+                y,
+                pointSize,
+                pointSize,
+                0,
+                0,
+                2 * Math.PI,
+                false
+              );
+              ctx?.fill();
+              // ctx?.stroke();
+              ctx?.closePath();
+            });
+          }
+        }
+      }
+
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+
+      let ticker = new counterpoint.Ticker(marks).onChange(draw);
+      draw();
+
+      let stopProfile = false;
+      function profile() {
+        stopProfile = false;
+        let currentTime = window.performance.now();
+        let totalFrameDurations = 0;
+        let totalFrames = 0;
+        function frame() {
+          totalFrameDurations += window.performance.now() - currentTime;
+          totalFrames++;
+          currentTime = window.performance.now();
+          if (!stopProfile) requestAnimationFrame(frame);
+          else {
+            document.getElementById(
+              'results'
+            ).innerHTML += `<p>cp_canvas,${numPoints},${totalFrames},${
+              totalFrameDurations / totalFrames
+            }</p>`;
+          }
+        }
+
+        requestAnimationFrame(frame);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>
