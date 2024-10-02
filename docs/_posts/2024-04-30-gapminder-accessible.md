@@ -5,8 +5,8 @@ title: 'Example: Accessible Gapminder Chart'
 
 Below is a responsive, screen-reader-navigable version of the chart shown on the [homepage]({{ site.baseurl }}/). Press Navigate to enter keyboard navigation. Or, change your "prefers reduced motion" system setting to see fade animations instead of motion.
 
-<div style="display: flex; max-width: 100%; flex-wrap: wrap">
-  <div style="flex-shrink: 0">
+<div style="display: flex; width: 100%; flex-wrap: wrap; overflow: visible;">
+  <div style="flex: 1 0 auto; max-width: 100%;">
   <button id="navigation-entry" tabindex="0">Navigate</button>
   <button id="navigation-exit" tabindex="0" style="display: none">
       Exit Chart
@@ -15,7 +15,7 @@ Below is a responsive, screen-reader-navigable version of the chart shown on the
   <div
       id="gapminder-chart-container"
       tabindex="0"
-      style="position: relative"
+      style="position: relative; max-height: 50vh;"
       role="figure"
   >
       <svg
@@ -36,7 +36,7 @@ Below is a responsive, screen-reader-navigable version of the chart shown on the
       "
       ></canvas>
   </div>
-  <div style="max-width: 400px">
+  <div style="max-width: 400px; width: 100%;">
       <div
       id="navigation-tooltip"
       style="font-size: 12pt"
@@ -86,18 +86,19 @@ Below is a responsive, screen-reader-navigable version of the chart shown on the
 <link href="/counterpoint/assets/gapminder/gapminder.css" rel="stylesheet"/>
 <script type="text/javascript"> 
         console.log('loading');
+    var hasGapminder = false;
   import("/counterpoint/assets/gapminder/gapminder_accessible.js").then(({ loadGapminderPlot }) => {
     // load gapminder when the page changes if not already loaded
-    let hasGapminder = false;
     new MutationObserver(() => {
-      if (!!document.getElementById('gapminder-chart-container')) {
-        loadGapminderPlot();
+      if (!!document.getElementById('gapminder-chart-container') && !hasGapminder) {
         hasGapminder = true;
+        loadGapminderPlot();
       } else {
         hasGapminder = false;
       }
     })
     .observe(document.body, { childList: true })
+    hasGapminder = true;
     loadGapminderPlot();
   });
 </script>

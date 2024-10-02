@@ -527,7 +527,7 @@ export class Attribute<
    */
   set(newValue: ValueType | ((computeArg: ComputeArgumentType) => ValueType)) {
     if (typeof newValue == 'function') {
-      if (this.value != null) this._computedValue = this.value;
+      if (this.value != null) this._computedValue = this.getUntransformed();
       this.valueFn = newValue as (computeArg: ComputeArgumentType) => ValueType;
       this.value = undefined;
       this._animatedValue = null;
@@ -560,7 +560,7 @@ export class Attribute<
    * function.
    */
   last(): ValueType {
-    if (!!this.animation) {
+    if (!!this.animation && this._preload) {
       // We're in a dirty state - a preloadable animation is underway and
       // the attribute hasn't been updated using the advance() method yet.
       // Because any updates to the attribute would result in the proper values
