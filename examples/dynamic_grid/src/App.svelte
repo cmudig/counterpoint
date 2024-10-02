@@ -1,9 +1,7 @@
 <script lang="ts">
   import {
-    Attribute,
     Mark,
     MarkRenderGroup,
-    StageManager,
     Ticker,
     curveEaseInOut,
   } from 'counterpoint-vis';
@@ -12,7 +10,15 @@
   const cellWidth = 25;
 
   let canvas: HTMLCanvasElement;
-  let markSet = new MarkRenderGroup()
+  let markSet = new MarkRenderGroup(
+    (id) =>
+      new Mark(id, {
+        x: 0,
+        y: 0,
+        alpha: 0,
+        color: `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`,
+      })
+  )
     .configure({
       animationDuration: 500,
       animationCurve: curveEaseInOut,
@@ -24,14 +30,6 @@
         element.animateTo('alpha', 0.0, { duration: 500 }).wait('alpha'),
     });
 
-  function createMark(id: any, location: { x: number; y: number }) {
-    return new Mark(id, {
-      x: location.x,
-      y: location.y,
-      alpha: 0,
-      color: `hsl(${Math.round(Math.random() * 360)}, 75%, 75%)`,
-    });
-  }
   let ticker = new Ticker(markSet).onChange(draw);
 
   function draw() {
@@ -84,11 +82,13 @@
     let cellID =
       (roundedLocation.x / cellWidth) * 500 + roundedLocation.y / cellWidth;
     // toggle visibility
-    if (markSet.has(cellID)) markSet.deleteMark(markSet.get(cellID)!);
+    if (markSet.has(cellID)) markSet.delete(cellID);
     else
-      markSet.addMark(
-        markSet.stage?.get(cellID) ?? createMark(cellID, roundedLocation)
-      );
+      markSet
+        .add(cellID)
+        .get(cellID)!
+        .setAttr('x', roundedLocation.x)
+        .setAttr('y', roundedLocation.y);
   }
 </script>
 
