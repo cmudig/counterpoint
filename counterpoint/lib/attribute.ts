@@ -317,8 +317,15 @@ export class Attribute<
     );
     // Complete the animation if within one frame
     if (this._animationFinished() && recomputeOnComplete) {
-      if (!!this.valueFn) this.compute();
-      else this.value = value;
+      if (!!this.valueFn) {
+        if (
+          this.recompute !== AttributeRecompute.WHEN_UPDATED ||
+          !this._hasComputed
+        ) {
+          this.compute();
+          this._hasComputed = true;
+        }
+      } else this.value = value;
       this._cleanUpAnimation(false);
       this._animatedValue = null;
     } else {
@@ -362,8 +369,14 @@ export class Attribute<
         this.value = this.animation.animator.finalValue;
         this._lastTickValue = this.value;
       } else {
-        this.compute();
-        this._lastTickValue = this._computedValue;
+        if (
+          this.recompute !== AttributeRecompute.WHEN_UPDATED ||
+          !this._hasComputed
+        ) {
+          this.compute();
+          this._hasComputed = true;
+        }
+        this._lastTickValue = this.animation.animator.finalValue;
       }
     }
     this.animation = null;
@@ -527,9 +540,12 @@ export class Attribute<
    */
   set(newValue: ValueType | ((computeArg: ComputeArgumentType) => ValueType)) {
     if (typeof newValue == 'function') {
-      if (this.value != null) this._computedValue = this.value;
+      if (this.value != null) {
+        this._computedValue = this.value;
+      }
       this.valueFn = newValue as (computeArg: ComputeArgumentType) => ValueType;
       this.value = undefined;
+      this._hasComputed = false;
       this._animatedValue = null;
     } else {
       this.value = newValue;
@@ -550,6 +566,8 @@ export class Attribute<
   data(): ValueType {
     if (!!this.valueFn) {
       return this.valueFn(this._getComputeArg());
+    } else if (!!this.animation) {
+      return this.animation.animator.finalValue;
     } else {
       return this.value;
     }
@@ -620,10 +638,12 @@ export class Attribute<
     if (!!this.animation) {
       // Set the current value of the property to wherever it is now
       this._computeAnimation();
+
+      let animatedValue = this._preload ? this.last() : this._animatedValue;
       if (!this.valueFn) {
-        this.value = this._animatedValue;
+        this.value = animatedValue;
       } else {
-        this._computedValue = this._animatedValue;
+        this._computedValue = animatedValue;
       }
       this._lastTickValue = this._animatedValue;
       this._cleanUpAnimation(true);
