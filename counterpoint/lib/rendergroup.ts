@@ -708,7 +708,18 @@ export class MarkRenderGroup<
   count(): number {
     return this.markSet.size;
   }
-
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(
+    attrToModify: string,
+    newFunc: (raw: any, computeArg: any) => any
+  ): void {
+    this.forEach((m) => m.setTransform(attrToModify, newFunc));
+  }
   /**
    * @param attrNames the attributes to check for changes in (if none provided,
    *  checks all attributes)

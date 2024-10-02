@@ -684,7 +684,21 @@ export class Attribute<
     this.valueFn = undefined;
     return this;
   }
-
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(
+    newFunc: (
+      raw: ValueType,
+      computeArg: ComputeArgumentType
+    ) => TransformedValueType
+  ): void {
+    this.transform = newFunc;
+    this.updateTransform();
+  }
   /**
    * @returns whether or not this attribute changed value (due to animation or
    * other updates) on the last call to `advance`
