@@ -73,6 +73,8 @@ export function autoMixingFunction<T>(
     // parsing of the color values
     let cache: { [key: string]: any } = {};
     return (v1: T, p1: number, v2: T, p2: number): T => {
+      if (p1 == 1.0) return v1;
+      if (p2 == 1.0) return v2;
       if (!cache[v1 as string])
         cache[v1 as string] = new Color(v1 as string).srgb;
       if (!cache[v2 as string])
