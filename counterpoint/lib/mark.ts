@@ -669,7 +669,6 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
     this._reverseAdjacency.add(sourceMark);
     return this;
   }
-
   /**
    * Tells the mark that it no longer has an edge from the given mark.
    * @param sourceMark the mark that has no longer has an edge to this mark
@@ -677,6 +676,18 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
   _removeEdgeFrom(sourceMark: Mark<AttributeSet>): Mark<AttributeSet> {
     this._reverseAdjacency.delete(sourceMark);
     return this;
+  }
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(
+    attrToModify: string,
+    newFunc: (raw: any, computeArg: any) => any
+  ): void {
+    this.attributes[attrToModify].setTransform(newFunc);
   }
 }
 

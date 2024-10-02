@@ -4,8 +4,8 @@ import * as d3legend from 'https://cdn.jsdelivr.net/npm/d3-svg-legend/+esm';
 import * as CP from 'https://cdn.jsdelivr.net/npm/counterpoint-vis@latest/dist/counterpoint-vis.es.js';
 
 // Declare the chart dimensions and margins.
-let width = 600;
-let height = 600;
+let width = 400;
+let height = 400;
 const marginTop = 60;
 const marginRight = 60;
 const marginBottom = 60;
@@ -163,7 +163,7 @@ function drawCanvas(canvas, bubbleSet) {
     ctx.globalAlpha = alpha * 0.1;
     ctx.fillStyle = color;
     ctx.fill();
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = alpha * 0.8;
     ctx.strokeStyle = color;
     ctx.stroke();
     ctx.closePath();
@@ -198,7 +198,7 @@ export function loadCarsBubble() {
       let sizeScale = d3
         .scaleSqrt()
         .domain(d3.extent(data, sizeGet))
-        .range([1, 20])
+        .range([1, 10])
         .nice();
       let colorScale = d3
         .scaleOrdinal(d3.schemeCategory10)

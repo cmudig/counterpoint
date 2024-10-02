@@ -102,7 +102,7 @@ class b {
       Math.min(this.currentTime - r, e.duration)
       // can add a debug flag here
     );
-    this._animationFinished() && t ? (this.valueFn ? this.compute() : this.value = s, this._cleanUpAnimation(!1), this._animatedValue = null) : this._animatedValue = s;
+    this._animationFinished() && t ? (this.valueFn ? (this.recompute !== 2 || !this._hasComputed) && (this.compute(), this._hasComputed = !0) : this.value = s, this._cleanUpAnimation(!1), this._animatedValue = null) : this._animatedValue = s;
   }
   _animationFinished() {
     return this.animation ? this.animation.animator.duration + 20 <= this.currentTime - this.animation.start : !0;
@@ -125,7 +125,7 @@ class b {
     return e;
   }
   _cleanUpAnimation(t = !1) {
-    this._preload && this.animation && !t && (this.valueFn ? (this.compute(), this._lastTickValue = this._computedValue) : (this.value = this.animation.animator.finalValue, this._lastTickValue = this.value)), this.animation = null, this._animatedValue = null, this._animationCompleteCallbacks.forEach((e) => {
+    this._preload && this.animation && !t && (this.valueFn ? ((this.recompute !== 2 || !this._hasComputed) && (this.compute(), this._hasComputed = !0), this._lastTickValue = this.animation.animator.finalValue) : (this.value = this.animation.animator.finalValue, this._lastTickValue = this.value)), this.animation = null, this._animatedValue = null, this._animationCompleteCallbacks.forEach((e) => {
       !t || !e.info.rejectOnCancel ? e.resolve(this) : e.reject({ newValue: this.last() });
     }), this._animationCompleteCallbacks = [], this._animationCompleteTimeout && (clearTimeout(this._animationCompleteTimeout), this._animationCompleteTimeout = null);
   }
@@ -224,7 +224,7 @@ class b {
    * @param newValue The new value or value function.
    */
   set(t) {
-    typeof t == "function" ? (this.value != null && (this._computedValue = this.value), this.valueFn = t, this.value = void 0, this._animatedValue = null) : (this.value = t, this.valueFn = null, this._animatedValue = null), this.needsUpdate = !0, this._lastTickValue = void 0, this.animation && this._cleanUpAnimation(!0), this._listeners.forEach((e) => e(this, !1));
+    typeof t == "function" ? (this.value != null && (this._computedValue = this.getUntransformed()), this.valueFn = t, this.value = void 0, this._hasComputed = !1, this._animatedValue = null) : (this.value = t, this.valueFn = null, this._animatedValue = null), this.needsUpdate = !0, this._lastTickValue = void 0, this.animation && this._cleanUpAnimation(!0), this._listeners.forEach((e) => e(this, !1));
   }
   /**
    * Retrieves the non-animated value for the attribute, i.e. the final value
@@ -232,14 +232,14 @@ class b {
    * computes the value if specified as a value function.
    */
   data() {
-    return this.valueFn ? this.valueFn(this._getComputeArg()) : this.value;
+    return this.valueFn ? this.valueFn(this._getComputeArg()) : this.animation ? this.animation.animator.finalValue : this.value;
   }
   /**
    * Returns the last value known for this attribute _without_ running the value
    * function.
    */
   last() {
-    return this.animation && this._computeAnimation(!1), this._lastTickValue !== void 0 ? this._lastTickValue : this._animatedValue != null ? this._animatedValue : this.value !== void 0 ? this.value : this._computedValue;
+    return this.animation && this._preload && this._computeAnimation(!1), this._lastTickValue !== void 0 ? this._lastTickValue : this._animatedValue != null ? this._animatedValue : this.value !== void 0 ? this.value : this._computedValue;
   }
   /**
    * Returns the value that this attribute is approaching if animating (or `null`
@@ -271,7 +271,12 @@ class b {
    * @param context the context in which the animation runs
    */
   animate(t) {
-    return this._timeProvider && (this.currentTime = this._timeProvider()), this.animation && (this._computeAnimation(), this.valueFn ? this._computedValue = this._animatedValue : this.value = this._animatedValue, this._lastTickValue = this._animatedValue, this._cleanUpAnimation(!0)), this.animation = {
+    if (this._timeProvider && (this.currentTime = this._timeProvider()), this.animation) {
+      this._computeAnimation();
+      let e = this._preload ? this.last() : this._animatedValue;
+      this.valueFn ? this._computedValue = e : this.value = e, this._lastTickValue = this._animatedValue, this._cleanUpAnimation(!0);
+    }
+    return this.animation = {
       animator: t,
       initial: this.last(),
       start: this.currentTime
@@ -306,6 +311,15 @@ class b {
    */
   freeze() {
     return this.animation && this._cleanUpAnimation(!0), this.value = this.last(), this.valueFn = void 0, this;
+  }
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(t) {
+    this.transform = t, this.updateTransform();
   }
   /**
    * @returns whether or not this attribute changed value (due to animation or
@@ -874,7 +888,7 @@ var et = new f({
     }
   }
 });
-const re = 25 ** 7, kt = Math.PI, ae = 180 / kt, H = kt / 180;
+const re = 25 ** 7, kt = Math.PI, ae = 180 / kt, V = kt / 180;
 function $t(i, t, { kL: e = 1, kC: r = 1, kH: a = 1 } = {}) {
   let [s, n, o] = T.from(i), h = et.from(T, [s, n, o])[1], [l, u, c] = T.from(t), d = et.from(T, [l, u, c])[1];
   h < 0 && (h = 0), d < 0 && (d = 0);
@@ -882,11 +896,11 @@ function $t(i, t, { kL: e = 1, kC: r = 1, kH: a = 1 } = {}) {
   x < 0 && (x += 2 * kt), P < 0 && (P += 2 * kt), x *= ae, P *= ae;
   let q = l - s, Y = D - w, B = P - x, N = x + P, Wt = Math.abs(B), J;
   w * D === 0 ? J = 0 : Wt <= 180 ? J = B : B > 180 ? J = B - 360 : B < -180 ? J = B + 360 : console.log("the unthinkable has happened");
-  let Nt = 2 * Math.sqrt(D * w) * Math.sin(J * H / 2), ui = (s + l) / 2, At = (w + D) / 2, Jt = Math.pow(At, 7), O;
+  let Nt = 2 * Math.sqrt(D * w) * Math.sin(J * V / 2), ui = (s + l) / 2, At = (w + D) / 2, Jt = Math.pow(At, 7), O;
   w * D === 0 ? O = N : Wt <= 180 ? O = N / 2 : N < 360 ? O = (N + 360) / 2 : O = (N - 360) / 2;
   let Qt = (ui - 50) ** 2, ci = 1 + 0.015 * Qt / Math.sqrt(20 + Qt), Kt = 1 + 0.045 * At, Q = 1;
-  Q -= 0.17 * Math.cos((O - 30) * H), Q += 0.24 * Math.cos(2 * O * H), Q += 0.32 * Math.cos((3 * O + 6) * H), Q -= 0.2 * Math.cos((4 * O - 63) * H);
-  let te = 1 + 0.015 * At * Q, di = 30 * Math.exp(-1 * ((O - 275) / 25) ** 2), fi = 2 * Math.sqrt(Jt / (Jt + re)), mi = -1 * Math.sin(2 * di * H) * fi, ot = (q / (e * ci)) ** 2;
+  Q -= 0.17 * Math.cos((O - 30) * V), Q += 0.24 * Math.cos(2 * O * V), Q += 0.32 * Math.cos((3 * O + 6) * V), Q -= 0.2 * Math.cos((4 * O - 63) * V);
+  let te = 1 + 0.015 * At * Q, di = 30 * Math.exp(-1 * ((O - 275) / 25) ** 2), fi = 2 * Math.sqrt(Jt / (Jt + re)), mi = -1 * Math.sin(2 * di * V) * fi, ot = (q / (e * ci)) ** 2;
   return ot += (Y / (r * Kt)) ** 2, ot += (Nt / (a * te)) ** 2, ot += mi * (Y / (r * Kt)) * (Nt / (a * te)), Math.sqrt(ot);
 }
 const Ti = 75e-6;
@@ -1334,7 +1348,7 @@ const $i = 0.56, Xi = 0.57, ji = 0.62, Ii = 0.65, le = 0.022, Ui = 1.414, qi = 0
 function ce(i) {
   return i >= le ? i : i + (le - i) ** Ui;
 }
-function W(i) {
+function H(i) {
   let t = i < 0 ? -1 : 1, e = Math.abs(i);
   return t * Math.pow(e, 2.4);
 }
@@ -1342,9 +1356,9 @@ function Hi(i, t) {
   t = g(t), i = g(i);
   let e, r, a, s, n, o;
   t = A(t, "srgb"), [s, n, o] = t.coords;
-  let h = W(s) * 0.2126729 + W(n) * 0.7151522 + W(o) * 0.072175;
+  let h = H(s) * 0.2126729 + H(n) * 0.7151522 + H(o) * 0.072175;
   i = A(i, "srgb"), [s, n, o] = i.coords;
-  let l = W(s) * 0.2126729 + W(n) * 0.7151522 + W(o) * 0.072175, u = ce(h), c = ce(l), d = c > u;
+  let l = H(s) * 0.2126729 + H(n) * 0.7151522 + H(o) * 0.072175, u = ce(h), c = ce(l), d = c > u;
   return Math.abs(c - u) < Zi ? r = 0 : d ? (e = c ** $i - u ** Xi, r = e * Gi) : (e = c ** Ii - u ** ji, r = e * Vi), Math.abs(r) < qi ? a = 0 : r > 0 ? a = r - ue : a = r + ue, a * 100;
 }
 function Wi(i, t) {
@@ -2564,7 +2578,7 @@ function Ht(i) {
     return Jr;
   return (t, e, r, a) => e < 1 ? t : r;
 }
-function V(i, t = void 0) {
+function W(i, t = void 0) {
   return t === void 0 && (t = Ht(i)), {
     finalValue: i,
     interpolate: (e, r) => t(
@@ -2575,7 +2589,7 @@ function V(i, t = void 0) {
     )
   };
 }
-function ha(i, t = void 0) {
+function Qr(i, t = void 0) {
   return t === void 0 && (t = Ht(i())), {
     interpolate: (e, r) => t(
       e,
@@ -2615,10 +2629,10 @@ class z {
     return this.interpolator.interpolate(t, r);
   }
   withDelay(t) {
-    return t ? new Qr(this, t) : this;
+    return t ? new Kr(this, t) : this;
   }
 }
-class Qr extends z {
+class Kr extends z {
   constructor(t, e) {
     super(t.interpolator, t.duration + e, t.curve), this.delay = e;
   }
@@ -2630,10 +2644,10 @@ class Qr extends z {
   }
 }
 function ua(i, t = 1e3, e = oi) {
-  return new z(V(i), t, e);
+  return new z(W(i), t, e);
 }
-var Kr = /* @__PURE__ */ ((i) => (i.Waiting = "waiting", i.Entering = "entering", i.Visible = "visible", i.Exiting = "exiting", i.Completed = "completed", i))(Kr || {}), ta = /* @__PURE__ */ ((i) => (i.Show = "show", i.Hide = "hide", i))(ta || {});
-class ea {
+var ta = /* @__PURE__ */ ((i) => (i.Waiting = "waiting", i.Entering = "entering", i.Visible = "visible", i.Exiting = "exiting", i.Completed = "completed", i))(ta || {}), ea = /* @__PURE__ */ ((i) => (i.Show = "show", i.Hide = "hide", i))(ea || {});
+class ia {
   constructor(t = {}) {
     this.markStates = /* @__PURE__ */ new Map(), this.marksByID = /* @__PURE__ */ new Map(), this.queuedAnimations = /* @__PURE__ */ new Map(), this._flushTimer = null, this.animatingMarks = /* @__PURE__ */ new Set(), this._updated = !1, this.defer = !1, this.saveExitedMarks = !1, this._callbacks = {
       initialize: t.initialize || (() => {
@@ -2884,7 +2898,7 @@ function Pe(i, t, e) {
     ])
   );
 }
-class ia {
+class ra {
   /**
    * @param marks The set of marks that this group should manage, all including
    *  the same set of attributes.
@@ -2900,7 +2914,7 @@ class ia {
         return;
       }
       this.marksByID.set(r.id, r), this.markSet.add(r), this._setupMark(r);
-    }), this.stage && this.stage.setVisibleMarks(this.marks);
+    }), this._setupStage();
   }
   /**
    * Applies configuration options to the render group.
@@ -2920,12 +2934,18 @@ class ia {
    * @returns this render group
    */
   configure(t) {
-    return t.timeProvider !== void 0 && (this.timeProvider = t.timeProvider), t.lazyUpdates !== void 0 && (this.lazyUpdates = t.lazyUpdates), t.animationDuration !== void 0 && (this._defaultDuration = t.animationDuration), t.animationCurve !== void 0 && (this._defaultCurve = t.animationCurve), t.hitTest !== void 0 && (this._hitTest = t.hitTest), this.marks && this.getMarks().forEach((e) => this._configureMark(e)), this.useStaging = t.useStaging ?? this.useStaging, this.useStaging ? (this.stage = new ea(), this.marks && this.stage.setVisibleMarks(this.getMarks())) : this.stage = null, this;
+    return t.timeProvider !== void 0 && (this.timeProvider = t.timeProvider), t.lazyUpdates !== void 0 && (this.lazyUpdates = t.lazyUpdates), t.animationDuration !== void 0 && (this._defaultDuration = t.animationDuration), t.animationCurve !== void 0 && (this._defaultCurve = t.animationCurve), t.hitTest !== void 0 && (this._hitTest = t.hitTest), this.marks && this.getMarks().forEach((e) => this._configureMark(e)), this.useStaging = t.useStaging ?? this.useStaging, this._setupStage(), this;
   }
   configureStaging(t, e = void 0) {
     return this.useStaging || console.error(
       "Can't configure staging without setting useStaging to true"
     ), this.stage.onInitialize(t.initialize), this.stage.onEnter(t.enter), this.stage.onExit(t.exit), e && this.stage.configure(e), this;
+  }
+  /**
+   * Sets up the stage manager if it has not already been set up.
+   */
+  _setupStage() {
+    this.useStaging ? (this.stage || (this.stage = new ia()), this.marks && this.stage.setVisibleMarks(this.getMarks())) : this.stage = null;
   }
   /**
    * Sets up a mark for the first time.
@@ -3211,6 +3231,15 @@ class ia {
     return this.markSet.size;
   }
   /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(t, e) {
+    this.forEach((r) => r.setTransform(t, e));
+  }
+  /**
    * @param attrNames the attributes to check for changes in (if none provided,
    *  checks all attributes)
    *
@@ -3221,7 +3250,7 @@ class ia {
     return t === void 0 ? this._changedLastTick : this._changedLastTick && this.getMarks().some((e) => e.changed(t));
   }
 }
-const ra = 5e3;
+const aa = 5e3;
 class Z {
   constructor(t, e) {
     this._timeProvider = null, this._attrNames = [], this._listeners = [], this._graphListeners = [], this._defaultDuration = 1e3, this._defaultCurve = G, this._changedLastTick = !1, this._changedAttributes = {}, this._hitTest = null, this._adjacency = {}, this._reverseAdjacency = /* @__PURE__ */ new Set(), this.represented = void 0, this._updateListeners = {}, this._eventListeners = {}, this.framesWithUpdate = 0, this.id = t, e === void 0 && console.error(
@@ -3341,7 +3370,7 @@ class Z {
         continue;
       this.attributes[r].advance(t) ? e = !0 : this._changedAttributes[r] = !1;
     }
-    return e ? (this.framesWithUpdate += 1, this.framesWithUpdate > ra && console.warn("Marks are being updated excessively!"), this._changedLastTick = !0, !0) : (this.framesWithUpdate = 0, this._changedLastTick = !1, !1);
+    return e ? (this.framesWithUpdate += 1, this.framesWithUpdate > aa && console.warn("Marks are being updated excessively!"), this._changedLastTick = !0, !0) : (this.framesWithUpdate = 0, this._changedLastTick = !1, !1);
   }
   /**
    * Instantaneously sets the value of an attribute, either taking the new
@@ -3427,7 +3456,7 @@ class Z {
       this.attributes[t].last()
     );
     let a = r.duration === void 0 ? this._defaultDuration : r.duration, s = r.curve === void 0 ? this._defaultCurve : r.curve, n = new z(
-      V(e),
+      W(e),
       a,
       s
     ).withDelay(r.delay || 0);
@@ -3453,7 +3482,7 @@ class Z {
       if (!_t(a, this.attributes[t].last()) || !_t(a, this.attributes[t].future())) {
         let s = e.duration !== void 0 ? e.duration : this._defaultDuration, n = e.curve !== void 0 ? e.curve : this._defaultCurve;
         r = new z(
-          V(a),
+          W(a),
           s,
           n
         ).withDelay(e.delay || 0);
@@ -3556,6 +3585,15 @@ class Z {
   _removeEdgeFrom(t) {
     return this._reverseAdjacency.delete(t), this;
   }
+  /**
+   * Sets transform of an attribute to a new function, can be applied to an Attribute,
+   * a Mark, or a MarkRenderGroup
+   * @param attrToModify attribute to modify
+   * @param newFunc new function to set transform to
+   */
+  setTransform(t, e) {
+    this.attributes[t].setTransform(e);
+  }
 }
 function ca(i) {
   let t;
@@ -3614,9 +3652,9 @@ class fa {
 }
 function pt(i, t, e) {
   e > 0 ? (i[0].animate(
-    new z(V(t[0]), e, G)
+    new z(W(t[0]), e, G)
   ), i[1].animate(
-    new z(V(t[1]), e, G)
+    new z(W(t[1]), e, G)
   )) : (i[0].set(t[0]), i[1].set(t[1]));
 }
 class ma {
@@ -3756,7 +3794,7 @@ class ma {
     if (t !== void 0) {
       if (this.unfollow(), e) {
         let r = (a) => new z(
-          V(a),
+          W(a),
           this.animationDuration,
           G
         );
@@ -3824,11 +3862,11 @@ class ma {
       return r.ky || r.k;
     }), this._translateX.set(() => this._calculatingTransform ? this._translateX.last() : this._calculateControllerTransform().x), this._translateY.set(() => this._calculatingTransform ? this._translateY.last() : this._calculateControllerTransform().y), e) {
       let r = (a) => new z(
-        V(a),
+        Qr(() => a.data()),
         this.animationDuration,
         G
       );
-      this._xScaleFactor.animate(r(this._xScaleFactor.data())), this._yScaleFactor.animate(r(this._yScaleFactor.data())), this._translateX.animate(r(this._translateX.data())), this._translateY.animate(r(this._translateY.data()));
+      this._xScaleFactor.animate(r(this._xScaleFactor)), this._yScaleFactor.animate(r(this._yScaleFactor)), this._translateX.animate(r(this._translateX)), this._translateY.animate(r(this._translateY));
     }
     return this;
   }
@@ -3995,7 +4033,7 @@ class _a {
   }
   _forEachMark(t) {
     this.markCollections.forEach((e) => {
-      if (e instanceof ia)
+      if (e instanceof ra)
         e.forEach(t);
       else if (e instanceof Z)
         t(e);
@@ -4135,8 +4173,8 @@ class _a {
     return a && a.dispatch(e, r), a;
   }
 }
-var aa = /* @__PURE__ */ ((i) => (i.none = "no-preference", i.more = "more", i.less = "less", i))(aa || {}), sa = /* @__PURE__ */ ((i) => (i.light = "light", i.dark = "dark", i))(sa || {});
-class na {
+var sa = /* @__PURE__ */ ((i) => (i.none = "no-preference", i.more = "more", i.less = "less", i))(sa || {}), na = /* @__PURE__ */ ((i) => (i.light = "light", i.dark = "dark", i))(na || {});
+class oa {
   constructor() {
     this._hasChanged = !1;
     let t = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -4201,24 +4239,24 @@ class na {
 }
 let Ot;
 function ya() {
-  return Ot || (Ot = new na()), Ot;
+  return Ot || (Ot = new oa()), Ot;
 }
 export {
   z as Animator,
   b as Attribute,
   bi as AttributeRecompute,
-  sa as ColorSchemePreference,
-  aa as ContrastPreference,
+  na as ColorSchemePreference,
+  sa as ContrastPreference,
   fa as LazyTicker,
   Z as Mark,
   li as MarkFollower,
-  ia as MarkRenderGroup,
+  ra as MarkRenderGroup,
   _a as PositionMap,
-  na as RenderContext,
+  oa as RenderContext,
   ma as Scales,
-  ea as StageManager,
-  ta as StagingAction,
-  Kr as StagingState,
+  ia as StageManager,
+  ea as StagingAction,
+  ta as StagingState,
   da as Ticker,
   Ht as autoMixingFunction,
   ua as basicAnimationTo,
@@ -4229,8 +4267,8 @@ export {
   ca as defineMark,
   ya as getRenderContext,
   la as interpolateAlongPath,
-  V as interpolateTo,
-  ha as interpolateToFunction,
+  W as interpolateTo,
+  Qr as interpolateToFunction,
   pa as markBox,
   Jr as numericalArrayMixingFunction,
   hi as numericalMixingFunction
