@@ -5,6 +5,8 @@ title: 'Example: VIS Citations'
 
 In the below chart, each point represents an IEEE VIS paper published between 1990 and 2022. Lighter colors represent more recent publications, and larger bubbles indicate more highly cited papers. Select a point to connect it to its immediate references and highlight papers that have been "influenced" by that paper (e.g. papers for whom the selected paper is in their citation ancestry).
 
+If the chart doesn't load at first, try reloading the page.
+
 <div id="citation-chart-container"></div>
 
 <script type="module"> 

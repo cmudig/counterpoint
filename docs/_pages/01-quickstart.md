@@ -243,13 +243,12 @@ interpolate to the new values.
 > Since the `draw()` function will get called about 60 times per second during animations, it's 
 > important to make sure it runs fast and doesn't perform any unnecessary
 > calculations. Plus, you can configure Counterpoint to redraw only when
-> needed, improving performance and saving energy. See [Optimizing Performance]({% link _pages/07-optimizing-performance.md %}) 
-> to learn more.
+> needed, improving performance and saving energy.
 > 
 >
 {: .block-tip }
 
-To enable animations, we first have to create a **<a href="{{ site.baseurl }}/pages/03-animation-timing#triggering-render-updates-with-a-ticker">ticker</a>** to keep track of our
+To enable animations, we first have to create a **<a href="{{ site.baseurl }}/pages/03-animation-timing#tickers">ticker</a>** to keep track of our
 animations' timing. This `Ticker` instance will keep track of the render group(s)
 we give it, and we pass it a function to call when the state of the render group
 changes:
