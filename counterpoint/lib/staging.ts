@@ -99,9 +99,9 @@ export class StageManager<AttributeSet extends AttributeSetBase>
 
   constructor(callbacks: StageManagerCallback<Mark<AttributeSet>> = {}) {
     this._callbacks = {
-      initialize: callbacks.initialize || (() => {}),
-      enter: callbacks.enter || (() => {}),
-      exit: callbacks.exit || (() => {}),
+      initialize: callbacks.initialize,
+      enter: callbacks.enter,
+      exit: callbacks.exit,
     };
   }
 
@@ -136,15 +136,15 @@ export class StageManager<AttributeSet extends AttributeSetBase>
   }
 
   onInitialize(cb: StageManagerCallback<Mark<AttributeSet>>['initialize']) {
-    this._callbacks.initialize = cb || (() => {});
+    this._callbacks.initialize = cb;
   }
 
   onEnter(cb: StageManagerCallback<Mark<AttributeSet>>['enter']) {
-    this._callbacks.enter = cb || (() => {});
+    this._callbacks.enter = cb;
   }
 
   onExit(cb: StageManagerCallback<Mark<AttributeSet>>['exit']) {
-    this._callbacks.exit = cb || (() => {});
+    this._callbacks.exit = cb;
   }
 
   advance(dt: number): boolean {
@@ -166,7 +166,9 @@ export class StageManager<AttributeSet extends AttributeSetBase>
       if (this.markStates.get(element) === StagingState.Visible) return;
       this.markStates.set(element, StagingState.Entering);
       this.marksByID.set(element.id, element);
-      let result = this._callbacks.enter(element);
+      let result = !!this._callbacks.enter
+        ? this._callbacks.enter(element)
+        : undefined;
       if (!!result && result instanceof Promise) {
         this.animatingMarks.add(element);
         result.then(
@@ -185,11 +187,12 @@ export class StageManager<AttributeSet extends AttributeSetBase>
           }
         );
       } else {
-        if (!this._showedPromiseWarning)
+        if (!!this._callbacks.enter && !this._showedPromiseWarning) {
           console.warn(
             'The enter function did not return a Promise, assuming the animation is synchronous.'
           );
-        this._showedPromiseWarning = true;
+          this._showedPromiseWarning = true;
+        }
         this.markStates.set(element, StagingState.Visible);
       }
     } else if (action == StagingAction.Hide) {
@@ -202,7 +205,9 @@ export class StageManager<AttributeSet extends AttributeSetBase>
         return;
       this.markStates.set(element, StagingState.Exiting);
       this.marksByID.set(element.id, element);
-      let result = this._callbacks.exit(element);
+      let result = !!this._callbacks.exit
+        ? this._callbacks.exit(element)
+        : undefined;
       if (!!result && result instanceof Promise) {
         this.animatingMarks.add(element);
         result.then(
@@ -227,11 +232,12 @@ export class StageManager<AttributeSet extends AttributeSetBase>
           }
         );
       } else {
-        if (!this._showedPromiseWarning)
+        if (this._callbacks.exit && !this._showedPromiseWarning) {
           console.warn(
             'The exit function did not return a Promise, assuming the animation is synchronous.'
           );
-        this._showedPromiseWarning = true;
+          this._showedPromiseWarning = true;
+        }
         if (this.saveExitedMarks) {
           this.markStates.set(element, StagingState.Completed);
         } else {
@@ -299,7 +305,7 @@ export class StageManager<AttributeSet extends AttributeSetBase>
    */
   show(element: Mark<AttributeSet>): boolean {
     if (!this.markStates.has(element)) {
-      this._callbacks.initialize(element);
+      if (!!this._callbacks.initialize) this._callbacks.initialize(element);
       this.markStates.set(element, StagingState.Waiting);
       this.marksByID.set(element.id, element);
     }

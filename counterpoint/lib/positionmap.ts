@@ -300,6 +300,7 @@ export class PositionMap {
     maximumDistance: number | null = null
   ): Mark<any> | null {
     if (!this._positionMap) this.compute();
+    if (this._numMarks == 0) return null;
     if (maximumDistance == null) maximumDistance = this._maximumHitTestDistance;
 
     let maxBins =

@@ -25,6 +25,7 @@ export type SimpleAnimationOptions = {
   duration?: number;
   curve?: AnimationCurve;
   delay?: number;
+  overrideIfIdentical?: boolean; // if false (default true), then don't animate if already animating to the same value
 };
 export type AnimationOptions<ValueType> = SimpleAnimationOptions & {
   interpolator?: Interpolator<ValueType>;
@@ -465,18 +466,25 @@ export class Mark<AttributeSet extends AttributeSetBase = MarkAttributes>
       );
     }
 
-    let duration =
-      options.duration === undefined ? this._defaultDuration : options.duration;
-    let curve =
-      options.curve === undefined ? this._defaultCurve : options.curve;
+    if (
+      (options.overrideIfIdentical ?? true) ||
+      !approxEquals(finalValue, this.attributes[attrName].data())
+    ) {
+      let duration =
+        options.duration === undefined
+          ? this._defaultDuration
+          : options.duration;
+      let curve =
+        options.curve === undefined ? this._defaultCurve : options.curve;
 
-    let animation = new Animator(
-      interpolateTo(finalValue),
-      duration,
-      curve
-    ).withDelay(options.delay || 0);
+      let animation = new Animator(
+        interpolateTo(finalValue),
+        duration,
+        curve
+      ).withDelay(options.delay || 0);
 
-    (this.attributes[attrName] as AttributeType).animate(animation);
+      (this.attributes[attrName] as AttributeType).animate(animation);
+    }
     return this;
   }
 
