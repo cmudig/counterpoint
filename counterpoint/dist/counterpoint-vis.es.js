@@ -482,7 +482,7 @@ const wi = 75e-6, C = class C {
       h.type || (h.type = "function"), h.name || (h.name = o);
     }
     t.cssId && !((a = this.formats.functions) != null && a.color) ? (this.formats.color = { id: t.cssId }, Object.defineProperty(this, "cssId", { value: t.cssId })) : (s = this.formats) != null && s.color && !((n = this.formats) != null && n.color.id) && (this.formats.color.id = this.id), this.referred = t.referred, Object.defineProperty(this, "path", {
-      value: Si(this).reverse(),
+      value: xi(this).reverse(),
       writable: !1,
       enumerable: !0,
       configurable: !0
@@ -615,7 +615,7 @@ Lt(C, "registry", {}), Lt(C, "DEFAULT_FORMAT", {
   name: "color"
 });
 let f = C;
-function Si(i) {
+function xi(i) {
   let t = [i];
   for (let e = i; e = e.base; )
     t.push(e);
@@ -651,7 +651,7 @@ var L = new f({
   },
   aliases: ["xyz"]
 });
-class S extends f {
+class x extends f {
   /**
    * Creates a new RGB ColorSpace.
    * If coords are not specified, they will use the default RGB coords.
@@ -717,10 +717,10 @@ function Ye(i, { meta: t } = {}) {
               let Y = y.name || p;
               throw new TypeError(`${w} not allowed for ${Y} in ${h}()`);
             }
-            let x = D.range;
-            w === "<percentage>" && (x || (x = [0, 1]));
+            let S = D.range;
+            w === "<percentage>" && (S || (S = [0, 1]));
             let E = y.range || y.refRange;
-            return x && E && (d[b] = qt(x, E, d[b])), D;
+            return S && E && (d[b] = qt(S, E, d[b])), D;
           })), t && Object.assign(t, { formatId: u.name, types: m }), {
             spaceId: l.id,
             coords: d,
@@ -780,7 +780,7 @@ var Gt = new f({
     color: {}
   }
 });
-const xi = 216 / 24389, ie = 24 / 116, lt = 24389 / 27;
+const Si = 216 / 24389, ie = 24 / 116, lt = 24389 / 27;
 let Pt = R.D50;
 var T = new f({
   id: "lab",
@@ -804,7 +804,7 @@ var T = new f({
   // Convert D50-adapted XYX to Lab
   //  CIE 15.3:2004 section 8.2.1.1
   fromBase(i) {
-    let e = i.map((r, a) => r / Pt[a]).map((r) => r > xi ? Math.cbrt(r) : (lt * r + 16) / 116);
+    let e = i.map((r, a) => r / Pt[a]).map((r) => r > Si ? Math.cbrt(r) : (lt * r + 16) / 116);
     return [
       116 * e[1] - 16,
       // L
@@ -892,9 +892,9 @@ const re = 25 ** 7, kt = Math.PI, ae = 180 / kt, V = kt / 180;
 function $t(i, t, { kL: e = 1, kC: r = 1, kH: a = 1 } = {}) {
   let [s, n, o] = T.from(i), h = it.from(T, [s, n, o])[1], [l, u, c] = T.from(t), d = it.from(T, [l, u, c])[1];
   h < 0 && (h = 0), d < 0 && (d = 0);
-  let p = ((h + d) / 2) ** 7, y = 0.5 * (1 - Math.sqrt(p / (p + re))), b = (1 + y) * n, k = (1 + y) * u, w = Math.sqrt(b ** 2 + o ** 2), D = Math.sqrt(k ** 2 + c ** 2), x = b === 0 && o === 0 ? 0 : Math.atan2(o, b), E = k === 0 && c === 0 ? 0 : Math.atan2(c, k);
-  x < 0 && (x += 2 * kt), E < 0 && (E += 2 * kt), x *= ae, E *= ae;
-  let q = l - s, Y = D - w, B = E - x, N = x + E, Wt = Math.abs(B), J;
+  let p = ((h + d) / 2) ** 7, y = 0.5 * (1 - Math.sqrt(p / (p + re))), b = (1 + y) * n, k = (1 + y) * u, w = Math.sqrt(b ** 2 + o ** 2), D = Math.sqrt(k ** 2 + c ** 2), S = b === 0 && o === 0 ? 0 : Math.atan2(o, b), E = k === 0 && c === 0 ? 0 : Math.atan2(c, k);
+  S < 0 && (S += 2 * kt), E < 0 && (E += 2 * kt), S *= ae, E *= ae;
+  let q = l - s, Y = D - w, B = E - S, N = S + E, Wt = Math.abs(B), J;
   w * D === 0 ? J = 0 : Wt <= 180 ? J = B : B > 180 ? J = B - 360 : B < -180 ? J = B + 360 : console.log("the unthinkable has happened");
   let Nt = 2 * Math.sqrt(D * w) * Math.sin(J * V / 2), ui = (s + l) / 2, At = (w + D) / 2, Jt = Math.pow(At, 7), O;
   w * D === 0 ? O = N : Wt <= 180 ? O = N / 2 : N < 360 ? O = (N + 360) / 2 : O = (N - 360) / 2;
@@ -989,7 +989,7 @@ const Di = [
   [-0.666684351832489, 1.616481236634939, 0.0157685458139111],
   [0.017639857445311, -0.042770613257809, 0.942103121235474]
 ];
-var Tt = new S({
+var Tt = new x({
   id: "rec2020-linear",
   name: "Linear REC.2020",
   white: "D65",
@@ -1000,7 +1000,7 @@ var Tt = new S({
   }
 });
 const ut = 1.09929682680944, se = 0.018053968510807;
-var Xe = new S({
+var Xe = new x({
   id: "rec2020",
   name: "REC.2020",
   base: Tt,
@@ -1028,7 +1028,7 @@ const Li = [
   [-0.8294889695615747, 1.7626640603183463, 0.023624685841943577],
   [0.03584583024378447, -0.07617238926804182, 0.9568845240076872]
 ];
-var je = new S({
+var je = new x({
   id: "p3-linear",
   name: "Linear P3",
   white: "D65",
@@ -1044,7 +1044,7 @@ const Ei = [
   [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
   [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
 ];
-var Ie = new S({
+var Ie = new x({
   id: "srgb-linear",
   name: "Linear sRGB",
   white: "D65",
@@ -1204,7 +1204,7 @@ var Ie = new S({
   yellowgreen: [154 / 255, 205 / 255, 50 / 255]
 };
 let oe = Array(3).fill("<percentage> | <number>[0, 255]"), he = Array(3).fill("<number>[0, 255]");
-var at = new S({
+var at = new x({
   id: "srgb",
   name: "sRGB",
   base: Ie,
@@ -1274,7 +1274,7 @@ var at = new S({
       }
     }
   }
-}), Ue = new S({
+}), Ue = new x({
   id: "p3",
   name: "P3",
   base: je,
@@ -1492,9 +1492,9 @@ function nr(i, t, { l: e = 2, c: r = 1 } = {}) {
   o < 0 && (o = 0), d < 0 && (d = 0);
   let m = a - l, p = o - d, y = s - u, b = n - c, k = y ** 2 + b ** 2 - p ** 2, w = 0.511;
   a >= 16 && (w = 0.040975 * a / (1 + 0.01765 * a));
-  let D = 0.0638 * o / (1 + 0.0131 * o) + 0.638, x;
-  Number.isNaN(h) && (h = 0), h >= 164 && h <= 345 ? x = 0.56 + Math.abs(0.2 * Math.cos((h + 168) * fe)) : x = 0.36 + Math.abs(0.4 * Math.cos((h + 35) * fe));
-  let E = Math.pow(o, 4), q = Math.sqrt(E / (E + 1900)), Y = D * (q * x + 1 - q), B = (m / (e * w)) ** 2;
+  let D = 0.0638 * o / (1 + 0.0131 * o) + 0.638, S;
+  Number.isNaN(h) && (h = 0), h >= 164 && h <= 345 ? S = 0.56 + Math.abs(0.2 * Math.cos((h + 168) * fe)) : S = 0.36 + Math.abs(0.4 * Math.cos((h + 35) * fe));
+  let E = Math.pow(o, 4), q = Math.sqrt(E / (E + 1900)), Y = D * (q * S + 1 - q), B = (m / (e * w)) ** 2;
   return B += (p / (r * D)) ** 2, B += k / Y ** 2, Math.sqrt(B);
 }
 const me = 203;
@@ -1708,11 +1708,11 @@ const wr = [
   [0.8190224432164319, 0.3619062562801221, -0.12887378261216414],
   [0.0329836671980271, 0.9292868468965546, 0.03614466816999844],
   [0.048177199566046255, 0.26423952494422764, 0.6335478258136937]
-], Sr = [
+], xr = [
   [1.2268798733741557, -0.5578149965554813, 0.28139105017721583],
   [-0.04057576262431372, 1.1122868293970594, -0.07171106666151701],
   [-0.07637294974672142, -0.4214933239627914, 1.5869240244272418]
-], xr = [
+], Sr = [
   [0.2104542553, 0.793617785, -0.0040720468],
   [1.9779984951, -2.428592205, 0.4505937099],
   [0.0259040371, 0.7827717662, -0.808675766]
@@ -1721,7 +1721,7 @@ const wr = [
   [1.0000000088817609, -0.10556134232365635, -0.06385417477170591],
   [1.0000000546724108, -0.08948418209496575, -1.2914855378640917]
 ];
-var St = new f({
+var xt = new f({
   id: "oklab",
   name: "Oklab",
   coords: {
@@ -1741,11 +1741,11 @@ var St = new f({
   base: L,
   fromBase(i) {
     let e = v(wr, i).map((r) => Math.cbrt(r));
-    return v(xr, e);
+    return v(Sr, e);
   },
   toBase(i) {
     let e = v(Cr, i).map((r) => r ** 3);
-    return v(Sr, e);
+    return v(xr, e);
   },
   formats: {
     oklab: {
@@ -1754,10 +1754,10 @@ var St = new f({
   }
 });
 function Tr(i, t) {
-  let [e, r, a] = St.from(i), [s, n, o] = St.from(t), h = e - s, l = r - n, u = a - o;
+  let [e, r, a] = xt.from(i), [s, n, o] = xt.from(t), h = e - s, l = r - n, u = a - o;
   return Math.sqrt(h ** 2 + l ** 2 + u ** 2);
 }
-var xt = {
+var St = {
   deltaE76: ar,
   deltaECMC: nr,
   deltaE2000: $t,
@@ -1769,9 +1769,9 @@ function tt(i, t, e = {}) {
   st(e) && (e = { method: e });
   let { method: r = F.deltaE, ...a } = e;
   i = g(i), t = g(t);
-  for (let s in xt)
+  for (let s in St)
     if ("deltae" + r.toLowerCase() === s.toLowerCase())
-      return xt[s](i, t, a);
+      return St[s](i, t, a);
   throw new TypeError(`Unknown deltaE method: ${r}`);
 }
 function Dr(i, t = 0.25) {
@@ -2024,13 +2024,13 @@ const Br = [
   [-0.9692436362808795, 1.8759675015077202, 0.04155505740717557],
   [0.013444280632031142, -0.11836239223101838, 1.0151749943912054]
 ];
-var ii = new S({
+var ii = new x({
   id: "a98rgb-linear",
   name: "Linear Adobe® 98 RGB compatible",
   white: "D65",
   toXYZ_M: Br,
   fromXYZ_M: zr
-}), Fr = new S({
+}), Fr = new x({
   id: "a98rgb",
   name: "Adobe® 98 RGB compatible",
   base: ii,
@@ -2051,7 +2051,7 @@ const Or = [
   [-0.5446224939028347, 1.5082327413132781, 0.02053603239147973],
   [0, 0, 1.2119675456389454]
 ];
-var ri = new S({
+var ri = new x({
   id: "prophoto-linear",
   name: "Linear ProPhoto",
   white: "D50",
@@ -2060,7 +2060,7 @@ var ri = new S({
   fromXYZ_M: Yr
 });
 const $r = 1 / 512, Xr = 16 / 512;
-var jr = new S({
+var jr = new x({
   id: "prophoto",
   name: "ProPhoto",
   base: ri,
@@ -2094,7 +2094,7 @@ var jr = new S({
     }
   },
   white: "D65",
-  base: St,
+  base: xt,
   fromBase(i) {
     let [t, e, r] = i, a;
     const s = 2e-4;
@@ -2118,19 +2118,19 @@ var jr = new S({
     }
   }
 });
-const ke = 203, we = 2610 / 2 ** 14, Ur = 2 ** 14 / 2610, qr = 2523 / 2 ** 5, Se = 2 ** 5 / 2523, xe = 3424 / 2 ** 12, Ce = 2413 / 2 ** 7, Te = 2392 / 2 ** 7;
-var Gr = new S({
+const ke = 203, we = 2610 / 2 ** 14, Ur = 2 ** 14 / 2610, qr = 2523 / 2 ** 5, xe = 2 ** 5 / 2523, Se = 3424 / 2 ** 12, Ce = 2413 / 2 ** 7, Te = 2392 / 2 ** 7;
+var Gr = new x({
   id: "rec2100pq",
   name: "REC.2100-PQ",
   base: Tt,
   toBase(i) {
     return i.map(function(t) {
-      return (Math.max(t ** Se - xe, 0) / (Ce - Te * t ** Se)) ** Ur * 1e4 / ke;
+      return (Math.max(t ** xe - Se, 0) / (Ce - Te * t ** xe)) ** Ur * 1e4 / ke;
     });
   },
   fromBase(i) {
     return i.map(function(t) {
-      let e = Math.max(t * ke / 1e4, 0), r = xe + Ce * e ** we, a = 1 + Te * e ** we;
+      let e = Math.max(t * ke / 1e4, 0), r = Se + Ce * e ** we, a = 1 + Te * e ** we;
       return (r / a) ** qr;
     });
   },
@@ -2141,7 +2141,7 @@ var Gr = new S({
   }
 });
 const De = 0.17883277, Ae = 0.28466892, Le = 0.55991073, zt = 3.7743;
-var Zr = new S({
+var Zr = new x({
   id: "rec2100hlg",
   cssid: "rec2100-hlg",
   name: "REC.2100-HLG",
@@ -2267,7 +2267,7 @@ const Vr = [
   [-0.6636628587229829, 1.6153315916573379, 0.016756347685530137],
   [0.011721894328375376, -0.008284441996237409, 0.9883948585390215]
 ];
-var ni = new S({
+var ni = new x({
   id: "acescg",
   name: "ACEScg",
   // ACEScg – A scene-referred, linear-light encoding of ACES Data
@@ -2296,7 +2296,7 @@ var ni = new S({
   }
 });
 const gt = 2 ** -16, Ft = -0.35828683, pt = (Math.log2(65504) + 9.72) / 17.52;
-var Wr = new S({
+var Wr = new x({
   id: "acescc",
   name: "ACEScc",
   // see S-2014-003 ACEScc – A Logarithmic Encoding of ACES Data
@@ -2356,7 +2356,7 @@ var Wr = new S({
   Lab: T,
   Lab_D65: Xt,
   OKLCH: Ir,
-  OKLab: St,
+  OKLab: xt,
   P3: Ue,
   P3_Linear: je,
   ProPhoto: jr,
@@ -2532,9 +2532,9 @@ function Ut(i, t) {
     enumerable: !0
   });
 }
-_.extend(xt);
+_.extend(St);
 _.extend({ deltaE: tt });
-Object.assign(_, { deltaEMethods: xt });
+Object.assign(_, { deltaEMethods: St });
 _.extend(Lr);
 _.extend({ contrast: er });
 _.extend(rr);
@@ -4033,14 +4033,13 @@ class _a {
    * @returns this `PositionMap` instance
    */
   compute() {
-    return this._extents = new Array(this._coordinateAttributes.length).fill([
-      1e12,
-      -1e12
-    ]), this._numMarks = 0, this._forEachMark((t) => {
+    return this._extents = new Array(this._coordinateAttributes.length).fill(0).map((t) => [1e12, -1e12]), this._numMarks = 0, this._forEachMark((t) => {
       this._coordinateAttributes.forEach((e, r) => {
         let a = t.attr(e, this._transformCoordinates);
         a < this._extents[r][0] && (this._extents[r][0] = a), a > this._extents[r][1] && (this._extents[r][1] = a);
       }), this._numMarks += 1;
+    }), this._extents.forEach((t, e) => {
+      t[0] == t[1] ? this._extents[e] = [t[0], t[1] + 1] : this._extents[e] = [t[0], t[1] + (t[1] - t[0]) * 0.01];
     }), this._numMarks == 0 ? this : (this._numBins = Math.round(
       this._numMarks / (this._avgMarksPerBin ?? Math.min(Math.max(1, this._numMarks / 100), 10))
     ), this._binSizes = this._extents.map(

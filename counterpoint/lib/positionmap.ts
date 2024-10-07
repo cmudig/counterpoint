@@ -117,9 +117,9 @@ export class PositionMap {
    */
   compute(): PositionMap {
     // First traverse the marks and get the extents
-    this._extents = new Array(this._coordinateAttributes.length).fill([
-      1e12, -1e12,
-    ]);
+    this._extents = new Array(this._coordinateAttributes.length)
+      .fill(0)
+      .map((_) => [1e12, -1e12]);
     this._numMarks = 0;
     this._forEachMark((mark) => {
       this._coordinateAttributes.forEach((c, i) => {
@@ -128,6 +128,12 @@ export class PositionMap {
         if (coord > this._extents[i][1]) this._extents[i][1] = coord;
       });
       this._numMarks += 1;
+    });
+    // make sure no extents are zero, and add a little extra on the end of each
+    // to take care of exclusive upper bounds
+    this._extents.forEach((e, i) => {
+      if (e[0] == e[1]) this._extents[i] = [e[0], e[1] + 1];
+      else this._extents[i] = [e[0], e[1] + (e[1] - e[0]) * 0.01];
     });
 
     if (this._numMarks == 0) return this;
